@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Taeyoon's Website</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Fuzzy+Bubbles&family=Questrial&display=swap"
+    rel="stylesheet">
+
+  <!-- External CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="#home" class="nav-logo">Taeyoon Kim</a>
+      <ul class="nav-menu">
+        <li><a href="#home" class="nav-link">Home</a></li>
+        <li><a href="#about" class="nav-link">About</a></li>
+        <li><a href="#contact" class="nav-link">Contact</a></li>
+      </ul>
+      <div class="hamburger">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero">
+    <div class="hero-content">
+      <p class="typing-text">Welcome, Taeyoon's website!</p>
+      <p class="hero-subtitle">Developer | Student</p>
+      <div class="hero-buttons">
+        <a href="#about" class="btn btn-primary">About Me</a>
+        <a href="#contact" class="btn btn-secondary">Get In Touch</a>
+      </div>
+    </div>
+    <div class="scroll-indicator">
+      <span>Scroll Down</span>
+      <div class="arrow-down"></div>
+    </div>
+  </section>
+
+  <!-- About Section -->
+  <section id="about" class="section about">
+    <div class="container">
+      <h2 class="section-title">About Me</h2>
+      <div class="about-content">
+        <div class="about-text">
+          <p>안녕하세요! 저는 김태윤입니다.</p>
+          <p>새로운 기술을 배우고 창의적인 솔루션을 만드는 것을 좋아합니다.</p>
+          <!-- <p>사용자 경험을 최우선으로 생각하며, 깔끔하고 효율적인 코드를 작성하기 위해 노력합니다.</p> -->
+        </div>
+        <div class="about-image">
+          <div class="image-placeholder">
+            <img src="logo.jpg" alt="Taeyoon's Profile">
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section id="contact" class="section contact">
+    <div class="container">
+      <h2 class="section-title">Get In Touch</h2>
+      <div class="contact-content">
+        <div class="contact-info">
+          <a href="mailto:me@taeyoon.kr" class="contact-item" target="_blank">
+            <span class="contact-icon">📧</span>
+            <div>
+              <h3>Email</h3>
+              <p>me@taeyoon.kr</p>
+            </div>
+          </a>
+          <a href="https://instagram.com/taeyoon_0526" class="contact-item" target="_blank" rel="noopener noreferrer">
+            <span class="contact-icon">💼</span>
+            <div>
+              <h3>Instagram</h3>
+              <p>instagram.com/taeyoon_0526</p>
+            </div>
+          </a>
+          <a href="https://github.com/taeyoon0526" class="contact-item" target="_blank" rel="noopener noreferrer">
+            <span class="contact-icon">🐙</span>
+            <div>
+              <h3>GitHub</h3>
+              <p>github.com/taeyoon0526</p>
+            </div>
+          </a>
+        </div>
+        <form class="contact-form">
+          <input type="text" placeholder="Your Name" required>
+          <input type="email" placeholder="Your Email" required>
+          <textarea placeholder="Your Message" rows="5" required></textarea>
+          <button type="submit" class="btn btn-primary">Send Message</button>
+        </form>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <p>&copy; 2025 Taeyoon. All rights reserved.</p>
+    <div class="social-links">
+      <a href="https://github.com/taeyoon0526" target="_blank" rel="noopener noreferrer" aria-label="GitHub">GitHub</a>
+      <a href="https://instagram.com/taeyoon_0526" target="_blank" rel="noopener noreferrer"
+        aria-label="Instagram">Instagram</a>
+      <a href="mailto:me@taeyoon.kr" aria-label="Email">Email</a>
+    </div>
+  </footer>
+
+  <!-- External JavaScript -->
+  <script src="script.js"></script>
+</body>
+
+</html>
