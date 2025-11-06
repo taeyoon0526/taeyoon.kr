@@ -107,7 +107,7 @@ const contactForm = document.querySelector('.contact-form');
 if (contactForm) {
   contactForm.addEventListener('submit', (e) => {
     e.preventDefault();
-    alert('메시지가 전송되었습니다! (실제로는 서버 연동이 필요합니다)');
+    alert('기능 준비 중입니다.');
     contactForm.reset();
   });
 }
