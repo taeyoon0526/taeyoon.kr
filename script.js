@@ -1,3 +1,34 @@
+// Loading Screen
+window.addEventListener('load', () => {
+  const loaderWrapper = document.querySelector('.loader-wrapper');
+  
+  // Minimum loading time for better UX (0.8 seconds)
+  setTimeout(() => {
+    loaderWrapper.classList.add('fade-out');
+    document.body.classList.remove('loading');
+    
+    // Remove loader from DOM after animation
+    setTimeout(() => {
+      loaderWrapper.style.display = 'none';
+    }, 500);
+  }, 800);
+});
+
+// Add loading class to body initially
+document.body.classList.add('loading');
+
+// Scroll Progress Bar
+const scrollProgress = document.querySelector('.scroll-progress');
+
+window.addEventListener('scroll', () => {
+  const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+  const scrolled = (window.scrollY / windowHeight) * 100;
+  
+  if (scrollProgress) {
+    scrollProgress.style.width = scrolled + '%';
+  }
+});
+
 // Smooth scrolling for navigation links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   anchor.addEventListener('click', function (e) {
