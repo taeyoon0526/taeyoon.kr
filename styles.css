@@ -286,18 +286,22 @@ a {
   display: inline-block;
 }
 
+.typing-container {
+  display: inline-block;
+  position: relative;
+}
+
 .typing-words {
   display: inline-block;
   color: #4a90e2;
-  min-width: 150px;
-  text-align: left;
+  min-width: 0;
 }
 
 .typing-cursor {
   display: inline-block;
   color: #4a90e2;
   animation: blink 0.7s infinite;
-  margin-left: 2px;
+  font-weight: normal;
 }
 
 .hero-subtitle {
@@ -732,7 +736,7 @@ a {
   }
 
   .typing-words {
-    min-width: 100px;
+    min-width: 0;
   }
 
   .hero-subtitle {
@@ -896,7 +900,7 @@ a {
   }
 
   .typing-words {
-    min-width: 90px;
+    min-width: 0;
   }
 
   .hero-subtitle {
