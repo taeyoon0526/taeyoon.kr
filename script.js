@@ -112,27 +112,165 @@ if (contactForm) {
   });
 }
 
-// Intersection Observer for fade-in animations
-const observerOptions = {
-  threshold: 0.1,
-  rootMargin: '0px 0px -50px 0px'
-};
+// ===== 5. Multiple Typing Effect =====
+const typingWords = ['Developer', 'Student'];
+let wordIndex = 0;
+let charIndex = 0;
+let isDeleting = false;
+let typingSpeed = 150;
 
-const observer = new IntersectionObserver((entries) => {
+const typingElement = document.querySelector('.typing-words');
+
+function type() {
+  if (!typingElement) return;
+  
+  const currentWord = typingWords[wordIndex];
+  
+  if (isDeleting) {
+    typingElement.textContent = currentWord.substring(0, charIndex - 1);
+    charIndex--;
+    typingSpeed = 100;
+  } else {
+    typingElement.textContent = currentWord.substring(0, charIndex + 1);
+    charIndex++;
+    typingSpeed = 150;
+  }
+  
+  if (!isDeleting && charIndex === currentWord.length) {
+    typingSpeed = 2000; // Pause at end
+    isDeleting = true;
+  } else if (isDeleting && charIndex === 0) {
+    isDeleting = false;
+    wordIndex = (wordIndex + 1) % typingWords.length;
+    typingSpeed = 500; // Pause before next word
+  }
+  
+  setTimeout(type, typingSpeed);
+}
+
+// Start typing effect after page load
+setTimeout(type, 1000);
+
+// ===== 6. Back to Top Button =====
+const backToTopButton = document.getElementById('back-to-top');
+
+window.addEventListener('scroll', () => {
+  if (window.pageYOffset > 300) {
+    backToTopButton.classList.add('show');
+  } else {
+    backToTopButton.classList.remove('show');
+  }
+});
+
+backToTopButton.addEventListener('click', () => {
+  window.scrollTo({
+    top: 0,
+    behavior: 'smooth'
+  });
+});
+
+// ===== 7. Particle Background =====
+const canvas = document.getElementById('particle-canvas');
+const ctx = canvas.getContext('2d');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let particlesArray = [];
+const numberOfParticles = window.innerWidth < 768 ? 30 : 80;
+
+class Particle {
+  constructor() {
+    this.x = Math.random() * canvas.width;
+    this.y = Math.random() * canvas.height;
+    this.size = Math.random() * 2 + 1;
+    this.speedX = Math.random() * 0.5 - 0.25;
+    this.speedY = Math.random() * 0.5 - 0.25;
+  }
+  
+  update() {
+    this.x += this.speedX;
+    this.y += this.speedY;
+    
+    if (this.x > canvas.width || this.x < 0) {
+      this.speedX = -this.speedX;
+    }
+    if (this.y > canvas.height || this.y < 0) {
+      this.speedY = -this.speedY;
+    }
+  }
+  
+  draw() {
+    ctx.fillStyle = 'rgba(74, 144, 226, 0.8)';
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+}
+
+function initParticles() {
+  particlesArray = [];
+  for (let i = 0; i < numberOfParticles; i++) {
+    particlesArray.push(new Particle());
+  }
+}
+
+function connectParticles() {
+  for (let i = 0; i < particlesArray.length; i++) {
+    for (let j = i; j < particlesArray.length; j++) {
+      const dx = particlesArray[i].x - particlesArray[j].x;
+      const dy = particlesArray[i].y - particlesArray[j].y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < 120) {
+        ctx.strokeStyle = `rgba(74, 144, 226, ${0.2 - distance / 600})`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(particlesArray[i].x, particlesArray[i].y);
+        ctx.lineTo(particlesArray[j].x, particlesArray[j].y);
+        ctx.stroke();
+      }
+    }
+  }
+}
+
+function animateParticles() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  
+  particlesArray.forEach(particle => {
+    particle.update();
+    particle.draw();
+  });
+  
+  connectParticles();
+  requestAnimationFrame(animateParticles);
+}
+
+initParticles();
+animateParticles();
+
+// Resize canvas on window resize
+window.addEventListener('resize', () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  initParticles();
+});
+
+// ===== 8. Enhanced Section Animations =====
+const sectionObserver = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
     if (entry.isIntersecting) {
-      entry.target.style.opacity = '1';
-      entry.target.style.transform = 'translateY(0)';
+      entry.target.classList.add('visible');
     }
   });
-}, observerOptions);
+}, {
+  threshold: 0.15,
+  rootMargin: '0px 0px -100px 0px'
+});
 
 // Observe all sections
 document.querySelectorAll('.section').forEach(section => {
-  section.style.opacity = '0';
-  section.style.transform = 'translateY(30px)';
-  section.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
-  observer.observe(section);
+  sectionObserver.observe(section);
 });
 
 console.log('Welcome to Taeyoon\'s website! 🚀');
