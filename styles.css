@@ -751,15 +751,41 @@ a {
   transform: translateY(0);
 }
 
-.skill-card:nth-child(1) { transition-delay: 0.1s; }
-.skill-card:nth-child(2) { transition-delay: 0.2s; }
-.skill-card:nth-child(3) { transition-delay: 0.3s; }
-.skill-card:nth-child(4) { transition-delay: 0.4s; }
-.skill-card:nth-child(5) { transition-delay: 0.5s; }
-.skill-card:nth-child(6) { transition-delay: 0.6s; }
-.skill-card:nth-child(7) { transition-delay: 0.7s; }
-.skill-card:nth-child(8) { transition-delay: 0.8s; }
-.skill-card:nth-child(9) { transition-delay: 0.9s; }
+.skill-card:nth-child(1) {
+  transition-delay: 0.1s;
+}
+
+.skill-card:nth-child(2) {
+  transition-delay: 0.2s;
+}
+
+.skill-card:nth-child(3) {
+  transition-delay: 0.3s;
+}
+
+.skill-card:nth-child(4) {
+  transition-delay: 0.4s;
+}
+
+.skill-card:nth-child(5) {
+  transition-delay: 0.5s;
+}
+
+.skill-card:nth-child(6) {
+  transition-delay: 0.6s;
+}
+
+.skill-card:nth-child(7) {
+  transition-delay: 0.7s;
+}
+
+.skill-card:nth-child(8) {
+  transition-delay: 0.8s;
+}
+
+.skill-card:nth-child(9) {
+  transition-delay: 0.9s;
+}
 
 .skill-card:hover {
   transform: translateY(-10px);
