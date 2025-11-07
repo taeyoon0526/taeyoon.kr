@@ -838,6 +838,14 @@ a {
 
 .contact-icon {
   font-size: 1.8rem;
+  width: 30px;
+  height: 30px;
+  color: #4a90e2;
+  transition: color 0.3s;
+}
+
+.contact-item:hover .contact-icon {
+  color: #5fa3ef;
 }
 
 .contact-details {
@@ -1234,6 +1242,8 @@ a {
 
   .contact-icon {
     font-size: 1.5rem;
+    width: 26px;
+    height: 26px;
   }
 
   .contact-info h4 {
