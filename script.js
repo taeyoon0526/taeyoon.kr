@@ -333,4 +333,111 @@ document.querySelectorAll('.section').forEach(section => {
   sectionObserver.observe(section);
 });
 
+// ===== 9. Enhanced Hover Effects =====
+// Add ripple effect on buttons
+document.querySelectorAll('.btn, .contact-item').forEach(element => {
+  element.addEventListener('click', function(e) {
+    const ripple = document.createElement('span');
+    const rect = this.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    const x = e.clientX - rect.left - size / 2;
+    const y = e.clientY - rect.top - size / 2;
+    
+    ripple.style.cssText = `
+      position: absolute;
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.5);
+      top: ${y}px;
+      left: ${x}px;
+      pointer-events: none;
+      transform: scale(0);
+      animation: ripple-animation 0.6s ease-out;
+    `;
+    
+    this.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
+  });
+});
+
+// Add CSS for ripple animation dynamically
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes ripple-animation {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
+
+// ===== 10. Parallax Effect for Hero Section =====
+window.addEventListener('scroll', () => {
+  const scrolled = window.pageYOffset;
+  const hero = document.querySelector('.hero-content');
+  if (hero && scrolled < window.innerHeight) {
+    hero.style.transform = `translateY(${scrolled * 0.3}px)`;
+    hero.style.opacity = 1 - (scrolled / window.innerHeight) * 0.5;
+  }
+});
+
+// ===== 11. Performance Optimization - Debounce Scroll =====
+let scrollTimeout;
+window.addEventListener('scroll', () => {
+  if (scrollTimeout) {
+    window.cancelAnimationFrame(scrollTimeout);
+  }
+  scrollTimeout = window.requestAnimationFrame(() => {
+    // Add or update scroll-based animations here
+    const scrolled = window.pageYOffset;
+    document.body.style.setProperty('--scroll', scrolled);
+  });
+}, { passive: true });
+
+// ===== 12. Lazy Load Images =====
+if ('loading' in HTMLImageElement.prototype) {
+  const images = document.querySelectorAll('img[loading="lazy"]');
+  images.forEach(img => {
+    img.src = img.dataset.src;
+  });
+} else {
+  // Fallback for browsers that don't support lazy loading
+  const script = document.createElement('script');
+  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
+  document.body.appendChild(script);
+}
+
+// ===== 13. Enhanced Skill Cards Animation =====
+const skillCards = document.querySelectorAll('.skill-card');
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+skillCards.forEach((card, index) => {
+  card.style.setProperty('--index', index);
+  
+  // Add 3D tilt effect on mouse move (only for non-touch devices)
+  if (!isTouchDevice) {
+    card.addEventListener('mousemove', (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const rotateX = (y - centerY) / 10;
+      const rotateY = (centerX - x) / 10;
+      
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) translateY(-10px)`;
+    });
+    
+    card.addEventListener('mouseleave', () => {
+      card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) translateY(0)';
+    });
+  }
+});
+
 console.log('Welcome to Taeyoon\'s website! 🚀');
+console.log('Made with ❤️ using HTML, CSS, and JavaScript');
+
