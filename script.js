@@ -1,3 +1,63 @@
+// Favicon - Crop to square
+function createSquareFavicon() {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function() {
+    const canvas = document.createElement('canvas');
+    const size = 256; // Favicon size
+    canvas.width = size;
+    canvas.height = size;
+    
+    const ctx = canvas.getContext('2d');
+    
+    // Calculate crop area (center of image)
+    const aspectRatio = img.width / img.height;
+    let sx, sy, sWidth, sHeight;
+    
+    if (aspectRatio > 1) {
+      // Landscape - crop width
+      sHeight = img.height;
+      sWidth = img.height;
+      sx = (img.width - sWidth) / 2;
+      sy = 0;
+    } else {
+      // Portrait - crop height  
+      sWidth = img.width;
+      sHeight = img.width;
+      sx = 0;
+      sy = (img.height - sHeight) / 2;
+    }
+    
+    // Draw cropped image
+    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
+    
+    // Create favicon
+    const favicon = canvas.toDataURL('image/png');
+    
+    // Update favicon links
+    let link = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = favicon;
+    
+    // Update apple touch icon
+    let appleLink = document.querySelector("link[rel='apple-touch-icon']");
+    if (!appleLink) {
+      appleLink = document.createElement('link');
+      appleLink.rel = 'apple-touch-icon';
+      document.head.appendChild(appleLink);
+    }
+    appleLink.href = favicon;
+  };
+  img.src = 'logo.jpg';
+}
+
+// Call favicon function
+createSquareFavicon();
+
 // Loading Screen
 window.addEventListener('load', () => {
   const loaderWrapper = document.querySelector('.loader-wrapper');
