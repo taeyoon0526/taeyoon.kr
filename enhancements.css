@@ -1,0 +1,608 @@
+/* ================================
+   ENHANCEMENTS - 추가 기능 & 개선사항
+   ================================ */
+
+/* 1. 스크롤 진행률 표시 개선 */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 4px;
+  background: linear-gradient(90deg, #4a90e2, #2ecc71, #f39c12);
+  background-size: 200% 100%;
+  animation: gradientFlow 3s ease infinite;
+  z-index: 9999;
+  box-shadow: 0 2px 10px rgba(74, 144, 226, 0.5);
+  transition: width 0.1s ease-out;
+}
+
+@keyframes gradientFlow {
+
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+/* 2. 툴팁 시스템 */
+.tooltip {
+  position: relative;
+  cursor: help;
+}
+
+.tooltip::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  padding: 0.5rem 1rem;
+  background: rgba(26, 26, 26, 0.95);
+  color: white;
+  font-size: 0.85rem;
+  border-radius: 8px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all 0.3s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: 115%;
+  left: 50%;
+  transform: translateX(-50%) scale(0);
+  border: 6px solid transparent;
+  border-top-color: rgba(26, 26, 26, 0.95);
+  opacity: 0;
+  transition: all 0.3s ease;
+}
+
+.tooltip:hover::before,
+.tooltip:hover::after {
+  transform: translateX(-50%) scale(1);
+  opacity: 1;
+}
+
+/* 3. 카드 호버 시 빛나는 효과 */
+.skill-card::before,
+.project-card::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #4a90e2, #2ecc71, #f39c12, #e74c3c);
+  background-size: 400% 400%;
+  border-radius: inherit;
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.5s ease;
+  animation: gradientRotate 4s ease infinite;
+  filter: blur(8px);
+}
+
+@keyframes gradientRotate {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.skill-card:hover::before,
+.project-card:hover::before {
+  opacity: 0.6;
+}
+
+/* 4. 타이핑 효과 개선 - 멀티 컬러 */
+.typing-words {
+  background: linear-gradient(90deg, #4a90e2, #2ecc71, #f39c12);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: textShine 3s ease-in-out infinite;
+}
+
+@keyframes textShine {
+
+  0%,
+  100% {
+    background-position: 0% center;
+  }
+
+  50% {
+    background-position: 100% center;
+  }
+}
+
+/* 5. 스킬 레벨 프로그레스 바 애니메이션 개선 */
+.skill-level {
+  position: relative;
+  overflow: visible;
+}
+
+.skill-level::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 100%;
+  height: calc(100% + 4px);
+  background: linear-gradient(90deg, transparent, rgba(74, 144, 226, 0.4), transparent);
+  border-radius: inherit;
+  opacity: 0;
+  animation: shimmerEffect 2s infinite;
+}
+
+.skill-card:hover .skill-level::after {
+  opacity: 1;
+}
+
+@keyframes shimmerEffect {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+/* 6. Contact 폼 입력 시 글로우 효과 */
+.form-group input:focus,
+.form-group textarea:focus {
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.2),
+    0 4px 12px rgba(74, 144, 226, 0.3);
+  border-color: #4a90e2;
+}
+
+/* 7. 네비게이션 활성 링크 표시 */
+.nav-link.active {
+  color: #4a90e2;
+  position: relative;
+}
+
+.nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #4a90e2, transparent);
+  animation: linkPulse 2s ease-in-out infinite;
+}
+
+@keyframes linkPulse {
+
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* 8. 로딩 스켈레톤 (이미지 로딩 전) */
+.skeleton {
+  background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+  background-size: 200% 100%;
+  animation: skeletonLoading 1.5s ease-in-out infinite;
+  border-radius: 8px;
+}
+
+@keyframes skeletonLoading {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 9. 이미지 Lazy Load 효과 */
+img {
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+img.loaded {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* 10. 버튼 클릭 시 리플 효과 */
+.btn,
+.submit-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after,
+.submit-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%);
+  transition: width 0.6s, height 0.6s;
+}
+
+.btn:active::after,
+.submit-btn:active::after {
+  width: 300px;
+  height: 300px;
+  opacity: 0;
+}
+
+/* 11. 스크롤 트리거 애니메이션 */
+.fade-in-up {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-up.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.fade-in-left {
+  opacity: 0;
+  transform: translateX(-30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.fade-in-right {
+  opacity: 0;
+  transform: translateX(30px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-in-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* 12. 테마 전환 시 부드러운 배경 변경 */
+body {
+  transition: background-color 0.5s ease, color 0.3s ease;
+}
+
+/* 13. Hero 섹션 파티클 효과 개선 */
+#particle-canvas {
+  opacity: 0.6;
+  transition: opacity 0.5s ease;
+}
+
+body[data-theme="light"] #particle-canvas {
+  opacity: 0.3;
+}
+
+/* 14. Contact 카드 호버 시 아이콘 회전 */
+.contact-item:hover .contact-icon-wrapper {
+  animation: iconBounce 0.6s ease;
+}
+
+@keyframes iconBounce {
+
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+
+  25% {
+    transform: scale(1.1) rotate(-10deg);
+  }
+
+  75% {
+    transform: scale(1.1) rotate(10deg);
+  }
+}
+
+/* 15. 프로젝트 카드 이미지 줌 효과 */
+.project-image {
+  overflow: hidden;
+  position: relative;
+}
+
+.project-image::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.7) 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.project-card:hover .project-image::after {
+  opacity: 1;
+}
+
+/* 16. 키보드 포커스 시각화 개선 */
+*:focus-visible {
+  outline: 3px solid #4a90e2;
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+button:focus-visible,
+a:focus-visible {
+  outline-offset: 5px;
+}
+
+/* 17. 다크 모드 시 가독성 개선 */
+body[data-theme="dark"] {
+  --text-primary: #e8e8e8;
+  --text-secondary: #b8b8b8;
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2a2a2a;
+}
+
+body[data-theme="light"] {
+  --text-primary: #2a2a2a;
+  --text-secondary: #5a5a5a;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f5f5f5;
+}
+
+/* 18. 성능 최적화 - GPU 가속 */
+.skill-card,
+.project-card,
+.btn,
+#back-to-top,
+.nav-link {
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+}
+
+/* 19. 스크롤바 커스터마이징 (다크 테마용) */
+body[data-theme="dark"]::-webkit-scrollbar {
+  width: 12px;
+  background: #1a1a1a;
+}
+
+body[data-theme="dark"]::-webkit-scrollbar-track {
+  background: #0f0f23;
+  border-radius: 10px;
+}
+
+body[data-theme="dark"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4a90e2, #357abd);
+  border-radius: 10px;
+  border: 2px solid #1a1a1a;
+}
+
+body[data-theme="dark"]::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #357abd, #2a5f8f);
+}
+
+/* 라이트 테마용 스크롤바 */
+body[data-theme="light"]::-webkit-scrollbar {
+  width: 12px;
+  background: #ffffff;
+}
+
+body[data-theme="light"]::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 10px;
+}
+
+body[data-theme="light"]::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4a90e2, #357abd);
+  border-radius: 10px;
+  border: 2px solid #ffffff;
+}
+
+body[data-theme="light"]::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #357abd, #2a5f8f);
+}
+
+/* 20. 접근성 - Reduced Motion 지원 */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .scroll-progress {
+    animation: none;
+  }
+
+  .typing-words {
+    animation: none;
+    background: #4a90e2;
+    -webkit-text-fill-color: #4a90e2;
+  }
+}
+
+/* 21. 프린트 스타일 */
+@media print {
+
+  .navbar,
+  .scroll-progress,
+  #back-to-top,
+  #particle-canvas,
+  .loader-wrapper {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+  }
+
+  .section {
+    page-break-inside: avoid;
+  }
+
+  a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+}
+
+/* 22. 고대비 모드 지원 */
+@media (prefers-contrast: high) {
+  body {
+    background: #000;
+    color: #fff;
+  }
+
+  .btn,
+  .nav-link,
+  .skill-card,
+  .project-card {
+    border: 2px solid currentColor;
+  }
+
+  .btn-primary {
+    background: #fff;
+    color: #000;
+  }
+}
+
+/* 23. 마우스 커서 커스터마이징 */
+.btn,
+.nav-link,
+a,
+button {
+  cursor: pointer;
+}
+
+.skill-card,
+.project-card,
+.contact-item {
+  cursor: default;
+}
+
+/* 24. 선택 영역 스타일 개선 */
+::selection {
+  background: rgba(74, 144, 226, 0.4);
+  color: white;
+  text-shadow: none;
+}
+
+::-moz-selection {
+  background: rgba(74, 144, 226, 0.4);
+  color: white;
+  text-shadow: none;
+}
+
+/* 25. 다크 모드 토글 버튼 개선 애니메이션 */
+.theme-toggle:hover {
+  transform: scale(1.1) rotate(15deg);
+  box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+}
+
+.theme-toggle:active {
+  transform: scale(0.95) rotate(0deg);
+}
+
+/* 26. 로딩 화면 최적화 */
+.loader-wrapper {
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+}
+
+.loader-wrapper.fade-out {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease;
+}
+
+/* 27. 반응형 이미지 최적화 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 28. 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+
+  .btn:hover,
+  .skill-card:hover,
+  .project-card:hover {
+    transform: none;
+  }
+
+  .btn:active {
+    transform: scale(0.97);
+  }
+
+  .skill-card:active,
+  .project-card:active {
+    transform: translateY(-2px);
+  }
+}
+
+/* 29. 다크/라이트 모드 섹션별 배경 */
+body[data-theme="dark"] .section:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+body[data-theme="light"] .section:nth-child(even) {
+  background: rgba(0, 0, 0, 0.02);
+}
+
+/* 30. 성능 모니터 (개발 모드) */
+.perf-monitor {
+  position: fixed;
+  bottom: 1rem;
+  left: 1rem;
+  background: rgba(0, 0, 0, 0.9);
+  color: #0f0;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-family: monospace;
+  font-size: 0.75rem;
+  z-index: 9998;
+  display: none;
+}
+
+.perf-monitor.show {
+  display: block;
+}

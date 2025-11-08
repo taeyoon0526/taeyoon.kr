@@ -4,14 +4,13 @@
 
 /* 기본 모바일 설정 */
 @media (max-width: 768px) {
-  
+
   /* 전체 텍스트 가독성 개선 */
   body {
     font-size: 16px;
     -webkit-text-size-adjust: 100%;
     -moz-text-size-adjust: 100%;
     -ms-text-size-adjust: 100%;
-    text-size-adjust: 100%;
     overflow-x: hidden;
   }
 
@@ -152,7 +151,6 @@
 
   .stat-item {
     padding: 1.2rem;
-    min-height: auto;
   }
 
   .stat-icon {
@@ -171,9 +169,7 @@
     margin-bottom: 1.5rem;
     overflow-x: auto;
     padding: 0.3rem;
-    scrollbar-width: none;
     -ms-overflow-style: none;
-    -webkit-overflow-scrolling: touch;
   }
 
   .skill-tabs::-webkit-scrollbar {
@@ -481,7 +477,7 @@
 
 /* 작은 모바일 (480px 이하) 추가 개선 */
 @media (max-width: 480px) {
-  
+
   .hero {
     padding: 4rem 0.8rem 2rem;
   }
@@ -557,7 +553,7 @@
 
 /* 아주 작은 화면 (360px 이하) */
 @media (max-width: 360px) {
-  
+
   .typing-text {
     font-size: 1.3rem;
   }
@@ -577,9 +573,8 @@
 
 /* 가로 모드 개선 */
 @media (max-width: 768px) and (orientation: landscape) {
-  
+
   .hero {
-    min-height: auto;
     padding: 3rem 1rem 2rem;
   }
 
@@ -599,7 +594,7 @@
 
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
-  
+
   .btn:hover {
     transform: none;
   }
