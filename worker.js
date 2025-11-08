@@ -8,11 +8,14 @@
  * - TURNSTILE_SECRET: Cloudflare Turnstile secret key
  * - RESEND_API_KEY: Resend API key for sending emails
  * - ALLOWED_ORIGIN: CORS allowed origin (default: https://taeyoon.kr)
+ * - SECURITY_WEBHOOK_URL (optional): Endpoint to receive JSON-formatted security alerts
  * 
  * Features:
  * - Cloudflare Turnstile CAPTCHA verification
  * - Honeypot spam detection (website field)
  * - Minimum submission time protection
+  * - HTTPS enforcement and hardened security headers
+  * - IP-based rate limiting with webhook-ready logging
  * - HTML escaping for security
  * - CORS with specific origin
  * - JSON API responses
@@ -26,7 +29,25 @@ const CONFIG = {
   EMAIL_FROM: 'Contact Form <noreply@taeyoon.kr>',
   EMAIL_TO: 'contact@taeyoon.kr',
   EMAIL_SUBJECT: '새로운 연락 메시지',
+  RATE_LIMIT_MAX_REQUESTS: 3,
+  RATE_LIMIT_WINDOW_MS: 60 * 1000,
+  RATE_LIMIT_BLOCK_MS: 5 * 60 * 1000,
 };
+
+const SECURITY_HEADERS = {
+  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self';",
+  'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'Permissions-Policy': 'geolocation=(), microphone=(), camera=(), payment=(), usb=()',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Resource-Policy': 'same-site',
+  'Cache-Control': 'no-store',
+  'Pragma': 'no-cache',
+};
+
+const rateLimitStore = new Map();
 
 // ===== Helper Functions =====
 
@@ -35,9 +56,13 @@ const CONFIG = {
  */
 function getCorsHeaders(origin, env) {
   const allowedOrigin = env.ALLOWED_ORIGIN || 'https://taeyoon.kr';
+  const baseHeaders = {
+    Vary: 'Origin',
+  };
   
   if (origin === allowedOrigin) {
     return {
+      ...baseHeaders,
       'Access-Control-Allow-Origin': origin,
       'Access-Control-Allow-Methods': 'POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
@@ -45,20 +70,119 @@ function getCorsHeaders(origin, env) {
     };
   }
   
-  return {};
+  return baseHeaders;
 }
 
 /**
  * Create JSON response with CORS headers
  */
-function jsonResponse(data, status = 200, origin, env) {
+function getSecurityHeaders() {
+  return { ...SECURITY_HEADERS };
+}
+
+function jsonResponse(data, status = 200, origin, env, extraHeaders = {}) {
   return new Response(JSON.stringify(data), {
     status,
     headers: {
       'Content-Type': 'application/json',
+      ...getSecurityHeaders(),
       ...getCorsHeaders(origin, env),
+      ...extraHeaders,
     },
   });
+}
+
+function cleanupRateLimitStore(now) {
+  for (const [ip, entry] of rateLimitStore.entries()) {
+    const expiry = Math.max(entry.blockedUntil ?? 0, entry.firstAttempt + CONFIG.RATE_LIMIT_WINDOW_MS + CONFIG.RATE_LIMIT_BLOCK_MS);
+    if (now > expiry) {
+      rateLimitStore.delete(ip);
+    }
+  }
+}
+
+function applyRateLimit(ip, now = Date.now()) {
+  if (!ip || ip === 'Unknown') {
+    return { limited: false };
+  }
+
+  cleanupRateLimitStore(now);
+
+  let entry = rateLimitStore.get(ip);
+
+  if (!entry) {
+    entry = {
+      count: 1,
+      firstAttempt: now,
+      blockedUntil: null,
+      lastSeen: now,
+    };
+    rateLimitStore.set(ip, entry);
+    return { limited: false };
+  }
+
+  entry.lastSeen = now;
+
+  if (entry.blockedUntil && now < entry.blockedUntil) {
+    return {
+      limited: true,
+      retryAfter: Math.ceil((entry.blockedUntil - now) / 1000),
+    };
+  }
+
+  if (now - entry.firstAttempt > CONFIG.RATE_LIMIT_WINDOW_MS) {
+    entry.count = 1;
+    entry.firstAttempt = now;
+    entry.blockedUntil = null;
+    return { limited: false };
+  }
+
+  entry.count += 1;
+
+  if (entry.count > CONFIG.RATE_LIMIT_MAX_REQUESTS) {
+    entry.blockedUntil = now + CONFIG.RATE_LIMIT_BLOCK_MS;
+    entry.count = 0;
+    entry.firstAttempt = now;
+    return {
+      limited: true,
+      retryAfter: Math.ceil(CONFIG.RATE_LIMIT_BLOCK_MS / 1000),
+    };
+  }
+
+  return { limited: false };
+}
+
+async function logSecurityEvent(eventType, details, env) {
+  const payload = {
+    eventType,
+    timestamp: new Date().toISOString(),
+    ...details,
+  };
+
+  console.warn(`[Security] ${eventType}`, payload);
+
+  if (env && env.SECURITY_WEBHOOK_URL) {
+    try {
+      await fetch(env.SECURITY_WEBHOOK_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+    } catch (error) {
+      console.error('Security webhook error:', error);
+    }
+  }
+}
+
+function scheduleSecurityLog(ctx, promise) {
+  if (!promise) return;
+  if (ctx && typeof ctx.waitUntil === 'function') {
+    ctx.waitUntil(promise);
+  } else {
+    promise.catch((error) => console.error('Security log error (no ctx):', error));
+  }
 }
 
 /**
@@ -134,6 +258,7 @@ async function sendEmail(name, email, message, clientInfo, env) {
     const escapedCountry = escapeHtml(clientInfo.country);
     const escapedUserAgent = escapeHtml(clientInfo.userAgent);
     const escapedReferer = escapeHtml(clientInfo.referer);
+  const escapedTimestamp = escapeHtml(clientInfo.timestamp);
     
     const htmlBody = `
       <!DOCTYPE html>
@@ -176,7 +301,7 @@ async function sendEmail(name, email, message, clientInfo, env) {
               <div class="field-value">
                 <strong>IP 주소:</strong> ${escapedIP}<br>
                 <strong>국가:</strong> ${escapedCountry}<br>
-                <strong>전송 시각:</strong> ${clientInfo.timestamp}
+                <strong>전송 시각:</strong> ${escapedTimestamp}
               </div>
             </div>
             <div class="field">
@@ -257,11 +382,44 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
+    const clientInfo = getClientInfo(request);
+
+    // Enforce HTTPS
+    try {
+      const visitorScheme = request.headers.get('CF-Visitor');
+      if (visitorScheme) {
+        const parsed = JSON.parse(visitorScheme);
+        if (parsed && parsed.scheme === 'http') {
+          const secureUrl = `https://${url.host}${url.pathname}${url.search}`;
+          return new Response(null, {
+            status: 301,
+            headers: {
+              Location: secureUrl,
+              ...getSecurityHeaders(),
+            },
+          });
+        }
+      } else if (url.protocol === 'http:') {
+        const secureUrl = `https://${url.host}${url.pathname}${url.search}`;
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: secureUrl,
+            ...getSecurityHeaders(),
+          },
+        });
+      }
+    } catch (error) {
+      console.error('HTTPS enforcement error:', error);
+    }
 
     // Handle CORS preflight
     if (request.method === 'OPTIONS') {
       return new Response(null, {
-        headers: getCorsHeaders(origin, env),
+        headers: {
+          ...getSecurityHeaders(),
+          ...getCorsHeaders(origin, env),
+        },
       });
     }
 
@@ -274,6 +432,30 @@ export default {
         404,
         origin,
         env
+      );
+    }
+
+    // Rate limiting per IP
+    const rateLimitStatus = applyRateLimit(clientInfo.ip);
+    if (rateLimitStatus.limited) {
+      scheduleSecurityLog(
+        ctx,
+        logSecurityEvent('rate_limit', {
+          ip: clientInfo.ip,
+          userAgent: clientInfo.userAgent,
+          referer: clientInfo.referer,
+          retryAfterSeconds: rateLimitStatus.retryAfter,
+        }, env)
+      );
+
+      return jsonResponse(
+        { success: false, message: '요청이 너무 많습니다. 잠시 후 다시 시도해주세요.' },
+        429,
+        origin,
+        env,
+        rateLimitStatus.retryAfter
+          ? { 'Retry-After': rateLimitStatus.retryAfter.toString() }
+          : {}
       );
     }
 
@@ -325,6 +507,14 @@ export default {
       // Anti-spam: Honeypot check
       if (website) {
         console.warn('Honeypot triggered:', { name, email });
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('honeypot_triggered', {
+            ip: clientInfo.ip,
+            email,
+            name,
+          }, env)
+        );
         return jsonResponse(
           { success: false, message: '전송에 실패했습니다.' },
           400,
@@ -338,6 +528,15 @@ export default {
         const submissionTime = Date.now() - parseInt(t, 10);
         if (submissionTime < CONFIG.MIN_SUBMISSION_TIME) {
           console.warn('Too fast submission:', { name, email, submissionTime });
+          scheduleSecurityLog(
+            ctx,
+            logSecurityEvent('suspicious_speed', {
+              ip: clientInfo.ip,
+              email,
+              name,
+              submissionTime,
+            }, env)
+          );
           return jsonResponse(
             { success: false, message: '너무 빠른 제출입니다. 잠시 후 다시 시도해주세요.' },
             400,
@@ -349,6 +548,14 @@ export default {
 
       // Verify Turnstile token
       if (!turnstileToken) {
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('missing_turnstile_token', {
+            ip: clientInfo.ip,
+            email,
+            name,
+          }, env)
+        );
         return jsonResponse(
           { success: false, message: 'CAPTCHA 인증이 필요합니다.' },
           400,
@@ -357,10 +564,17 @@ export default {
         );
       }
 
-      const clientIP = request.headers.get('CF-Connecting-IP') || request.headers.get('X-Forwarded-For') || '';
-      const isTurnstileValid = await verifyTurnstile(turnstileToken, clientIP, env);
+      const isTurnstileValid = await verifyTurnstile(turnstileToken, clientInfo.ip, env);
 
       if (!isTurnstileValid) {
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('turnstile_failed', {
+            ip: clientInfo.ip,
+            email,
+            name,
+          }, env)
+        );
         return jsonResponse(
           { success: false, message: 'CAPTCHA 인증에 실패했습니다.' },
           400,
@@ -369,13 +583,18 @@ export default {
         );
       }
 
-      // Get client information for security tracking
-      const clientInfo = getClientInfo(request);
-
       // Send email with client information
       const emailSent = await sendEmail(name, email, message, clientInfo, env);
 
       if (!emailSent) {
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('email_dispatch_failed', {
+            ip: clientInfo.ip,
+            email,
+            name,
+          }, env)
+        );
         return jsonResponse(
           { success: false, message: '이메일 전송에 실패했습니다. 잠시 후 다시 시도해주세요.' },
           500,
@@ -394,6 +613,13 @@ export default {
 
     } catch (error) {
       console.error('Request handling error:', error);
+      scheduleSecurityLog(
+        ctx,
+        logSecurityEvent('server_error', {
+          ip: clientInfo.ip,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        }, env)
+      );
       return jsonResponse(
         { success: false, message: '서버 오류가 발생했습니다.' },
         500,

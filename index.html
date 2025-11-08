@@ -11,6 +11,14 @@
   <meta name="theme-color" content="#1a1a1a" media="(prefers-color-scheme: dark)">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="color-scheme" content="dark light">
+  <meta http-equiv="Content-Security-Policy"
+    content="default-src 'self'; script-src 'self' 'nonce-tknGa4Z7KR2AU7lL4xQ9Tw==' https://www.googletagmanager.com https://www.google-analytics.com https://challenges.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https://www.google-analytics.com; connect-src 'self' https://contact.taeyoon.kr https://www.google-analytics.com https://region1.google-analytics.com https://www.googletagmanager.com https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://contact.taeyoon.kr; object-src 'none'; manifest-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="X-Frame-Options" content="DENY">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), microphone=(), camera=(), payment=(), usb=()">
+  <meta http-equiv="Cross-Origin-Opener-Policy" content="same-origin">
+  <meta http-equiv="Cross-Origin-Resource-Policy" content="same-site">
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
@@ -45,7 +53,7 @@
 
   <!-- Google Analytics 4 -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-9F1LHK5E3H"></script>
-  <script>
+  <script nonce="tknGa4Z7KR2AU7lL4xQ9Tw==">
     window.dataLayer = window.dataLayer || [];
     function gtag() { dataLayer.push(arguments); }
     gtag('js', new Date());
@@ -56,8 +64,10 @@
   </script>
 
   <!-- External CSS -->
-  <link rel="stylesheet" href="styles.css">
-  <link rel="stylesheet" href="theme-upgrade.css">
+  <link rel="stylesheet" href="styles.css"
+    integrity="sha384-sEqu4WMKE8DbF2/0miP1oi1z5mVJXoX1YxqP4Jdl/6Mx+90RfaLfEL6TqBMhNkel" crossorigin="anonymous">
+  <link rel="stylesheet" href="theme-upgrade.css"
+    integrity="sha384-7RT7inPhlhqVi7xjS9+ye9iMayim+uZr+2BubWBByd9dvDUepYSJ9UZpVtA3gic8" crossorigin="anonymous">
   <link rel="stylesheet" href="mobile-improvements.css">
   <link rel="stylesheet" href="enhancements.css">
 </head>
@@ -623,9 +633,12 @@
   </footer>
 
   <!-- External JavaScript -->
-  <script src="script.js"></script>
-  <script src="enhancements.js"></script>
-  <script src="visitor-counter.js"></script>
+  <script src="script.js" integrity="sha384-veJy1BBLWSm71Jk/B5rBeHtmAlV5F12xwX2JR3bJj+BEdHEoXQyGtPZbzQMbIalF"
+    crossorigin="anonymous"></script>
+  <script src="enhancements.js" integrity="sha384-KLDXz92jkMeJMlc2orpIjOO6fjJErbieJyhHXGdcayxPSkfh+jTQeVO8VGF5sqij"
+    crossorigin="anonymous"></script>
+  <script src="visitor-counter.js" integrity="sha384-QsRRq9VPsa0thmjh4V51GGD1/ppBrtw+IvIpTmsHnzREGi8zJZuqsbIGl/k3y0lp"
+    crossorigin="anonymous"></script>
 </body>
 
 </html>
