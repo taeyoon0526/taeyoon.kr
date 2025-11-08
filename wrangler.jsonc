@@ -7,6 +7,5 @@
   ],
   "vars": {
     "ALLOWED_ORIGIN": "https://taeyoon.kr"
-  },
-  "node_compat": true
+  }
 }
