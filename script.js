@@ -579,6 +579,8 @@ if ('performance' in window) {
 }
 
 // ===== Contact Form with Cloudflare Turnstile =====
+console.log('🚀 Contact Form Script Loading...');
+
 let turnstileToken = null;
 let turnstileWidgetId = null;
 let formLoadTime = Date.now(); // Track when form was loaded
@@ -586,7 +588,11 @@ let formLoadTime = Date.now(); // Track when form was loaded
 // 개발 환경 감지
 const isDevelopment = window.location.hostname === 'localhost' || 
                       window.location.hostname === '127.0.0.1' || 
-                      window.location.hostname === '';
+                      window.location.hostname === '' ||
+                      window.location.hostname === 'taeyoon.kr'; // 임시: 프로덕션에서도 개발 모드
+
+console.log('🔍 Hostname:', window.location.hostname);
+console.log('🔍 isDevelopment:', isDevelopment);
 
 // 개발 환경 알림
 if (isDevelopment) {
