@@ -69,9 +69,11 @@
 - **Cloudflare Turnstile**: CAPTCHA 서비스
 
 ### Hosting & Deployment
-- **GitHub Pages**: 정적 사이트 호스팅
+- **GitHub Pages**: 정적 사이트 호스팅 (자동 배포)
+- **Cloudflare Workers**: Serverless 백엔드 (자동 배포)
 - **Cloudflare DNS**: DNS 관리
 - **Custom Domain**: taeyoon.kr
+- **Auto-Deployment**: GitHub Push → 자동 빌드 & 배포
 
 ---
 

@@ -1,0 +1,12 @@
+{
+  "name": "contact-form",
+  "main": "worker.js",
+  "compatibility_date": "2025-11-08",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "vars": {
+    "ALLOWED_ORIGIN": "https://taeyoon.kr"
+  },
+  "node_compat": true
+}
