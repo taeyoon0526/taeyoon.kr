@@ -1218,8 +1218,11 @@ a {
 
 /* Turnstile Widget */
 .cf-turnstile {
-  margin: 0 auto;
+  margin: 1rem auto;
   max-width: 300px;
+  display: flex;
+  justify-content: center;
+  min-height: 65px;
 }
 
 /* Form Status Messages */

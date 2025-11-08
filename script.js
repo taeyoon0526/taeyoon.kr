@@ -632,8 +632,17 @@ const formStatus = document.getElementById('formStatus');
 const messageField = document.getElementById('message');
 const charCounter = document.getElementById('charCounter');
 
+// Debug: Check if all elements are found
+console.log('📋 Form Elements Check:');
+console.log('  contactForm:', contactForm ? '✅' : '❌');
+console.log('  submitBtn:', submitBtn ? '✅' : '❌');
+console.log('  messageField:', messageField ? '✅' : '❌');
+console.log('  charCounter:', charCounter ? '✅' : '❌');
+console.log('  formStatus:', formStatus ? '✅' : '❌');
+
 // Character counter for message field
 if (messageField && charCounter) {
+  console.log('✅ Character counter initialized');
   messageField.addEventListener('input', () => {
     const length = messageField.value.length;
     const maxLength = 1000;
@@ -647,6 +656,8 @@ if (messageField && charCounter) {
       charCounter.classList.add('warning');
     }
   });
+} else {
+  console.error('❌ Character counter elements not found:', { messageField, charCounter });
 }
 
 // Show form status message
@@ -675,8 +686,11 @@ function resetTurnstile() {
 
 // Form submission handler
 if (contactForm) {
+  console.log('✅ Contact form found, attaching submit handler');
+  
   contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    console.log('📤 Form submitted');
     
     // Hide previous status
     hideFormStatus();
@@ -816,13 +830,22 @@ if (contactForm) {
   
   // Store Turnstile widget ID when ready
   window.addEventListener('load', () => {
+    console.log('🔄 Page loaded, checking Turnstile widget...');
     setTimeout(() => {
       const turnstileElement = document.querySelector('.cf-turnstile');
+      console.log('🔍 Turnstile element:', turnstileElement);
+      console.log('🔍 Turnstile API:', window.turnstile);
+      
       if (turnstileElement && window.turnstile) {
         turnstileWidgetId = turnstileElement.getAttribute('data-widget-id');
+        console.log('✅ Turnstile widget ID:', turnstileWidgetId);
+      } else {
+        console.warn('⚠️ Turnstile widget not found or API not loaded');
       }
     }, 1000);
   });
+} else {
+  console.error('❌ Contact form not found! Check if element with id="contactForm" exists');
 }
 
 console.log('Welcome to Taeyoon\'s website! 🚀');
