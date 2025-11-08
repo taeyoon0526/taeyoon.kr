@@ -8,9 +8,10 @@
   /* 전체 텍스트 가독성 개선 */
   body {
     font-size: 16px; /* 최소 16px로 자동 줌 방지 */
-    -webkit-text-size-adjust: 100%;
-    -moz-text-size-adjust: 100%;
-    -ms-text-size-adjust: 100%;
+    -webkit-text-size-adjust: 100%; /* Safari */
+    -moz-text-size-adjust: 100%; /* Firefox (old) */
+    -ms-text-size-adjust: 100%; /* IE/Edge */
+    text-size-adjust: 100%; /* Standard - Chrome 54+, Edge 79+ */
   }
 
   /* 컨테이너 패딩 개선 */
@@ -125,10 +126,11 @@
     margin-bottom: 2rem;
     overflow-x: auto;
     padding: 0.5rem;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
+    scrollbar-width: none; /* Firefox 64+ */
+    -ms-overflow-style: none; /* IE/Edge */
   }
 
+  /* Webkit browsers (Chrome, Safari, Edge) */
   .skill-tabs::-webkit-scrollbar {
     display: none;
   }
@@ -136,7 +138,7 @@
   .skill-tab {
     padding: 0.75rem 1.5rem;
     font-size: 0.95rem;
-    min-width: fit-content;
+    min-width: max-content;
     white-space: nowrap;
     flex-shrink: 0;
   }
