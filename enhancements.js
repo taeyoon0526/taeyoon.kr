@@ -1,9 +1,13 @@
 // ================================
-// ENHANCEMENTS.JS - 추가 기능 스크립트
+// ENHANCEMENTS.JS - 추가 기능 스크립트 (모바일 최적화)
 // ================================
 
 (function() {
   'use strict';
+
+  // 모바일 감지
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
+  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
   // 1. 스크롤 진행률 표시
   function updateScrollProgress() {
@@ -15,13 +19,31 @@
     scrollProgress.style.width = scrolled + '%';
   }
 
-  window.addEventListener('scroll', updateScrollProgress, { passive: true });
+  // 스크롤 이벤트 - 모바일 최적화
+  let scrollTimeout;
+  const handleScroll = function() {
+    if (scrollTimeout) {
+      window.cancelAnimationFrame(scrollTimeout);
+    }
+    scrollTimeout = window.requestAnimationFrame(function() {
+      updateScrollProgress();
+      updateActiveNavLink();
+    });
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  // 터치 스크롤도 감지
+  if (isTouch) {
+    window.addEventListener('touchmove', handleScroll, { passive: true });
+  }
   updateScrollProgress();
 
   // 2. 활성 네비게이션 링크 표시
   function updateActiveNavLink() {
     const sections = document.querySelectorAll('.section[id]');
     const navLinks = document.querySelectorAll('.nav-link');
+    
+    if (sections.length === 0 || navLinks.length === 0) return;
     
     let currentSection = '';
     const scrollY = window.pageYOffset;
@@ -43,104 +65,126 @@
     });
   }
 
-  window.addEventListener('scroll', updateActiveNavLink, { passive: true });
   updateActiveNavLink();
 
-  // 3. Intersection Observer로 섹션 애니메이션
-  const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
-  };
+  // 3. Intersection Observer로 섹션 애니메이션 (모바일 최적화)
+  if ('IntersectionObserver' in window) {
+    const observerOptions = {
+      threshold: isMobile ? 0.05 : 0.1, // 모바일에서 더 빨리 트리거
+      rootMargin: isMobile ? '0px 0px -50px 0px' : '0px 0px -100px 0px'
+    };
 
-  const sectionObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        
-        // 섹션 내부 요소들 순차 애니메이션
-        const elements = entry.target.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
-        elements.forEach((el, index) => {
-          setTimeout(() => {
-            el.classList.add('visible');
-          }, index * 100);
-        });
-      }
-    });
-  }, observerOptions);
-
-  // 섹션 관찰 시작
-  document.querySelectorAll('.section').forEach(section => {
-    sectionObserver.observe(section);
-  });
-
-  // 4. 이미지 Lazy Loading with Blur Effect
-  const imageObserver = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        
-        if (img.dataset.src) {
-          // 저해상도 이미지에서 고해상도 이미지로 전환
-          img.src = img.dataset.src;
-          img.classList.add('loaded');
-          imageObserver.unobserve(img);
-        } else {
-          img.classList.add('loaded');
-          imageObserver.unobserve(img);
+    const sectionObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          
+          // 섹션 내부 요소들 순차 애니메이션
+          const elements = entry.target.querySelectorAll('.fade-in-up, .fade-in-left, .fade-in-right');
+          elements.forEach((el, index) => {
+            setTimeout(() => {
+              el.classList.add('visible');
+            }, index * (isMobile ? 50 : 100)); // 모바일에서 더 빠르게
+          });
         }
-      }
+      });
+    }, observerOptions);
+
+    // 섹션 관찰 시작
+    document.querySelectorAll('.section').forEach(section => {
+      sectionObserver.observe(section);
     });
-  });
+  } else {
+    // Intersection Observer 미지원 시 모든 섹션 표시
+    document.querySelectorAll('.section').forEach(section => {
+      section.classList.add('visible');
+    });
+  }
 
-  document.querySelectorAll('img').forEach(img => {
-    imageObserver.observe(img);
-  });
+  // 4. 이미지 Lazy Loading (모바일 최적화)
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.classList.add('loaded');
+            imageObserver.unobserve(img);
+          } else {
+            img.classList.add('loaded');
+            imageObserver.unobserve(img);
+          }
+        }
+      });
+    }, {
+      rootMargin: isMobile ? '50px' : '100px' // 모바일에서 더 빨리 로드
+    });
 
-  // 5. 툴팁 기능 강화
+    document.querySelectorAll('img').forEach(img => {
+      imageObserver.observe(img);
+    });
+  } else {
+    // Fallback: 모든 이미지 즉시 로드
+    document.querySelectorAll('img').forEach(img => {
+      img.classList.add('loaded');
+    });
+  }
+
+  // 5. 툴팁 기능 (모바일에서는 터치 이벤트)
   function initTooltips() {
     const tooltipElements = document.querySelectorAll('[data-tooltip]');
     
     tooltipElements.forEach(el => {
-      el.addEventListener('mouseenter', function() {
-        const tooltip = this.getAttribute('data-tooltip');
-        if (!tooltip) return;
-        
-        // 접근성을 위한 aria-label 추가
-        this.setAttribute('aria-label', tooltip);
-      });
+      if (isTouch) {
+        // 모바일: 터치 이벤트
+        el.addEventListener('touchstart', function(e) {
+          const tooltip = this.getAttribute('data-tooltip');
+          if (tooltip) {
+            this.setAttribute('aria-label', tooltip);
+          }
+        }, { passive: true });
+      } else {
+        // 데스크톱: 마우스 이벤트
+        el.addEventListener('mouseenter', function() {
+          const tooltip = this.getAttribute('data-tooltip');
+          if (tooltip) {
+            this.setAttribute('aria-label', tooltip);
+          }
+        });
+      }
     });
   }
 
   initTooltips();
 
-  // 6. 키보드 단축키 확장
-  document.addEventListener('keydown', (e) => {
-    // Ctrl/Cmd + K: 검색 (향후 확장)
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      console.log('Search functionality - coming soon!');
-    }
-    
-    // Ctrl/Cmd + /: 키보드 단축키 도움말
-    if ((e.ctrlKey || e.metaKey) && e.key === '/') {
-      e.preventDefault();
-      showKeyboardShortcuts();
-    }
-    
-    // Esc: 메뉴 닫기
-    if (e.key === 'Escape') {
-      const navMenu = document.querySelector('.nav-menu');
-      const hamburger = document.querySelector('.hamburger');
-      
-      if (navMenu && navMenu.classList.contains('active')) {
-        navMenu.classList.remove('active');
-        hamburger?.classList.remove('active');
+  // 6. 키보드 단축키 (데스크톱만)
+  if (!isMobile) {
+    document.addEventListener('keydown', (e) => {
+      // Ctrl/Cmd + /: 키보드 단축키 도움말
+      if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        e.preventDefault();
+        showKeyboardShortcuts();
       }
-    }
-  });
+      
+      // Esc: 메뉴 닫기
+      if (e.key === 'Escape') {
+        const navMenu = document.querySelector('.nav-menu');
+        const hamburger = document.querySelector('.hamburger');
+        
+        if (navMenu && navMenu.classList.contains('active')) {
+          navMenu.classList.remove('active');
+          if (hamburger) hamburger.classList.remove('active');
+        }
+      }
+    });
+  }
 
-  // 7. 키보드 단축키 도움말 표시
+  // 7. 키보드 단축키 도움말 (데스크톱만)
   function showKeyboardShortcuts() {
+    if (isMobile) return;
+    
     const shortcuts = `
       🎯 키보드 단축키:
       
@@ -156,14 +200,25 @@
     alert(shortcuts);
   }
 
-  // 8. 성능 모니터링 (개발 모드)
+  // 8. 성능 모니터링 (개발 모드만)
   function initPerformanceMonitor() {
-    // URL에 ?debug=true가 있을 때만 표시
     const urlParams = new URLSearchParams(window.location.search);
     if (!urlParams.get('debug')) return;
     
     const monitor = document.createElement('div');
     monitor.className = 'perf-monitor show';
+    monitor.style.cssText = `
+      position: fixed;
+      bottom: 1rem;
+      left: 1rem;
+      background: rgba(0, 0, 0, 0.9);
+      color: #0f0;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      z-index: 9998;
+    `;
     document.body.appendChild(monitor);
     
     function updatePerfMonitor() {
@@ -201,7 +256,7 @@
     setInterval(updatePerfMonitor, 100);
   }
 
-  // 9. 스크롤 방향 감지 (네비게이션 숨김/표시)
+  // 9. 스크롤 방향 감지 (모바일 최적화)
   let lastScrollY = window.pageYOffset;
   let ticking = false;
 
@@ -276,9 +331,13 @@
     }
   }
 
-  // 12. 이스터 에그 - 콘솔 아트
+  // 12. 콘솔 메시지
   function showEasterEgg() {
-    const art = `
+    if (isMobile) {
+      console.log('🎨 Taeyoon Portfolio - Mobile Version');
+      console.log('📱 https://taeyoon.kr');
+    } else {
+      const art = `
     ╔═══════════════════════════════════════╗
     ║                                       ║
     ║   🎨 Taeyoon's Portfolio Website     ║
@@ -291,10 +350,14 @@
     ║                                       ║
     ╚═══════════════════════════════════════╝
     `;
+      
+      console.log('%c' + art, 'color: #4a90e2; font-family: monospace;');
+    }
     
-    console.log('%c' + art, 'color: #4a90e2; font-family: monospace;');
-    console.log('%c🚀 Tip: Add ?debug=true to URL for performance monitor', 'color: #2ecc71; font-weight: bold;');
-    console.log('%c⌨️  Press Ctrl+/ for keyboard shortcuts', 'color: #f39c12; font-weight: bold;');
+    if (!isMobile) {
+      console.log('%c🚀 Tip: Add ?debug=true to URL for performance monitor', 'color: #2ecc71; font-weight: bold;');
+      console.log('%c⌨️  Press Ctrl+/ for keyboard shortcuts', 'color: #f39c12; font-weight: bold;');
+    }
   }
 
   // 13. 폼 검증 개선
@@ -358,7 +421,7 @@
     console.log(`📖 예상 읽기 시간: 약 ${readingTime}분`);
   }
 
-  // 15. 클립보드 복사 기능 (이메일 등)
+  // 15. 클립보드 복사 (데스크톱 & 모바일)
   function enableCopyFeatures() {
     const copyableElements = document.querySelectorAll('[data-copy]');
     
@@ -366,39 +429,69 @@
       el.style.cursor = 'pointer';
       el.setAttribute('title', 'Click to copy');
       
-      el.addEventListener('click', async function() {
+      const handleCopy = async function(e) {
+        e.preventDefault();
         const textToCopy = this.getAttribute('data-copy') || this.textContent;
         
         try {
-          await navigator.clipboard.writeText(textToCopy);
-          showCopyNotification(this);
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(textToCopy);
+            showCopyNotification();
+          } else {
+            // Fallback for older browsers
+            const textArea = document.createElement('textarea');
+            textArea.value = textToCopy;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+              document.execCommand('copy');
+              showCopyNotification();
+            } catch (err) {
+              console.error('Fallback copy failed:', err);
+            }
+            
+            document.body.removeChild(textArea);
+          }
         } catch (err) {
           console.error('Failed to copy:', err);
         }
-      });
+      };
+      
+      if (isTouch) {
+        el.addEventListener('touchend', handleCopy, { passive: false });
+      } else {
+        el.addEventListener('click', handleCopy);
+      }
     });
   }
 
-  function showCopyNotification(element) {
+  function showCopyNotification() {
     const notification = document.createElement('div');
     notification.textContent = '✓ Copied!';
     notification.style.cssText = `
       position: fixed;
-      bottom: 2rem;
-      right: 2rem;
+      bottom: ${isMobile ? '5rem' : '2rem'};
+      right: 50%;
+      transform: translateX(50%);
       background: #2ecc71;
       color: white;
       padding: 0.75rem 1.5rem;
       border-radius: 8px;
       font-weight: 600;
       z-index: 10000;
-      animation: slideInUp 0.3s ease;
+      box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
     `;
     
     document.body.appendChild(notification);
     
     setTimeout(() => {
-      notification.style.animation = 'slideOutDown 0.3s ease';
+      notification.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+      notification.style.opacity = '0';
+      notification.style.transform = 'translateX(50%) translateY(20px)';
       setTimeout(() => notification.remove(), 300);
     }, 2000);
   }
@@ -418,64 +511,85 @@
     console.log('📍 Scroll snap enabled');
   }
 
-  // 초기화 함수들 실행
-  window.addEventListener('load', () => {
+  // 초기화 - DOM 로드 후 실행
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeEnhancements);
+  } else {
+    initializeEnhancements();
+  }
+
+  function initializeEnhancements() {
+    console.log('🎨 Enhancements initializing... (Mobile: ' + isMobile + ')');
+    
     autoThemeSwitcher();
     optimizeForConnection();
     showEasterEgg();
     enhanceFormValidation();
-    estimateReadingTime();
     enableCopyFeatures();
-    enableScrollSnap();
     initPerformanceMonitor();
-  });
-
-  // 디버그 정보 출력
-  if (window.location.search.includes('debug')) {
-    console.log('🔧 Debug mode enabled');
-    console.log('📊 Page load time:', performance.now() + 'ms');
+    
+    if (!isMobile) {
+      estimateReadingTime();
+      enableScrollSnap();
+    }
+    
+    console.log('✅ Enhancements loaded successfully!');
   }
 
 })();
 
-// 애니메이션 CSS 추가 (복사 알림용)
-const animationStyles = document.createElement('style');
-animationStyles.textContent = `
-  @keyframes slideInUp {
-    from {
-      transform: translateY(100%);
-      opacity: 0;
+// 애니메이션 CSS (자동 추가)
+if (!document.getElementById('enhancement-animations')) {
+  const animationStyles = document.createElement('style');
+  animationStyles.id = 'enhancement-animations';
+  animationStyles.textContent = `
+    @keyframes slideInUp {
+      from {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateY(0);
+        opacity: 1;
+      }
     }
-    to {
-      transform: translateY(0);
-      opacity: 1;
+    
+    @keyframes slideOutDown {
+      from {
+        transform: translateY(0);
+        opacity: 1;
+      }
+      to {
+        transform: translateY(100%);
+        opacity: 0;
+      }
     }
-  }
-  
-  @keyframes slideOutDown {
-    from {
-      transform: translateY(0);
-      opacity: 1;
+    
+    .reduced-animations * {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
     }
-    to {
-      transform: translateY(100%);
-      opacity: 0;
+    
+    .form-group input.error,
+    .form-group textarea.error {
+      border-color: #e74c3c !important;
+      box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2) !important;
     }
-  }
-  
-  .reduced-animations * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-  
-  .form-group input.error,
-  .form-group textarea.error {
-    border-color: #e74c3c !important;
-    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2) !important;
-  }
-  
-  .navbar {
-    transition: transform 0.3s ease;
-  }
-`;
-document.head.appendChild(animationStyles);
+    
+    .navbar {
+      transition: transform 0.3s ease;
+    }
+    
+    /* 모바일 터치 최적화 */
+    @media (max-width: 768px) {
+      * {
+        -webkit-tap-highlight-color: rgba(74, 144, 226, 0.2);
+      }
+      
+      a, button, .btn, .nav-link {
+        -webkit-touch-callout: none;
+      }
+    }
+  `;
+  document.head.appendChild(animationStyles);
+}
