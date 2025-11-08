@@ -1,5 +1,14 @@
 # 🔒 보안 가이드
 
+## ✅ Git 히스토리 정리 완료
+
+**2025년 11월 8일**: Git 히스토리에서 모든 민감한 API 키가 제거되었습니다.
+- `deploy-worker.sh` 파일이 전체 히스토리에서 완전히 삭제됨
+- 노출되었던 Resend API Key와 Turnstile Secret Key 제거 완료
+- 레포지토리가 비공개였으므로 API 키 재발급은 불필요
+
+---
+
 ## ⚠️ 중요: API 키 관리
 
 이 프로젝트는 다음 API 키들을 사용합니다:
@@ -17,7 +26,7 @@
 ### 3. Cloudflare Turnstile Site Key (공개 가능)
 - **용도**: 프론트엔드 CAPTCHA 위젯
 - **저장 위치**: `index.html`의 `data-sitekey` 속성
-- **공개 가능**: ✅ 이 키는 공개되어도 안전합니다
+- **공개 가능**: ✅ 이 키는 공개되어도 안전합니다 (Site Key: `0x4AAAAAAB_yMvcBndUqiPFv`)
 
 ---
 
@@ -71,24 +80,49 @@
 
 ### 2. Git 히스토리에서 제거
 
+민감한 파일이 Git에 커밋되었다면:
+
 ```bash
-# 민감한 파일을 Git 히스토리에서 완전히 제거
+# 1. 백업 생성
+cd /home/taeyoon_0526/Desktop
+cp -r taeyoon.kr taeyoon.kr-backup-$(date +%Y%m%d-%H%M%S)
+
+# 2. 해당 파일을 히스토리에서 제거
+cd taeyoon.kr
 git filter-branch --force --index-filter \
-  "git rm --cached --ignore-unmatch deploy-worker.sh" \
+  'git rm --cached --ignore-unmatch <파일명>' \
   --prune-empty --tag-name-filter cat -- --all
 
-# 강제 푸시 (주의: 협업 시 팀원과 조율 필요)
+# 3. 참조 정리
+rm -rf .git/refs/original/
+git reflog expire --expire=now --all
+git gc --prune=now --aggressive
+
+# 4. 강제 푸시
 git push origin --force --all
+git push origin --force --tags
 ```
 
-⚠️ **주의**: `git filter-branch`는 모든 커밋 히스토리를 변경합니다. 
-협업 중인 저장소라면 팀원들에게 미리 알려야 합니다.
+⚠️ **주의**: 
+- 이 작업은 모든 커밋 히스토리를 변경합니다
+- 협업 중이라면 팀원들과 조율이 필요합니다
+- 공개 레포지토리라면 API 키를 즉시 재발급해야 합니다
 
-### 3. GitHub에 보안 사고 신고
+---
 
-노출된 키가 악용될 가능성이 있다면:
-1. GitHub Security Advisories 사용
-2. https://github.com/[username]/[repo]/security/advisories/new
+## 💡 현재 프로젝트 구조
+
+### GitHub Pages (정적 호스팅)
+- **파일**: `index.html`, `styles.css`, `script.js`, `theme-upgrade.css`
+- **민감 정보**: ❌ 없음 (Site Key만 포함, 공개 가능)
+- **배포**: GitHub Actions 자동 배포
+
+### Cloudflare Workers (서버리스 백엔드)
+- **파일**: `worker.js`
+- **민감 정보**: ✅ 환경 변수로 안전하게 관리
+- **환경 변수**:
+  - `TURNSTILE_SECRET`: Cloudflare Dashboard에서 암호화하여 저장
+  - `RESEND_API_KEY`: Cloudflare Dashboard에서 암호화하여 저장
 
 ---
 
@@ -96,12 +130,13 @@ git push origin --force --all
 
 배포 전 반드시 확인하세요:
 
-- [ ] `.env` 파일이 `.gitignore`에 포함되어 있나?
-- [ ] API 키가 소스코드에 하드코딩되지 않았나?
-- [ ] 모든 민감한 키가 환경 변수로 관리되나?
-- [ ] `deploy-worker.sh` 같은 스크립트에 실제 키가 없나?
-- [ ] README나 문서에 예시 키만 있나?
-- [ ] `.gitignore`가 커밋되었나?
+- [x] `.env` 파일이 `.gitignore`에 포함되어 있나?
+- [x] API 키가 소스코드에 하드코딩되지 않았나?
+- [x] 모든 민감한 키가 환경 변수로 관리되나?
+- [x] Git 히스토리에서 민감한 정보 제거됨?
+- [x] `.gitignore`가 커밋되었나?
+- [ ] Cloudflare Workers 환경 변수 설정 완료?
+- [ ] Contact Form 테스트 완료?
 
 ---
 
@@ -111,6 +146,7 @@ git push origin --force --all
 - [Cloudflare Turnstile Documentation](https://developers.cloudflare.com/turnstile/)
 - [Resend API Documentation](https://resend.com/docs)
 - [GitHub Secret Scanning](https://docs.github.com/en/code-security/secret-scanning)
+- [Git Filter-Branch Documentation](https://git-scm.com/docs/git-filter-branch)
 
 ---
 
