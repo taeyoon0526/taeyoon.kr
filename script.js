@@ -67,6 +67,35 @@ function createSquareFavicon() {
 // Call favicon function
 createSquareFavicon();
 
+const LOADER_CLEANUP_DELAY = 800;
+let loaderRemoved = false;
+
+function removeLoader({ immediate = false, reason = 'completed' } = {}) {
+  if (loaderRemoved) {
+    return;
+  }
+
+  const loaderWrapper = document.querySelector('.loader-wrapper');
+  const cleanupDelay = immediate ? 0 : LOADER_CLEANUP_DELAY;
+
+  loaderRemoved = true;
+
+  if (loaderWrapper) {
+    loaderWrapper.classList.add('fade-out');
+    document.body.classList.remove('loading');
+
+    setTimeout(() => {
+      if (loaderWrapper.parentNode) {
+        loaderWrapper.remove();
+      }
+    }, cleanupDelay);
+  } else {
+    document.body.classList.remove('loading');
+  }
+
+  console.log(`🟢 Loader dismissed (${reason})`);
+}
+
 // Loading Screen - Enhanced Version
 (function() {
   const loaderWrapper = document.querySelector('.loader-wrapper');
@@ -90,17 +119,7 @@ createSquareFavicon();
       
       // Start fade out after reaching 100%
       setTimeout(() => {
-        if (loaderWrapper) {
-          loaderWrapper.classList.add('fade-out');
-          document.body.classList.remove('loading');
-          
-          // Remove from DOM after animation completes
-          setTimeout(() => {
-            if (loaderWrapper && loaderWrapper.parentNode) {
-              loaderWrapper.remove();
-            }
-          }, 800);
-        }
+        removeLoader({ reason: 'sequence-complete' });
       }, 300);
     }
     
@@ -111,20 +130,153 @@ createSquareFavicon();
   
   // Fallback: ensure loader is removed even if something goes wrong
   setTimeout(() => {
-    if (loaderWrapper && !loaderWrapper.classList.contains('fade-out')) {
-      loaderWrapper.classList.add('fade-out');
-      document.body.classList.remove('loading');
-      setTimeout(() => {
-        if (loaderWrapper && loaderWrapper.parentNode) {
-          loaderWrapper.remove();
-        }
-      }, 800);
-    }
+    removeLoader({ reason: 'safety-timeout' });
   }, duration + 1000);
 })();
 
 // Add loading class to body initially
 document.body.classList.add('loading');
+
+if (document.readyState === 'complete') {
+  removeLoader({ reason: 'doc-ready', immediate: true });
+} else {
+  window.addEventListener('load', () => {
+    setTimeout(() => removeLoader({ reason: 'window-load' }), 600);
+  });
+}
+
+// ===== Google Analytics Initialization =====
+const GA_MEASUREMENT_ID = 'G-9F1LHK5E3H';
+
+(function initAnalytics() {
+  if (!GA_MEASUREMENT_ID) {
+    console.warn('Google Analytics ID가 설정되어 있지 않아 추적을 건너뜁니다.');
+    return;
+  }
+
+  if (window.__GA_INITIALIZED__) {
+    return;
+  }
+
+  const respectPrivacy = () => {
+    const doNotTrack = navigator.doNotTrack === '1' || window.doNotTrack === '1' || navigator.msDoNotTrack === '1';
+    const gpcEnabled = navigator.globalPrivacyControl === true;
+    return doNotTrack || gpcEnabled;
+  };
+
+  if (respectPrivacy()) {
+    window.__GA_INITIALIZED__ = true;
+    console.info('🛡️ 사용자 프라이버시 설정(DNT/GPC)로 Google Analytics를 비활성화합니다.');
+    return;
+  }
+
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function gtag() {
+    window.dataLayer.push(arguments);
+  };
+
+  window.__GA_INITIALIZED__ = true;
+
+  const deviceCategory = (() => {
+    const coarsePointer = window.matchMedia('(pointer: coarse)').matches;
+    const narrowScreen = window.innerWidth <= 812;
+    const userAgent = navigator.userAgent || '';
+    const tabletIndicators = /(ipad|tablet|kindle|playbook|silk)|(android(?!.*mobile))/i;
+
+    if (coarsePointer || narrowScreen || /iphone|ipod|android.*mobile/i.test(userAgent)) {
+      return 'mobile';
+    }
+
+    if (tabletIndicators.test(userAgent)) {
+      return 'tablet';
+    }
+
+    return 'desktop';
+  })();
+
+  let reported = false;
+
+  const handleAnalyticsReady = () => {
+    if (reported) return;
+    reported = true;
+
+    window.gtag('js', new Date());
+    window.gtag('config', GA_MEASUREMENT_ID, {
+      send_page_view: false,
+      anonymize_ip: true,
+      transport_type: 'beacon',
+      page_title: document.title,
+    });
+
+    window.gtag('event', 'page_view', {
+      page_title: document.title,
+      page_location: window.location.href,
+      page_path: window.location.pathname,
+      device_category: deviceCategory,
+      viewport_height: window.innerHeight,
+      viewport_width: window.innerWidth,
+    });
+
+    console.log(`📊 Google Analytics 연결 성공 (device: ${deviceCategory})`);
+  };
+
+  const handleAnalyticsBlocked = (reason) => {
+    if (reported) return;
+    reported = true;
+    console.warn('⚠️ Google Analytics 로드에 실패했습니다. (사유:', reason, ')');
+    document.dispatchEvent(new CustomEvent('analytics:blocked', {
+      detail: {
+        reason,
+        timestamp: Date.now(),
+      },
+    }));
+  };
+
+  const ensureScript = () => {
+    const existingScript = document.querySelector('script[data-ga-loader="true"]')
+      || document.querySelector('script[src*="www.googletagmanager.com/gtag/js"]');
+
+    let gaScript = existingScript;
+
+    if (gaScript) {
+      gaScript.dataset.gaLoader = 'true';
+    } else {
+      gaScript = document.createElement('script');
+      gaScript.async = true;
+      gaScript.src = `https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`;
+      gaScript.dataset.gaLoader = 'true';
+      document.head.appendChild(gaScript);
+    }
+
+    gaScript.addEventListener('load', handleAnalyticsReady, { once: true });
+    gaScript.addEventListener('error', () => handleAnalyticsBlocked('network-error'), { once: true });
+
+    setTimeout(() => {
+      if (!reported) {
+        handleAnalyticsBlocked('timeout');
+      }
+    }, 5000);
+  };
+
+  ensureScript();
+
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted && window.gtag) {
+      window.gtag('event', 'page_restore', {
+        page_location: window.location.href,
+        page_path: window.location.pathname,
+      });
+    }
+  });
+
+  window.addEventListener('resize', debounce(() => {
+    if (!window.gtag) return;
+    window.gtag('event', 'viewport_change', {
+      viewport_height: window.innerHeight,
+      viewport_width: window.innerWidth,
+    });
+  }, 2000));
+})();
 
 // ===== Utility Functions =====
 // Throttle function for performance
