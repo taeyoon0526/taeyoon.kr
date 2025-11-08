@@ -1,17 +1,22 @@
 /* ================================
-   MOBILE IMPROVEMENTS - 모바일 가독성 & UX 개선
+  MOBILE IMPROVEMENTS - 모바일 가독성 & UX 개선
    ================================ */
 
 /* 모바일 기본 개선 */
 @media (max-width: 768px) {
-  
+
   /* 전체 텍스트 가독성 개선 */
   body {
-    font-size: 16px; /* 최소 16px로 자동 줌 방지 */
-    -webkit-text-size-adjust: 100%; /* Safari */
-    -moz-text-size-adjust: 100%; /* Firefox (old) */
-    -ms-text-size-adjust: 100%; /* IE/Edge */
-    text-size-adjust: 100%; /* Standard - Chrome 54+, Edge 79+ */
+    font-size: 16px;
+    /* 최소 16px로 자동 줌 방지 */
+    -webkit-text-size-adjust: 100%;
+    /* Safari */
+    -moz-text-size-adjust: 100%;
+    /* Firefox (old) */
+    -ms-text-size-adjust: 100%;
+    /* IE/Edge */
+    text-size-adjust: 100%;
+    /* Standard - Chrome 54+, Edge 79+ */
   }
 
   /* 컨테이너 패딩 개선 */
@@ -126,8 +131,10 @@
     margin-bottom: 2rem;
     overflow-x: auto;
     padding: 0.5rem;
-    scrollbar-width: none; /* Firefox 64+ */
-    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none;
+    /* Firefox 64+ */
+    -ms-overflow-style: none;
+    /* IE/Edge */
   }
 
   /* Webkit browsers (Chrome, Safari, Edge) */
@@ -280,7 +287,8 @@
 
   .form-group input,
   .form-group textarea {
-    font-size: 16px; /* iOS 자동 줌 방지 */
+    font-size: 16px;
+    /* iOS 자동 줌 방지 */
     padding: 1rem;
     border-radius: 8px;
   }
@@ -346,7 +354,8 @@
 
   /* Scroll Indicator 개선 */
   .scroll-indicator {
-    display: none; /* 모바일에서는 숨김 */
+    display: none;
+    /* 모바일에서는 숨김 */
   }
 
   /* Footer 개선 */
@@ -374,7 +383,7 @@
 
 /* 작은 모바일 (480px 이하) 추가 개선 */
 @media (max-width: 480px) {
-  
+
   .hero {
     padding: 5rem 1rem 2rem;
   }
@@ -445,7 +454,7 @@
 
 /* 가로 모드 개선 */
 @media (max-width: 768px) and (orientation: landscape) {
-  
+
   .hero {
     min-height: 100vh;
     padding: 4rem 1.5rem 2rem;
@@ -467,7 +476,7 @@
 
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
-  
+
   /* 호버 효과 제거, 활성 상태로 대체 */
   .btn:hover {
     transform: none;
