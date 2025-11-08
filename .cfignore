@@ -1,0 +1,3 @@
+# Ignore worker.js - deployed separately via Cloudflare Workers Dashboard
+worker.js
+deploy-worker.sh
