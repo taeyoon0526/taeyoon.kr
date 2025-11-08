@@ -254,15 +254,41 @@ body[data-theme="light"] .theme-toggle .moon-icon {
 }
 
 /* Individual skill levels */
-.skill-html { --skill-width: 90%; }
-.skill-css { --skill-width: 85%; }
-.skill-js { --skill-width: 80%; }
-.skill-python { --skill-width: 75%; }
-.skill-c { --skill-width: 70%; }
-.skill-git { --skill-width: 85%; }
-.skill-nodejs { --skill-width: 75%; }
-.skill-java { --skill-width: 65%; }
-.skill-github { --skill-width: 85%; }
+.skill-html {
+  --skill-width: 90%;
+}
+
+.skill-css {
+  --skill-width: 85%;
+}
+
+.skill-js {
+  --skill-width: 80%;
+}
+
+.skill-python {
+  --skill-width: 75%;
+}
+
+.skill-c {
+  --skill-width: 70%;
+}
+
+.skill-git {
+  --skill-width: 85%;
+}
+
+.skill-nodejs {
+  --skill-width: 75%;
+}
+
+.skill-java {
+  --skill-width: 65%;
+}
+
+.skill-github {
+  --skill-width: 85%;
+}
 
 @keyframes fillBar {
   from {

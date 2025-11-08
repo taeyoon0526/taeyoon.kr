@@ -54,162 +54,59 @@ a {
   left: 0;
   width: 100%;
   height: 100%;
-  background: linear-gradient(135deg, #0f0f1e 0%, #1a1a2e 50%, #16213e 100%);
+  background: #1a1a1a;
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 9999;
-  transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-    visibility 0.8s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
+  transition: opacity 0.5s ease, visibility 0.5s ease;
 }
 
 .loader-wrapper.fade-out {
   opacity: 0;
   visibility: hidden;
-  transform: scale(1.1);
-  pointer-events: none;
 }
 
 .loader {
   position: relative;
-  width: 180px;
-  height: 180px;
+  width: 150px;
+  height: 150px;
   display: flex;
   justify-content: center;
   align-items: center;
-  filter: drop-shadow(0 0 30px rgba(74, 144, 226, 0.5));
 }
 
 .loader-circle {
   position: absolute;
   width: 100%;
   height: 100%;
-  border: 4px solid transparent;
+  border: 3px solid transparent;
   border-top-color: #4a90e2;
-  border-right-color: rgba(74, 144, 226, 0.3);
   border-radius: 50%;
-  animation: spin 2s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
-  box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+  animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
 }
 
 .loader-circle:nth-child(2) {
-  width: 85%;
-  height: 85%;
+  width: 80%;
+  height: 80%;
   border-top-color: #357abd;
-  border-right-color: rgba(53, 122, 189, 0.3);
-  animation-delay: 0.15s;
-  animation-duration: 1.8s;
+  animation-delay: 0.2s;
 }
 
 .loader-circle:nth-child(3) {
-  width: 70%;
-  height: 70%;
+  width: 60%;
+  height: 60%;
   border-top-color: #2a5d8f;
-  border-right-color: rgba(42, 93, 143, 0.3);
-  animation-delay: 0.3s;
-  animation-duration: 1.6s;
+  animation-delay: 0.4s;
 }
 
 .loader-text {
   font-family: 'Fuzzy Bubbles', cursive;
-  font-size: 2.5rem;
+  font-size: 2rem;
+  color: #4a90e2;
   font-weight: bold;
   z-index: 1;
-  display: flex;
-  gap: 0.1em;
-  position: relative;
-}
-
-.loader-text .letter-t,
-.loader-text .letter-y {
-  display: inline-block;
-  background: linear-gradient(135deg, #4a90e2 0%, #2ecc71 50%, #4a90e2 100%);
-  background-size: 200% 200%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: gradientShift 3s ease-in-out infinite, letterFloat 2s ease-in-out infinite;
-  filter: drop-shadow(0 0 10px rgba(74, 144, 226, 0.7));
-}
-
-.loader-text .letter-y {
-  animation-delay: 0.15s;
-}
-
-.loader-percentage {
-  position: absolute;
-  bottom: -50px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-family: 'Roboto Mono', monospace;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #4a90e2;
-  text-shadow: 0 0 10px rgba(74, 144, 226, 0.5);
-  animation: fadeInOut 1.5s ease-in-out infinite;
-}
-
-/* Particle Effects */
-.loader-particles {
-  position: absolute;
-  width: 100%;
-  height: 100%;
-  top: 0;
-  left: 0;
-  pointer-events: none;
-}
-
-.particle {
-  position: absolute;
-  width: 4px;
-  height: 4px;
-  background: radial-gradient(circle, #4a90e2 0%, transparent 70%);
-  border-radius: 50%;
-  opacity: 0;
-  animation: particleFloat 4s ease-in-out infinite;
-  box-shadow: 0 0 10px #4a90e2;
-}
-
-.particle:nth-child(1) {
-  left: 20%;
-  animation-delay: 0s;
-}
-
-.particle:nth-child(2) {
-  left: 40%;
-  animation-delay: 0.5s;
-}
-
-.particle:nth-child(3) {
-  left: 60%;
-  animation-delay: 1s;
-}
-
-.particle:nth-child(4) {
-  left: 80%;
-  animation-delay: 1.5s;
-}
-
-.particle:nth-child(5) {
-  left: 30%;
-  animation-delay: 2s;
-}
-
-.particle:nth-child(6) {
-  left: 50%;
-  animation-delay: 2.5s;
-}
-
-.particle:nth-child(7) {
-  left: 70%;
-  animation-delay: 3s;
-}
-
-.particle:nth-child(8) {
-  left: 90%;
-  animation-delay: 3.5s;
+  animation: pulse 1.5s ease-in-out infinite;
 }
 
 @keyframes spin {
@@ -222,68 +119,17 @@ a {
   }
 }
 
-@keyframes gradientShift {
+@keyframes pulse {
 
   0%,
   100% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-}
-
-@keyframes letterFloat {
-
-  0%,
-  100% {
-    transform: translateY(0) scale(1);
-  }
-
-  50% {
-    transform: translateY(-10px) scale(1.1);
-  }
-}
-
-@keyframes fadeInOut {
-
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-
-  50% {
+    transform: scale(1);
     opacity: 1;
   }
-}
-
-@keyframes particleFloat {
-  0% {
-    bottom: 0;
-    opacity: 0;
-    transform: translateX(0) scale(0);
-  }
-
-  25% {
-    opacity: 1;
-    transform: translateX(20px) scale(1);
-  }
 
   50% {
+    transform: scale(1.1);
     opacity: 0.8;
-    transform: translateX(-20px) scale(1.2);
-  }
-
-  75% {
-    opacity: 0.4;
-    transform: translateX(10px) scale(0.8);
-  }
-
-  100% {
-    bottom: 100%;
-    opacity: 0;
-    transform: translateX(0) scale(0);
   }
 }
 
