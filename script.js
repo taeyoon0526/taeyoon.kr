@@ -858,4 +858,220 @@ console.log('Welcome to Taeyoon\'s website! 🚀');
 console.log('Made with ❤️ using HTML, CSS, and JavaScript');
 console.log('💡 Tip: Try keyboard shortcuts! Alt+H (Home), Alt+A (About), Alt+S (Skills), Alt+C (Contact)');
 
+// ===== THEME UPGRADE FEATURES =====
+
+// Theme Toggle
+(function initTheme() {
+  const themeToggle = document.querySelector('.theme-toggle');
+  const body = document.body;
+  
+  // Get saved theme or default to dark
+  const savedTheme = localStorage.getItem('theme') || 'dark';
+  body.setAttribute('data-theme', savedTheme);
+  
+  if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = body.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      
+      body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      
+      // Add pulse animation
+      themeToggle.style.animation = 'pulse 0.5s ease-in-out';
+      setTimeout(() => {
+        themeToggle.style.animation = '';
+      }, 500);
+      
+      console.log(`🎨 Theme switched to ${newTheme} mode`);
+    });
+  }
+})();
+
+// Skill Tabs Filtering
+(function initSkillTabs() {
+  const tabs = document.querySelectorAll('.skill-tab');
+  const skillCards = document.querySelectorAll('.skill-card');
+  
+  if (tabs.length === 0 || skillCards.length === 0) return;
+  
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      // Remove active class from all tabs
+      tabs.forEach(t => t.classList.remove('active'));
+      // Add active class to clicked tab
+      tab.classList.add('active');
+      
+      const category = tab.getAttribute('data-category');
+      
+      // Filter skill cards
+      skillCards.forEach(card => {
+        const cardCategory = card.getAttribute('data-category');
+        
+        if (category === 'all' || cardCategory === category) {
+          card.style.display = '';
+          card.style.animation = 'fadeInUp 0.5s ease-out';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+      
+      console.log(`🎯 Filtered skills: ${category}`);
+    });
+  });
+})();
+
+// Enhanced Scroll Animations for New Elements
+(function initScrollAnimations() {
+  const observerOptions = {
+    threshold: 0.1,
+    rootMargin: '0px 0px -50px 0px'
+  };
+  
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.style.opacity = '1';
+        entry.target.style.transform = 'translateY(0)';
+      }
+    });
+  }, observerOptions);
+  
+  // Observe project cards
+  document.querySelectorAll('.project-card').forEach(card => {
+    card.style.opacity = '0';
+    card.style.transform = 'translateY(30px)';
+    card.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+    observer.observe(card);
+  });
+})();
+
+// Smooth Scroll with Offset for Fixed Navbar
+(function initSmoothScroll() {
+  const navbarHeight = document.querySelector('.navbar')?.offsetHeight || 0;
+  
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', function(e) {
+      const href = this.getAttribute('href');
+      if (href === '#' || !href) return;
+      
+      e.preventDefault();
+      const target = document.querySelector(href);
+      
+      if (target) {
+        const targetPosition = target.getBoundingClientRect().top + window.pageYOffset - navbarHeight;
+        
+        window.scrollTo({
+          top: targetPosition,
+          behavior: 'smooth'
+        });
+        
+        // Update URL without jumping
+        history.pushState(null, null, href);
+      }
+    });
+  });
+})();
+
+// Performance Monitoring Enhanced
+(function monitorPerformance() {
+  if ('performance' in window) {
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        const perfData = performance.getEntriesByType('navigation')[0];
+        const paintEntries = performance.getEntriesByType('paint');
+        
+        console.log('📊 Performance Metrics:');
+        console.log(`  Page Load: ${Math.round(perfData.loadEventEnd - perfData.fetchStart)}ms`);
+        console.log(`  DOM Ready: ${Math.round(perfData.domContentLoadedEventEnd - perfData.fetchStart)}ms`);
+        
+        paintEntries.forEach(entry => {
+          console.log(`  ${entry.name}: ${Math.round(entry.startTime)}ms`);
+        });
+        
+        // Check for slow performance
+        const loadTime = perfData.loadEventEnd - perfData.fetchStart;
+        if (loadTime > 3000) {
+          console.warn('⚠️ Page load time is slow. Consider optimizing resources.');
+        }
+      }, 0);
+    });
+  }
+})();
+
+// Responsive Image Loading
+(function initLazyLoading() {
+  if ('IntersectionObserver' in window) {
+    const imageObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target;
+          if (img.dataset.src) {
+            img.src = img.dataset.src;
+            img.classList.add('loaded');
+            imageObserver.unobserve(img);
+          }
+        }
+      });
+    });
+    
+    document.querySelectorAll('img[data-src]').forEach(img => {
+      imageObserver.observe(img);
+    });
+  }
+})();
+
+// Mobile Menu Enhancement
+(function enhanceMobileMenu() {
+  const hamburger = document.querySelector('.hamburger');
+  const navMenu = document.querySelector('.nav-menu');
+  const navLinks = document.querySelectorAll('.nav-link');
+  
+  if (!hamburger || !navMenu) return;
+  
+  // Close menu when clicking a link
+  navLinks.forEach(link => {
+    link.addEventListener('click', () => {
+      if (navMenu.classList.contains('active')) {
+        hamburger.classList.remove('active');
+        navMenu.classList.remove('active');
+        hamburger.setAttribute('aria-expanded', 'false');
+        document.body.style.overflow = '';
+      }
+    });
+  });
+  
+  // Close menu when clicking outside
+  document.addEventListener('click', (e) => {
+    if (navMenu.classList.contains('active') && 
+        !navMenu.contains(e.target) && 
+        !hamburger.contains(e.target)) {
+      hamburger.classList.remove('active');
+      navMenu.classList.remove('active');
+      hamburger.setAttribute('aria-expanded', 'false');
+      document.body.style.overflow = '';
+    }
+  });
+})();
+
+// Add fadeInUp animation for skill cards
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+`;
+document.head.appendChild(style);
+
+console.log('✨ Theme upgrade features loaded!');
+console.log('🌓 Toggle theme with the button in the navigation bar');
+console.log('🔍 Filter skills by category using the tabs');
+
 
