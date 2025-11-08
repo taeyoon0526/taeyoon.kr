@@ -742,8 +742,12 @@ function hideFormStatus() {
 // Reset Turnstile widget
 function resetTurnstile() {
   try {
-    if (window.turnstile && turnstileWidgetId !== null) {
-      window.turnstile.reset(turnstileWidgetId);
+    if (window.turnstile) {
+      if (turnstileWidgetId) {
+        window.turnstile.reset(turnstileWidgetId);
+      } else {
+        window.turnstile.reset();
+      }
     }
     turnstileToken = null;
   } catch (error) {
@@ -908,12 +912,17 @@ if (contactForm) {
 
         showFormStatus('❌ ' + errorMessage, 'error');
         console.error('Form submission failed:', data);
+
+        resetTurnstile();
+        formLoadTime = Date.now();
       }
       
     } catch (error) {
       // Network error
       console.error('Network error:', error);
       showFormStatus('❌ 네트워크 오류가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.', 'error');
+      resetTurnstile();
+      formLoadTime = Date.now();
     } finally {
       // Re-enable submit button
       submitBtn.disabled = false;
