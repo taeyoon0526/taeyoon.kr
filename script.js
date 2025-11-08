@@ -786,7 +786,7 @@ if (contactForm) {
     
     try {
       // Send POST request
-      const response = await fetch('https://contact.taeyoon.kr/contact', {
+      const response = await fetch('https://contact.taeyoon.kr/', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

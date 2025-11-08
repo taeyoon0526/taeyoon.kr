@@ -218,8 +218,10 @@ export default {
       });
     }
 
-    // Only allow POST requests to /contact
-    if (request.method !== 'POST' || url.pathname !== '/contact') {
+    // Only allow POST requests to /contact or root path
+    const isValidPath = url.pathname === '/contact' || url.pathname === '/';
+    
+    if (request.method !== 'POST' || !isValidPath) {
       return jsonResponse(
         { success: false, message: 'Not Found' },
         404,
