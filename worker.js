@@ -32,6 +32,7 @@ const CONFIG = {
   RATE_LIMIT_MAX_REQUESTS: 3,
   RATE_LIMIT_WINDOW_MS: 60 * 1000,
   RATE_LIMIT_BLOCK_MS: 5 * 60 * 1000,
+  MAX_PAYLOAD_SIZE_BYTES: 6 * 1024,
 };
 
 const SECURITY_HEADERS = {
@@ -51,16 +52,24 @@ const rateLimitStore = new Map();
 
 // ===== Helper Functions =====
 
+function getAllowedOrigins(env) {
+  const rawOrigins = env.ALLOWED_ORIGINS || env.ALLOWED_ORIGIN || 'https://taeyoon.kr';
+  return rawOrigins
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter((origin) => origin.length > 0);
+}
+
 /**
  * CORS headers for the allowed origin
  */
 function getCorsHeaders(origin, env) {
-  const allowedOrigin = env.ALLOWED_ORIGIN || 'https://taeyoon.kr';
+  const allowedOrigins = getAllowedOrigins(env);
   const baseHeaders = {
     Vary: 'Origin',
   };
   
-  if (origin === allowedOrigin) {
+  if (origin && allowedOrigins.includes(origin)) {
     return {
       ...baseHeaders,
       'Access-Control-Allow-Origin': origin,
@@ -71,6 +80,26 @@ function getCorsHeaders(origin, env) {
   }
   
   return baseHeaders;
+}
+
+function isRequestFromAllowedContext(origin, referer, allowedOrigins, workerOrigin) {
+  const normalizedAllowed = new Set([...allowedOrigins, workerOrigin]);
+  if (origin && normalizedAllowed.has(origin)) {
+    return true;
+  }
+
+  if (referer) {
+    try {
+      const refererOrigin = new URL(referer).origin;
+      if (normalizedAllowed.has(refererOrigin)) {
+        return true;
+      }
+    } catch (error) {
+      console.warn('Invalid referer URL received:', referer, error);
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -402,7 +431,10 @@ export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const origin = request.headers.get('Origin');
+    const refererHeader = request.headers.get('Referer');
     const clientInfo = getClientInfo(request);
+    const allowedOrigins = getAllowedOrigins(env);
+    const workerOrigin = `${url.protocol}//${url.host}`;
 
     // Enforce HTTPS
     try {
@@ -455,6 +487,64 @@ export default {
       );
     }
 
+    const hasTrustedContext = isRequestFromAllowedContext(origin, refererHeader, allowedOrigins, workerOrigin);
+    if (!hasTrustedContext) {
+      scheduleSecurityLog(
+        ctx,
+        logSecurityEvent('origin_validation_failed', {
+          ip: clientInfo.ip || 'Unknown',
+          origin: origin || 'none',
+          referer: refererHeader || 'none',
+          path: url.pathname,
+        }, env)
+      );
+
+      return jsonResponse(
+        { success: false, message: '허용되지 않은 요청입니다.' },
+        403,
+        origin,
+        env
+      );
+    }
+
+    const contentType = request.headers.get('Content-Type') || '';
+    if (!contentType.toLowerCase().includes('application/json')) {
+      scheduleSecurityLog(
+        ctx,
+        logSecurityEvent('invalid_content_type', {
+          ip: clientInfo.ip || 'Unknown',
+          origin: origin || 'none',
+          contentType,
+        }, env)
+      );
+
+      return jsonResponse(
+        { success: false, message: '지원하지 않는 콘텐츠 형식입니다.' },
+        415,
+        origin,
+        env
+      );
+    }
+
+    const contentLengthHeader = request.headers.get('Content-Length');
+    if (contentLengthHeader && Number(contentLengthHeader) > CONFIG.MAX_PAYLOAD_SIZE_BYTES) {
+      scheduleSecurityLog(
+        ctx,
+        logSecurityEvent('payload_too_large', {
+          ip: clientInfo.ip || 'Unknown',
+          origin: origin || 'none',
+          contentLength: Number(contentLengthHeader),
+        }, env)
+      );
+
+      return jsonResponse(
+        { success: false, message: '전송 데이터가 너무 큽니다.' },
+        413,
+        origin,
+        env
+      );
+    }
+
     // Rate limiting per IP
     const rateLimitStatus = applyRateLimit(clientInfo.ip);
     const logIP = clientInfo.ip || 'Unknown';
@@ -481,9 +571,62 @@ export default {
     }
 
     try {
-    // Parse request body
-    const body = await request.json();
-    const { name, email, message, website, 'cf-turnstile-response': turnstileToken, t, siteKey } = body;
+      const rawBody = await request.clone().text();
+
+      if (!rawBody || rawBody.length === 0) {
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('empty_payload', {
+            ip: logIP,
+            origin: origin || 'none',
+          }, env)
+        );
+        return jsonResponse(
+          { success: false, message: '전송된 데이터가 없습니다.' },
+          400,
+          origin,
+          env
+        );
+      }
+
+      if (rawBody.length > CONFIG.MAX_PAYLOAD_SIZE_BYTES) {
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('payload_too_large', {
+            ip: logIP,
+            origin: origin || 'none',
+            payloadSize: rawBody.length,
+          }, env)
+        );
+        return jsonResponse(
+          { success: false, message: '전송 데이터가 너무 큽니다.' },
+          413,
+          origin,
+          env
+        );
+      }
+
+      let body;
+      try {
+        body = JSON.parse(rawBody);
+      } catch (error) {
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('malformed_json', {
+            ip: logIP,
+            origin: origin || 'none',
+            error: error instanceof Error ? error.message : 'Unknown JSON parse error',
+          }, env)
+        );
+        return jsonResponse(
+          { success: false, message: '잘못된 데이터 형식입니다.' },
+          400,
+          origin,
+          env
+        );
+      }
+
+      const { name, email, message, website, 'cf-turnstile-response': turnstileToken, t, siteKey } = body;
 
       // Validation: Required fields
       if (!name || !email || !message) {
