@@ -43,6 +43,18 @@
   <!-- Cloudflare Turnstile -->
   <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
 
+  <!-- Google Analytics 4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-9F1LHK5E3H"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag() { dataLayer.push(arguments); }
+    gtag('js', new Date());
+    gtag('config', 'G-9F1LHK5E3H', {
+      'send_page_view': true,
+      'anonymize_ip': true
+    });
+  </script>
+
   <!-- External CSS -->
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme-upgrade.css">
@@ -566,6 +578,43 @@
   <!-- Footer -->
   <footer class="footer">
     <p>&copy; 2025 Taeyoon. All rights reserved.</p>
+
+    <!-- Visitor Counter Badge -->
+    <div class="visitor-stats">
+      <div class="visitor-badge">
+        <svg class="visitor-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+          <circle cx="9" cy="7" r="4"></circle>
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+          <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+        </svg>
+        <div class="visitor-info">
+          <span class="visitor-label">Total Visits</span>
+          <span class="visitor-count" id="totalVisits">Loading...</span>
+        </div>
+      </div>
+      <div class="visitor-badge">
+        <svg class="visitor-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"></circle>
+          <polyline points="12 6 12 12 16 14"></polyline>
+        </svg>
+        <div class="visitor-info">
+          <span class="visitor-label">Today</span>
+          <span class="visitor-count" id="todayVisits">Loading...</span>
+        </div>
+      </div>
+      <div class="visitor-badge">
+        <svg class="visitor-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M12 1v6m0 6v6M1 12h6m6 0h6"></path>
+        </svg>
+        <div class="visitor-info">
+          <span class="visitor-label">Online Now</span>
+          <span class="visitor-count" id="onlineNow">Loading...</span>
+        </div>
+      </div>
+    </div>
+
     <div class="social-links">
       <a href="https://instagram.com/taeyoon_0526" target="_blank" rel="noopener noreferrer"
         aria-label="Instagram">Instagram</a>
@@ -576,6 +625,7 @@
   <!-- External JavaScript -->
   <script src="script.js"></script>
   <script src="enhancements.js"></script>
+  <script src="visitor-counter.js"></script>
 </body>
 
 </html>
