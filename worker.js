@@ -109,13 +109,31 @@ async function verifyTurnstile(token, ip, env) {
 }
 
 /**
- * Send email using Resend API
+ * Get client information for security tracking
  */
-async function sendEmail(name, email, message, env) {
+function getClientInfo(request) {
+  const headers = request.headers;
+  return {
+    ip: headers.get('CF-Connecting-IP') || headers.get('X-Forwarded-For') || headers.get('X-Real-IP') || 'Unknown',
+    country: headers.get('CF-IPCountry') || 'Unknown',
+    userAgent: headers.get('User-Agent') || 'Unknown',
+    referer: headers.get('Referer') || 'Direct',
+    timestamp: new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' }),
+  };
+}
+
+/**
+ * Send email using Resend API with client information
+ */
+async function sendEmail(name, email, message, clientInfo, env) {
   try {
     const escapedName = escapeHtml(name);
     const escapedEmail = escapeHtml(email);
     const escapedMessage = escapeHtml(message);
+    const escapedIP = escapeHtml(clientInfo.ip);
+    const escapedCountry = escapeHtml(clientInfo.country);
+    const escapedUserAgent = escapeHtml(clientInfo.userAgent);
+    const escapedReferer = escapeHtml(clientInfo.referer);
     
     const htmlBody = `
       <!DOCTYPE html>
@@ -153,8 +171,24 @@ async function sendEmail(name, email, message, env) {
               <div class="field-label">💬 메시지</div>
               <div class="message-box">${escapedMessage}</div>
             </div>
+            <div class="field">
+              <div class="field-label">🔒 보안 정보</div>
+              <div class="field-value">
+                <strong>IP 주소:</strong> ${escapedIP}<br>
+                <strong>국가:</strong> ${escapedCountry}<br>
+                <strong>전송 시각:</strong> ${clientInfo.timestamp}
+              </div>
+            </div>
+            <div class="field">
+              <div class="field-label">🖥️ 기기 정보</div>
+              <div class="field-value" style="word-break: break-all;">
+                <strong>User Agent:</strong> ${escapedUserAgent}<br>
+                <strong>Referer:</strong> ${escapedReferer}
+              </div>
+            </div>
             <div class="footer">
               <p>이 메시지는 taeyoon.kr 연락 폼에서 전송되었습니다.</p>
+              <p style="color: #999; font-size: 11px;">스팸 방지: Cloudflare Turnstile 인증 완료</p>
             </div>
           </div>
         </div>
@@ -171,8 +205,21 @@ async function sendEmail(name, email, message, env) {
 메시지:
 ${message}
 
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔒 보안 정보
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+IP 주소: ${clientInfo.ip}
+국가: ${clientInfo.country}
+전송 시각: ${clientInfo.timestamp}
+
+🖥️ 기기 정보
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+User Agent: ${clientInfo.userAgent}
+Referer: ${clientInfo.referer}
+
 ---
 이 메시지는 taeyoon.kr 연락 폼에서 전송되었습니다.
+스팸 방지: Cloudflare Turnstile 인증 완료
     `.trim();
 
     const response = await fetch(CONFIG.RESEND_API_URL, {
@@ -322,8 +369,11 @@ export default {
         );
       }
 
-      // Send email
-      const emailSent = await sendEmail(name, email, message, env);
+      // Get client information for security tracking
+      const clientInfo = getClientInfo(request);
+
+      // Send email with client information
+      const emailSent = await sendEmail(name, email, message, clientInfo, env);
 
       if (!emailSent) {
         return jsonResponse(
