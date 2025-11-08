@@ -881,11 +881,28 @@ if (contactForm) {
 
         if (Array.isArray(data.errorCodes) && data.errorCodes.length > 0) {
           console.warn('Turnstile error codes:', data.errorCodes);
+          if (data.hostname) {
+            console.warn('Turnstile response hostname:', data.hostname);
+          }
 
           if (data.errorCodes.includes('timeout-or-duplicate')) {
             errorMessage = 'CAPTCHA가 만료되었거나 이미 사용되었습니다. 새로고침 후 다시 시도해주세요.';
           } else if (data.errorCodes.includes('invalid-input-response')) {
             errorMessage = 'CAPTCHA 응답이 올바르지 않습니다. 새로고침 후 다시 시도해주세요.';
+          } else if (data.errorCodes.includes('missing-turnstile-secret')) {
+            errorMessage = '서버 보안 설정이 완료되지 않았습니다. 잠시 후 다시 시도해주세요.';
+          }
+
+          const unknownCodes = data.errorCodes.filter(
+            (code) => !['timeout-or-duplicate', 'invalid-input-response', 'missing-turnstile-secret'].includes(code)
+          );
+
+          if (unknownCodes.length > 0) {
+            errorMessage += `\n(오류 코드: ${unknownCodes.join(', ')})`;
+          }
+
+          if (data.hostname) {
+            errorMessage += `\n(응답 호스트: ${data.hostname})`;
           }
         }
 

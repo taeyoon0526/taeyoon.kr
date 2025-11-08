@@ -585,6 +585,29 @@ export default {
         );
       }
 
+      if (!env.TURNSTILE_SECRET) {
+        console.error('TURNSTILE_SECRET is not configured in the Worker environment');
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('missing_turnstile_secret', {
+            ip: logIP,
+            email,
+            name,
+          }, env)
+        );
+
+        return jsonResponse(
+          {
+            success: false,
+            message: '서버 보안 설정 오류로 CAPTCHA를 검증할 수 없습니다. 관리자에게 문의해주세요.',
+            errorCodes: ['missing-turnstile-secret'],
+          },
+          500,
+          origin,
+          env
+        );
+      }
+
       const turnstileResult = await verifyTurnstile(
         turnstileToken,
         clientInfo.ip,
@@ -600,6 +623,7 @@ export default {
             email,
             name,
             errorCodes: turnstileResult.errorCodes,
+            hostname: turnstileResult.hostname,
           }, env)
         );
         return jsonResponse(
@@ -607,6 +631,7 @@ export default {
             success: false,
             message: 'CAPTCHA 인증에 실패했습니다.',
             errorCodes: turnstileResult.errorCodes,
+            hostname: turnstileResult.hostname,
           },
           400,
           origin,
