@@ -212,16 +212,21 @@ function isValidEmail(email) {
  */
 async function verifyTurnstile(token, ip, env) {
   try {
+    const payload = {
+      secret: env.TURNSTILE_SECRET,
+      response: token,
+    };
+
+    if (ip) {
+      payload.remoteip = ip;
+    }
+
     const response = await fetch(CONFIG.TURNSTILE_VERIFY_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        secret: env.TURNSTILE_SECRET,
-        response: token,
-        remoteip: ip,
-      }),
+      body: JSON.stringify(payload),
     });
 
     const data = await response.json();
@@ -238,7 +243,7 @@ async function verifyTurnstile(token, ip, env) {
 function getClientInfo(request) {
   const headers = request.headers;
   return {
-    ip: headers.get('CF-Connecting-IP') || headers.get('X-Forwarded-For') || headers.get('X-Real-IP') || 'Unknown',
+    ip: headers.get('CF-Connecting-IP') || headers.get('X-Forwarded-For') || headers.get('X-Real-IP') || null,
     country: headers.get('CF-IPCountry') || 'Unknown',
     userAgent: headers.get('User-Agent') || 'Unknown',
     referer: headers.get('Referer') || 'Direct',
@@ -254,11 +259,11 @@ async function sendEmail(name, email, message, clientInfo, env) {
     const escapedName = escapeHtml(name);
     const escapedEmail = escapeHtml(email);
     const escapedMessage = escapeHtml(message);
-    const escapedIP = escapeHtml(clientInfo.ip);
+    const escapedIP = escapeHtml(clientInfo.ip || 'Unknown');
     const escapedCountry = escapeHtml(clientInfo.country);
     const escapedUserAgent = escapeHtml(clientInfo.userAgent);
     const escapedReferer = escapeHtml(clientInfo.referer);
-  const escapedTimestamp = escapeHtml(clientInfo.timestamp);
+    const escapedTimestamp = escapeHtml(clientInfo.timestamp);
     
     const htmlBody = `
       <!DOCTYPE html>
@@ -333,7 +338,7 @@ ${message}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🔒 보안 정보
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-IP 주소: ${clientInfo.ip}
+IP 주소: ${clientInfo.ip || 'Unknown'}
 국가: ${clientInfo.country}
 전송 시각: ${clientInfo.timestamp}
 
@@ -436,12 +441,13 @@ export default {
     }
 
     // Rate limiting per IP
-    const rateLimitStatus = applyRateLimit(clientInfo.ip);
+  const rateLimitStatus = applyRateLimit(clientInfo.ip);
+  const logIP = clientInfo.ip || 'Unknown';
     if (rateLimitStatus.limited) {
       scheduleSecurityLog(
         ctx,
         logSecurityEvent('rate_limit', {
-          ip: clientInfo.ip,
+          ip: logIP,
           userAgent: clientInfo.userAgent,
           referer: clientInfo.referer,
           retryAfterSeconds: rateLimitStatus.retryAfter,
@@ -510,7 +516,7 @@ export default {
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('honeypot_triggered', {
-            ip: clientInfo.ip,
+            ip: logIP,
             email,
             name,
           }, env)
@@ -531,7 +537,7 @@ export default {
           scheduleSecurityLog(
             ctx,
             logSecurityEvent('suspicious_speed', {
-              ip: clientInfo.ip,
+              ip: logIP,
               email,
               name,
               submissionTime,
@@ -551,7 +557,7 @@ export default {
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('missing_turnstile_token', {
-            ip: clientInfo.ip,
+            ip: logIP,
             email,
             name,
           }, env)
@@ -569,8 +575,8 @@ export default {
       if (!isTurnstileValid) {
         scheduleSecurityLog(
           ctx,
-          logSecurityEvent('turnstile_failed', {
-            ip: clientInfo.ip,
+      logSecurityEvent('turnstile_failed', {
+        ip: logIP,
             email,
             name,
           }, env)
@@ -590,7 +596,7 @@ export default {
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('email_dispatch_failed', {
-            ip: clientInfo.ip,
+            ip: logIP,
             email,
             name,
           }, env)
@@ -616,7 +622,7 @@ export default {
       scheduleSecurityLog(
         ctx,
         logSecurityEvent('server_error', {
-          ip: clientInfo.ip,
+          ip: logIP,
           error: error instanceof Error ? error.message : 'Unknown error',
         }, env)
       );
