@@ -11,27 +11,27 @@
   --text-primary: #1a1a1a;
   --text-secondary: #6c757d;
   --text-tertiary: #adb5bd;
-  
+
   /* Accent Colors */
   --accent-primary: #4a90e2;
   --accent-secondary: #357abd;
   --accent-gradient: linear-gradient(135deg, #4a90e2, #357abd);
-  
+
   /* UI Elements */
   --card-bg: rgba(255, 255, 255, 0.95);
   --card-border: rgba(0, 0, 0, 0.1);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.15);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.2);
-  
+
   /* Transitions */
   --transition-speed: 0.3s;
   --transition-ease: cubic-bezier(0.4, 0, 0.2, 1);
-  
+
   /* Navbar */
   --nav-bg: rgba(255, 255, 255, 0.95);
   --nav-text: #1a1a1a;
-  
+
   /* Particle Opacity */
   --particle-opacity: 0.3;
 }
@@ -44,16 +44,16 @@ body[data-theme="dark"] {
   --text-primary: #ffffff;
   --text-secondary: #a0a0a0;
   --text-tertiary: #6c757d;
-  
+
   --card-bg: rgba(42, 42, 42, 0.95);
   --card-border: rgba(255, 255, 255, 0.1);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.5);
-  
+
   --nav-bg: rgba(26, 26, 26, 0.95);
   --nav-text: #ffffff;
-  
+
   --particle-opacity: 0.6;
 }
 
@@ -62,7 +62,7 @@ body {
   background: var(--bg-primary);
   color: var(--text-primary);
   transition: background var(--transition-speed) var(--transition-ease),
-              color var(--transition-speed) var(--transition-ease);
+    color var(--transition-speed) var(--transition-ease);
 }
 
 #particle-canvas {
@@ -83,8 +83,8 @@ body {
   justify-content: center;
   transition: all var(--transition-speed) var(--transition-ease);
   margin-right: 1rem;
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .theme-toggle:hover {
@@ -97,7 +97,7 @@ body {
   height: 20px;
   position: absolute;
   transition: opacity var(--transition-speed) var(--transition-ease),
-              transform var(--transition-speed) var(--transition-ease);
+    transform var(--transition-speed) var(--transition-ease);
 }
 
 .theme-toggle .sun-icon {
@@ -131,8 +131,8 @@ body[data-theme="light"] .theme-toggle .moon-icon {
 /* Enhanced Navigation */
 .navbar {
   background: var(--nav-bg);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--card-border);
 }
 
@@ -154,8 +154,15 @@ body[data-theme="light"] .theme-toggle .moon-icon {
 }
 
 @keyframes blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
 }
 
 .nav-link {
@@ -172,7 +179,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   height: 2px;
   background: var(--accent-gradient);
   transition: width var(--transition-speed) var(--transition-ease),
-              left var(--transition-speed) var(--transition-ease);
+    left var(--transition-speed) var(--transition-ease);
 }
 
 .nav-link:hover::after,
@@ -199,8 +206,8 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-speed) var(--transition-ease);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .skill-tab:hover {
@@ -240,15 +247,31 @@ body[data-theme="light"] .theme-toggle .moon-icon {
 .skill-bar {
   height: 100%;
   background: var(--accent-gradient);
-  width: var(--level, 0%);
+  width: 0%;
   border-radius: 10px;
   transition: width 1s var(--transition-ease);
   animation: fillBar 2s var(--transition-ease) forwards;
 }
 
+/* Individual skill levels */
+.skill-html { --skill-width: 90%; }
+.skill-css { --skill-width: 85%; }
+.skill-js { --skill-width: 80%; }
+.skill-python { --skill-width: 75%; }
+.skill-c { --skill-width: 70%; }
+.skill-git { --skill-width: 85%; }
+.skill-nodejs { --skill-width: 75%; }
+.skill-java { --skill-width: 65%; }
+.skill-github { --skill-width: 85%; }
+
 @keyframes fillBar {
-  from { width: 0%; }
-  to { width: var(--level, 0%); }
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: var(--skill-width, 0%);
+  }
 }
 
 /* Projects Section */
@@ -269,8 +292,8 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   border-radius: 20px;
   overflow: hidden;
   transition: all var(--transition-speed) var(--transition-ease);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .project-card:hover {
@@ -375,8 +398,8 @@ body[data-theme="light"] .theme-toggle .moon-icon {
 .contact-form {
   background: var(--card-bg);
   border: 1px solid var(--card-border);
-  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
 }
 
 .form-group label {
@@ -429,31 +452,31 @@ body[data-theme="light"] .theme-toggle .moon-icon {
     height: 40px;
     margin-right: 0.5rem;
   }
-  
+
   .theme-toggle svg {
     width: 18px;
     height: 18px;
   }
-  
+
   .skill-tabs {
     gap: 0.5rem;
     margin-bottom: 2rem;
   }
-  
+
   .skill-tab {
     padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
   }
-  
+
   .projects-grid {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
-  
+
   .project-image {
     height: 180px;
   }
-  
+
   .project-placeholder svg {
     width: 60px;
     height: 60px;
@@ -465,15 +488,15 @@ body[data-theme="light"] .theme-toggle .moon-icon {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .skill-tab {
     text-align: center;
   }
-  
+
   .project-links {
     flex-direction: column;
   }
-  
+
   .project-link {
     justify-content: center;
     width: 100%;
@@ -500,14 +523,15 @@ body[data-theme="light"] .theme-toggle .moon-icon {
 
 /* Enhanced Glassmorphism Effects */
 @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
+
   .navbar,
   .theme-toggle,
   .skill-tab,
   .card-bg,
   .contact-form,
   .project-card {
-    backdrop-filter: blur(10px) saturate(180%);
     -webkit-backdrop-filter: blur(10px) saturate(180%);
+    backdrop-filter: blur(10px) saturate(180%);
   }
 }
 
@@ -518,6 +542,7 @@ body.loading {
 
 /* Accessibility - Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
+
   *,
   *::before,
   *::after {
@@ -529,6 +554,7 @@ body.loading {
 
 /* Print Styles */
 @media print {
+
   .navbar,
   .theme-toggle,
   #back-to-top,
@@ -537,7 +563,7 @@ body.loading {
   .loader-wrapper {
     display: none !important;
   }
-  
+
   body {
     background: white;
     color: black;
