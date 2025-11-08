@@ -210,7 +210,7 @@ function isValidEmail(email) {
 /**
  * Verify Cloudflare Turnstile token
  */
-async function verifyTurnstile(token, ip, env) {
+async function verifyTurnstile(token, ip, env, siteKey = null) {
   try {
     const payload = {
       secret: env.TURNSTILE_SECRET,
@@ -219,6 +219,10 @@ async function verifyTurnstile(token, ip, env) {
 
     if (ip) {
       payload.remoteip = ip;
+    }
+
+    if (siteKey) {
+      payload.sitekey = siteKey;
     }
 
     const response = await fetch(CONFIG.TURNSTILE_VERIFY_URL, {
@@ -230,10 +234,21 @@ async function verifyTurnstile(token, ip, env) {
     });
 
     const data = await response.json();
-    return data.success === true;
+
+    return {
+      success: data.success === true,
+      errorCodes: data['error-codes'] || [],
+      challengeTs: data.challenge_ts,
+      hostname: data.hostname,
+      action: data.action,
+      cdata: data.cdata,
+    };
   } catch (error) {
     console.error('Turnstile verification error:', error);
-    return false;
+    return {
+      success: false,
+      errorCodes: ['network-error'],
+    };
   }
 }
 
@@ -441,8 +456,8 @@ export default {
     }
 
     // Rate limiting per IP
-  const rateLimitStatus = applyRateLimit(clientInfo.ip);
-  const logIP = clientInfo.ip || 'Unknown';
+    const rateLimitStatus = applyRateLimit(clientInfo.ip);
+    const logIP = clientInfo.ip || 'Unknown';
     if (rateLimitStatus.limited) {
       scheduleSecurityLog(
         ctx,
@@ -466,9 +481,9 @@ export default {
     }
 
     try {
-      // Parse request body
-      const body = await request.json();
-      const { name, email, message, website, 'cf-turnstile-response': turnstileToken, t } = body;
+    // Parse request body
+    const body = await request.json();
+    const { name, email, message, website, 'cf-turnstile-response': turnstileToken, t, siteKey } = body;
 
       // Validation: Required fields
       if (!name || !email || !message) {
@@ -570,19 +585,29 @@ export default {
         );
       }
 
-      const isTurnstileValid = await verifyTurnstile(turnstileToken, clientInfo.ip, env);
+      const turnstileResult = await verifyTurnstile(
+        turnstileToken,
+        clientInfo.ip,
+        env,
+        siteKey || (env.TURNSTILE_SITE_KEY || null)
+      );
 
-      if (!isTurnstileValid) {
+      if (!turnstileResult.success) {
         scheduleSecurityLog(
           ctx,
       logSecurityEvent('turnstile_failed', {
         ip: logIP,
             email,
             name,
+            errorCodes: turnstileResult.errorCodes,
           }, env)
         );
         return jsonResponse(
-          { success: false, message: 'CAPTCHA 인증에 실패했습니다.' },
+          {
+            success: false,
+            message: 'CAPTCHA 인증에 실패했습니다.',
+            errorCodes: turnstileResult.errorCodes,
+          },
           400,
           origin,
           env

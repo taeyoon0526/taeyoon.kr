@@ -697,6 +697,7 @@ const submitSpinner = document.getElementById('submitSpinner');
 const formStatus = document.getElementById('formStatus');
 const messageField = document.getElementById('message');
 const charCounter = document.getElementById('charCounter');
+const turnstileElement = document.querySelector('.cf-turnstile');
 
 // Debug: Check if all elements are found
 console.log('📋 Form Elements Check:');
@@ -857,7 +858,8 @@ if (contactForm) {
           message: formData.message,
           website: formData.website,
           'cf-turnstile-response': turnstileToken,
-          t: formLoadTime // Timestamp for anti-spam
+          t: formLoadTime, // Timestamp for anti-spam
+          siteKey: turnstileElement?.dataset?.sitekey || null,
         })
       });
       
@@ -875,7 +877,18 @@ if (contactForm) {
         console.log('Contact form submitted successfully');
       } else {
         // Server error
-        const errorMessage = data.message || '전송에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        let errorMessage = data.message || '전송에 실패했습니다. 잠시 후 다시 시도해주세요.';
+
+        if (Array.isArray(data.errorCodes) && data.errorCodes.length > 0) {
+          console.warn('Turnstile error codes:', data.errorCodes);
+
+          if (data.errorCodes.includes('timeout-or-duplicate')) {
+            errorMessage = 'CAPTCHA가 만료되었거나 이미 사용되었습니다. 새로고침 후 다시 시도해주세요.';
+          } else if (data.errorCodes.includes('invalid-input-response')) {
+            errorMessage = 'CAPTCHA 응답이 올바르지 않습니다. 새로고침 후 다시 시도해주세요.';
+          }
+        }
+
         showFormStatus('❌ ' + errorMessage, 'error');
         console.error('Form submission failed:', data);
       }
@@ -898,7 +911,7 @@ if (contactForm) {
   window.addEventListener('load', () => {
     console.log('🔄 Page loaded, checking Turnstile widget...');
     setTimeout(() => {
-      const turnstileElement = document.querySelector('.cf-turnstile');
+  // Element already captured above
       console.log('🔍 Turnstile element:', turnstileElement);
       console.log('🔍 Turnstile API:', window.turnstile);
       
