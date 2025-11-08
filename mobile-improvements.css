@@ -1,0 +1,503 @@
+/* ================================
+   MOBILE IMPROVEMENTS - 모바일 가독성 & UX 개선
+   ================================ */
+
+/* 모바일 기본 개선 */
+@media (max-width: 768px) {
+  
+  /* 전체 텍스트 가독성 개선 */
+  body {
+    font-size: 16px; /* 최소 16px로 자동 줌 방지 */
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    -ms-text-size-adjust: 100%;
+  }
+
+  /* 컨테이너 패딩 개선 */
+  .container {
+    padding: 0 1.5rem;
+    max-width: 100%;
+  }
+
+  /* Hero 섹션 개선 */
+  .hero {
+    padding: 6rem 1.5rem 3rem;
+    min-height: calc(100vh - 70px);
+  }
+
+  .hero-content {
+    max-width: 100%;
+    padding: 1rem;
+  }
+
+  .hero-greeting {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .typing-text {
+    font-size: 1.5rem;
+    line-height: 1.4;
+    margin-bottom: 1.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin: 1.5rem 0 2rem;
+    max-width: 100%;
+  }
+
+  .hero-buttons {
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+
+  /* 버튼 터치 영역 확대 */
+  .btn {
+    min-height: 54px;
+    padding: 1rem 2rem;
+    font-size: 1rem;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+  }
+
+  .btn-primary,
+  .btn-secondary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  /* About 섹션 개선 */
+  .about-content {
+    gap: 2.5rem;
+  }
+
+  .about-card {
+    padding: 2rem 1.5rem;
+    margin: 0;
+  }
+
+  .about-card h3 {
+    font-size: 1.5rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .about-card p {
+    font-size: 1rem;
+    line-height: 1.8;
+    margin-bottom: 1rem;
+  }
+
+  .about-stats {
+    margin-top: 2rem;
+    gap: 1.2rem;
+  }
+
+  .stat-item {
+    padding: 1.5rem 1rem;
+    min-height: 80px;
+  }
+
+  .stat-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .stat-label {
+    font-size: 1rem;
+  }
+
+  /* Skills 섹션 개선 */
+  .section-description {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    padding: 0 0.5rem;
+  }
+
+  .skill-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    overflow-x: auto;
+    padding: 0.5rem;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .skill-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .skill-tab {
+    padding: 0.75rem 1.5rem;
+    font-size: 0.95rem;
+    min-width: fit-content;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .skills-grid {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
+  .skill-card {
+    padding: 1.8rem 1.5rem;
+    text-align: center;
+  }
+
+  .skill-icon {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 1.2rem;
+  }
+
+  .skill-card h3 {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .skill-card p {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .skill-level {
+    margin-top: 1rem;
+  }
+
+  /* Projects 섹션 개선 */
+  .projects-grid {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .project-card {
+    margin: 0 0.5rem;
+  }
+
+  .project-content {
+    padding: 1.8rem 1.5rem;
+  }
+
+  .project-content h3 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+  }
+
+  .project-content p {
+    font-size: 1rem;
+    line-height: 1.7;
+    margin-bottom: 1.2rem;
+  }
+
+  .project-tags {
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+
+  .tag {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .project-links {
+    gap: 1rem;
+    flex-direction: column;
+  }
+
+  .project-link {
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Contact 섹션 개선 */
+  .contact-intro {
+    padding: 0;
+    margin-bottom: 2rem;
+  }
+
+  .contact-intro h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1.2rem;
+  }
+
+  .contact-intro p {
+    font-size: 1rem;
+    line-height: 1.7;
+  }
+
+  .contact-items {
+    gap: 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  .contact-item {
+    padding: 1.5rem;
+    margin: 0;
+    text-align: left;
+  }
+
+  .contact-item h3 {
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .contact-item p {
+    font-size: 1rem;
+  }
+
+  /* 폼 개선 */
+  .contact-form {
+    padding: 2rem 1.5rem;
+    margin: 0;
+  }
+
+  .contact-form h3 {
+    font-size: 1.4rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.5rem;
+  }
+
+  .form-group label {
+    font-size: 1rem;
+    margin-bottom: 0.7rem;
+    display: block;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    font-size: 16px; /* iOS 자동 줌 방지 */
+    padding: 1rem;
+    border-radius: 8px;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: 2px solid #4a90e2;
+    outline-offset: 2px;
+  }
+
+  .form-group textarea {
+    min-height: 150px;
+    resize: vertical;
+  }
+
+  .submit-btn {
+    min-height: 54px;
+    padding: 1rem 2rem;
+    font-size: 1.1rem;
+    width: 100%;
+  }
+
+  /* Navigation 개선 */
+  .navbar {
+    padding: 1rem 0;
+    height: 70px;
+  }
+
+  .nav-logo {
+    font-size: 1.4rem;
+    padding: 0.5rem;
+  }
+
+  .hamburger {
+    padding: 0.75rem;
+    min-width: 48px;
+    min-height: 48px;
+  }
+
+  .nav-menu {
+    top: 70px;
+    padding: 1rem 0;
+  }
+
+  .nav-link {
+    font-size: 1.1rem;
+    padding: 1rem 1.5rem;
+    min-height: 54px;
+  }
+
+  /* Back to Top 버튼 개선 */
+  #back-to-top {
+    bottom: 1.5rem;
+    right: 1.5rem;
+    width: 54px;
+    height: 54px;
+  }
+
+  #back-to-top svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Scroll Indicator 개선 */
+  .scroll-indicator {
+    display: none; /* 모바일에서는 숨김 */
+  }
+
+  /* Footer 개선 */
+  .footer {
+    padding: 2.5rem 1.5rem;
+  }
+
+  .footer p {
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .social-links {
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+
+  .social-links a {
+    font-size: 1rem;
+    padding: 0.75rem 1.2rem;
+    min-width: 48px;
+    min-height: 48px;
+  }
+}
+
+/* 작은 모바일 (480px 이하) 추가 개선 */
+@media (max-width: 480px) {
+  
+  .hero {
+    padding: 5rem 1rem 2rem;
+  }
+
+  .typing-text {
+    font-size: 1.3rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.95rem;
+    padding: 0;
+  }
+
+  .section {
+    padding: 2.5rem 1rem;
+  }
+
+  .section-title {
+    font-size: 1.6rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .about-card {
+    padding: 1.5rem 1.2rem;
+  }
+
+  .about-card h3 {
+    font-size: 1.3rem;
+  }
+
+  .about-card p {
+    font-size: 0.95rem;
+  }
+
+  .skill-card {
+    padding: 1.5rem 1.2rem;
+  }
+
+  .skill-icon {
+    width: 60px;
+    height: 60px;
+  }
+
+  .skill-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .skill-card p {
+    font-size: 0.95rem;
+  }
+
+  .contact-form {
+    padding: 1.5rem 1.2rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 0.9rem;
+  }
+
+  #back-to-top {
+    bottom: 1rem;
+    right: 1rem;
+    width: 48px;
+    height: 48px;
+  }
+}
+
+/* 가로 모드 개선 */
+@media (max-width: 768px) and (orientation: landscape) {
+  
+  .hero {
+    min-height: 100vh;
+    padding: 4rem 1.5rem 2rem;
+  }
+
+  .section {
+    padding: 3rem 1.5rem;
+  }
+
+  .about-content {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .image-placeholder {
+    width: 180px;
+    height: 180px;
+  }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+  
+  /* 호버 효과 제거, 활성 상태로 대체 */
+  .btn:hover {
+    transform: none;
+  }
+
+  .btn:active {
+    transform: translateY(2px) scale(0.98);
+  }
+
+  .skill-card:hover {
+    transform: none;
+  }
+
+  .skill-card:active {
+    transform: translateY(-2px);
+  }
+
+  .contact-item:hover {
+    transform: none;
+  }
+
+  .contact-item:active {
+    transform: scale(0.98);
+  }
+
+  /* 링크 터치 영역 확대 */
+  a {
+    padding: 0.2rem;
+  }
+
+  /* 스크롤 성능 개선 */
+  * {
+    -webkit-tap-highlight-color: rgba(74, 144, 226, 0.2);
+  }
+}
