@@ -5,14 +5,31 @@
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="김태윤의 개인 웹사이트 - Developer | Student">
+  <meta name="description" content="김태윤의 개인 웹사이트 - Developer | Student | Learner | Creator">
+  <meta name="keywords" content="김태윤, Taeyoon Kim, Developer, Student, Portfolio, Web Development">
+  <meta name="author" content="Taeyoon Kim">
   <meta name="theme-color" content="#1a1a1a">
+  
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://taeyoon.kr/">
+  <meta property="og:title" content="Taeyoon's Website - Developer | Student">
+  <meta property="og:description" content="새로운 것을 배우고 도전하는 것을 즐기는 김태윤입니다">
+  <meta property="og:image" content="https://taeyoon.kr/logo.jpg">
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image">
+  <meta property="twitter:url" content="https://taeyoon.kr/">
+  <meta property="twitter:title" content="Taeyoon's Website - Developer | Student">
+  <meta property="twitter:description" content="새로운 것을 배우고 도전하는 것을 즐기는 김태윤입니다">
+  <meta property="twitter:image" content="https://taeyoon.kr/logo.jpg">
 
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="logo.jpg">
   <link rel="apple-touch-icon" href="logo.jpg">
+  <link rel="canonical" href="https://taeyoon.kr/">
 
-  <title>Taeyoon's Website</title>
+  <title>Taeyoon Kim - Developer | Student | Learner</title>
 
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,8 +43,11 @@
 </head>
 
 <body>
+  <!-- Skip to main content for accessibility -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  
   <!-- Loading Screen -->
-  <div class="loader-wrapper">
+  <div class="loader-wrapper" aria-hidden="true">
     <div class="loader">
       <div class="loader-circle"></div>
       <div class="loader-circle"></div>
@@ -37,38 +57,39 @@
   </div>
 
   <!-- Scroll Progress Bar -->
-  <div class="scroll-progress"></div>
+  <div class="scroll-progress" role="progressbar" aria-label="Page scroll progress"></div>
 
   <!-- Particle Background -->
-  <canvas id="particle-canvas"></canvas>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
 
   <!-- Back to Top Button -->
-  <button id="back-to-top" aria-label="Back to top">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+  <button id="back-to-top" aria-label="Back to top" title="Back to top (Alt+Home)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
       <path d="M12 19V5M5 12l7-7 7 7" />
     </svg>
   </button>
 
   <!-- Navigation -->
-  <nav class="navbar">
+  <nav class="navbar" role="navigation" aria-label="Main navigation">
     <div class="nav-container">
       <a href="#home" class="nav-logo">Taeyoon Kim</a>
-      <ul class="nav-menu">
+      <ul class="nav-menu" role="list">
         <li><a href="#home" class="nav-link">Home</a></li>
         <li><a href="#about" class="nav-link">About</a></li>
         <li><a href="#skills" class="nav-link">Skills</a></li>
         <li><a href="#contact" class="nav-link">Contact</a></li>
       </ul>
-      <div class="hamburger">
+      <button class="hamburger" aria-label="Toggle navigation menu" aria-expanded="false">
         <span></span>
         <span></span>
         <span></span>
-      </div>
+      </button>
     </div>
   </nav>
 
   <!-- Hero Section -->
   <section id="home" class="hero">
+    <main id="main-content">
     <div class="hero-content">
       <div class="hero-greeting">👋 안녕하세요!</div>
       <h1 class="typing-text">

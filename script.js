@@ -1,57 +1,66 @@
-// Favicon - Crop to square
+// Favicon - Crop to square (with error handling)
 function createSquareFavicon() {
   const img = new Image();
-  img.crossOrigin = 'anonymous';
+  // Remove crossOrigin for same-origin images
   img.onload = function() {
-    const canvas = document.createElement('canvas');
-    const size = 256; // Favicon size
-    canvas.width = size;
-    canvas.height = size;
-    
-    const ctx = canvas.getContext('2d');
-    
-    // Calculate crop area (center of image)
-    const aspectRatio = img.width / img.height;
-    let sx, sy, sWidth, sHeight;
-    
-    if (aspectRatio > 1) {
-      // Landscape - crop width
-      sHeight = img.height;
-      sWidth = img.height;
-      sx = (img.width - sWidth) / 2;
-      sy = 0;
-    } else {
-      // Portrait - crop height  
-      sWidth = img.width;
-      sHeight = img.width;
-      sx = 0;
-      sy = (img.height - sHeight) / 2;
+    try {
+      const canvas = document.createElement('canvas');
+      const size = 256; // Favicon size
+      canvas.width = size;
+      canvas.height = size;
+      
+      const ctx = canvas.getContext('2d');
+      
+      // Calculate crop area (center of image)
+      const aspectRatio = img.width / img.height;
+      let sx, sy, sWidth, sHeight;
+      
+      if (aspectRatio > 1) {
+        // Landscape - crop width
+        sHeight = img.height;
+        sWidth = img.height;
+        sx = (img.width - sWidth) / 2;
+        sy = 0;
+      } else {
+        // Portrait - crop height  
+        sWidth = img.width;
+        sHeight = img.width;
+        sx = 0;
+        sy = (img.height - sHeight) / 2;
+      }
+      
+      // Draw cropped image
+      ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
+      
+      // Create favicon
+      const favicon = canvas.toDataURL('image/png');
+      
+      // Update favicon links
+      let link = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'icon';
+        document.head.appendChild(link);
+      }
+      link.href = favicon;
+      
+      // Update apple touch icon
+      let appleLink = document.querySelector("link[rel='apple-touch-icon']");
+      if (!appleLink) {
+        appleLink = document.createElement('link');
+        appleLink.rel = 'apple-touch-icon';
+        document.head.appendChild(appleLink);
+      }
+      appleLink.href = favicon;
+    } catch (error) {
+      console.warn('Favicon creation failed, using default:', error);
     }
-    
-    // Draw cropped image
-    ctx.drawImage(img, sx, sy, sWidth, sHeight, 0, 0, size, size);
-    
-    // Create favicon
-    const favicon = canvas.toDataURL('image/png');
-    
-    // Update favicon links
-    let link = document.querySelector("link[rel*='icon']");
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
-      document.head.appendChild(link);
-    }
-    link.href = favicon;
-    
-    // Update apple touch icon
-    let appleLink = document.querySelector("link[rel='apple-touch-icon']");
-    if (!appleLink) {
-      appleLink = document.createElement('link');
-      appleLink.rel = 'apple-touch-icon';
-      document.head.appendChild(appleLink);
-    }
-    appleLink.href = favicon;
   };
+  
+  img.onerror = function() {
+    console.warn('Failed to load logo.jpg for favicon');
+  };
+  
   img.src = 'logo.jpg';
 }
 
@@ -77,17 +86,74 @@ window.addEventListener('load', () => {
 // Add loading class to body initially
 document.body.classList.add('loading');
 
-// Scroll Progress Bar
-const scrollProgress = document.querySelector('.scroll-progress');
+// ===== Utility Functions =====
+// Throttle function for performance
+function throttle(func, delay) {
+  let lastCall = 0;
+  return function(...args) {
+    const now = new Date().getTime();
+    if (now - lastCall < delay) {
+      return;
+    }
+    lastCall = now;
+    return func(...args);
+  };
+}
 
-window.addEventListener('scroll', () => {
+// Debounce function for performance
+function debounce(func, delay) {
+  let timeoutId;
+  return function(...args) {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(this, args), delay);
+  };
+}
+
+// ===== Unified Scroll Handler =====
+let lastScroll = 0;
+const navbar = document.querySelector('.navbar');
+const scrollProgress = document.querySelector('.scroll-progress');
+const backToTopBtn = document.getElementById('back-to-top');
+
+const handleScroll = throttle(() => {
+  const currentScroll = window.pageYOffset;
   const windowHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-  const scrolled = (window.scrollY / windowHeight) * 100;
+  const scrolled = (currentScroll / windowHeight) * 100;
   
+  // Update scroll progress bar
   if (scrollProgress) {
     scrollProgress.style.width = scrolled + '%';
   }
-});
+  
+  // Update navbar shadow
+  if (navbar) {
+    if (currentScroll <= 0) {
+      navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+    } else {
+      navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
+    }
+  }
+  
+  // Show/hide back to top button (only after scrolling 300px)
+  if (backToTopBtn) {
+    if (currentScroll > 300) {
+      backToTopBtn.classList.add('show');
+    } else {
+      backToTopBtn.classList.remove('show');
+    }
+  }
+  
+  // Parallax effect for hero section
+  const hero = document.querySelector('.hero-content');
+  if (hero && currentScroll < window.innerHeight) {
+    hero.style.transform = `translateY(${currentScroll * 0.3}px)`;
+    hero.style.opacity = 1 - (currentScroll / window.innerHeight) * 0.5;
+  }
+  
+  lastScroll = currentScroll;
+}, 16); // ~60fps
+
+window.addEventListener('scroll', handleScroll, { passive: true });
 
 // Smooth scrolling for navigation links
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
@@ -103,23 +169,7 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
   });
 });
 
-// Navbar scroll effect
-let lastScroll = 0;
-const navbar = document.querySelector('.navbar');
-
-window.addEventListener('scroll', () => {
-  const currentScroll = window.pageYOffset;
-  
-  if (currentScroll <= 0) {
-    navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
-  } else {
-    navbar.style.boxShadow = '0 2px 20px rgba(0, 0, 0, 0.5)';
-  }
-  
-  lastScroll = currentScroll;
-});
-
-// Mobile hamburger menu
+// Mobile hamburger menu with keyboard support
 const hamburger = document.querySelector('.hamburger');
 const navMenu = document.querySelector('.nav-menu');
 
@@ -127,17 +177,16 @@ if (hamburger && navMenu) {
   // Toggle menu
   hamburger.addEventListener('click', (e) => {
     e.stopPropagation();
-    navMenu.classList.toggle('active');
+    const isActive = navMenu.classList.toggle('active');
     hamburger.classList.toggle('active');
-    document.body.style.overflow = navMenu.classList.contains('active') ? 'hidden' : 'auto';
+    hamburger.setAttribute('aria-expanded', isActive);
+    document.body.style.overflow = isActive ? 'hidden' : 'auto';
   });
 
   // Close menu when clicking on a link
   document.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', () => {
-      navMenu.classList.remove('active');
-      hamburger.classList.remove('active');
-      document.body.style.overflow = 'auto';
+      closeMenu();
     });
   });
 
@@ -146,20 +195,31 @@ if (hamburger && navMenu) {
     if (navMenu.classList.contains('active') && 
         !hamburger.contains(e.target) && 
         !navMenu.contains(e.target)) {
-      navMenu.classList.remove('active');
-      hamburger.classList.remove('active');
-      document.body.style.overflow = 'auto';
+      closeMenu();
     }
   });
+  
+  // Close menu with ESC key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && navMenu.classList.contains('active')) {
+      closeMenu();
+    }
+  });
+  
+  // Helper function to close menu
+  function closeMenu() {
+    navMenu.classList.remove('active');
+    hamburger.classList.remove('active');
+    hamburger.setAttribute('aria-expanded', 'false');
+    document.body.style.overflow = 'auto';
+  }
 
   // Close menu on window resize if opened
-  window.addEventListener('resize', () => {
+  window.addEventListener('resize', debounce(() => {
     if (window.innerWidth > 768 && navMenu.classList.contains('active')) {
-      navMenu.classList.remove('active');
-      hamburger.classList.remove('active');
-      document.body.style.overflow = 'auto';
+      closeMenu();
     }
-  });
+  }, 250));
 }
 
 // Contact form submission (prevent default for demo)
@@ -172,8 +232,8 @@ if (contactForm) {
   });
 }
 
-// ===== 5. Multiple Typing Effect =====
-const typingWords = ['Developer', 'Student'];
+// ===== 5. Enhanced Multiple Typing Effect =====
+const typingWords = ['Developer', 'Student', 'Learner', 'Creator'];
 let wordIndex = 0;
 let charIndex = 0;
 let isDeleting = false;
@@ -189,15 +249,18 @@ function type() {
   if (isDeleting) {
     typingElement.textContent = currentWord.substring(0, charIndex - 1);
     charIndex--;
-    typingSpeed = 100;
+    typingSpeed = 75; // Faster deletion
   } else {
     typingElement.textContent = currentWord.substring(0, charIndex + 1);
     charIndex++;
-    typingSpeed = 150;
+    typingSpeed = 120; // Slightly faster typing
   }
   
+  // Add smooth transition effect
+  typingElement.style.opacity = '1';
+  
   if (!isDeleting && charIndex === currentWord.length) {
-    typingSpeed = 2000; // Pause at end
+    typingSpeed = 2500; // Longer pause at end to read
     isDeleting = true;
   } else if (isDeleting && charIndex === 0) {
     isDeleting = false;
@@ -211,23 +274,27 @@ function type() {
 // Start typing effect after page load
 setTimeout(type, 1000);
 
-// ===== 6. Back to Top Button =====
-const backToTopButton = document.getElementById('back-to-top');
-
-window.addEventListener('scroll', () => {
-  if (window.pageYOffset > 300) {
-    backToTopButton.classList.add('show');
-  } else {
-    backToTopButton.classList.remove('show');
-  }
-});
-
-backToTopButton.addEventListener('click', () => {
-  window.scrollTo({
-    top: 0,
-    behavior: 'smooth'
+// ===== 6. Back to Top Button (now handled in unified scroll) =====
+if (backToTopBtn) {
+  backToTopBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
   });
-});
+  
+  // Keyboard accessibility
+  backToTopBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  });
+}
 
 // ===== 7. Particle Background =====
 const canvas = document.getElementById('particle-canvas');
@@ -309,11 +376,22 @@ function animateParticles() {
 initParticles();
 animateParticles();
 
-// Resize canvas on window resize
-window.addEventListener('resize', () => {
+// Resize canvas on window resize with debounce
+window.addEventListener('resize', debounce(() => {
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
   initParticles();
+}, 250));
+
+// Pause particles when page is not visible (performance optimization)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    // Pause animation
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  } else {
+    // Resume animation
+    animateParticles();
+  }
 });
 
 // ===== 8. Enhanced Section Animations =====
@@ -373,43 +451,17 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// ===== 10. Parallax Effect for Hero Section =====
-window.addEventListener('scroll', () => {
-  const scrolled = window.pageYOffset;
-  const hero = document.querySelector('.hero-content');
-  if (hero && scrolled < window.innerHeight) {
-    hero.style.transform = `translateY(${scrolled * 0.3}px)`;
-    hero.style.opacity = 1 - (scrolled / window.innerHeight) * 0.5;
-  }
-});
-
-// ===== 11. Performance Optimization - Debounce Scroll =====
-let scrollTimeout;
-window.addEventListener('scroll', () => {
-  if (scrollTimeout) {
-    window.cancelAnimationFrame(scrollTimeout);
-  }
-  scrollTimeout = window.requestAnimationFrame(() => {
-    // Add or update scroll-based animations here
-    const scrolled = window.pageYOffset;
-    document.body.style.setProperty('--scroll', scrolled);
-  });
-}, { passive: true });
-
-// ===== 12. Lazy Load Images =====
+// ===== 10. Lazy Load Images =====
 if ('loading' in HTMLImageElement.prototype) {
   const images = document.querySelectorAll('img[loading="lazy"]');
   images.forEach(img => {
-    img.src = img.dataset.src;
+    if (img.dataset.src) {
+      img.src = img.dataset.src;
+    }
   });
-} else {
-  // Fallback for browsers that don't support lazy loading
-  const script = document.createElement('script');
-  script.src = 'https://cdnjs.cloudflare.com/ajax/libs/lazysizes/5.3.2/lazysizes.min.js';
-  document.body.appendChild(script);
 }
 
-// ===== 13. Enhanced Skill Cards Animation =====
+// ===== 11. Enhanced Skill Cards Animation =====
 const skillCards = document.querySelectorAll('.skill-card');
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -438,6 +490,179 @@ skillCards.forEach((card, index) => {
   }
 });
 
+// ===== 12. Additional Features =====
+
+// Copy email to clipboard on click
+const emailLinks = document.querySelectorAll('a[href^="mailto:"]');
+emailLinks.forEach(link => {
+  link.addEventListener('click', async (e) => {
+    const email = link.href.replace('mailto:', '');
+    
+    // Try to copy to clipboard
+    try {
+      if (navigator.clipboard) {
+        await navigator.clipboard.writeText(email);
+        showNotification('이메일이 클립보드에 복사되었습니다! 📋');
+      }
+    } catch (err) {
+      console.log('Clipboard copy not available');
+    }
+  });
+});
+
+// Show notification function
+function showNotification(message, duration = 3000) {
+  // Remove existing notification if any
+  const existing = document.querySelector('.custom-notification');
+  if (existing) existing.remove();
+  
+  const notification = document.createElement('div');
+  notification.className = 'custom-notification';
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: linear-gradient(135deg, #4a90e2, #357abd);
+    color: white;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(74, 144, 226, 0.4);
+    z-index: 10000;
+    font-size: 0.95rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Animate in
+  setTimeout(() => {
+    notification.style.transform = 'translateX(-50%) translateY(0)';
+    notification.style.opacity = '1';
+  }, 10);
+  
+  // Animate out and remove
+  setTimeout(() => {
+    notification.style.transform = 'translateX(-50%) translateY(100px)';
+    notification.style.opacity = '0';
+    setTimeout(() => notification.remove(), 400);
+  }, duration);
+}
+
+// Smooth scroll to section with offset for navbar
+function smoothScrollToSection(sectionId) {
+  const section = document.getElementById(sectionId);
+  if (section) {
+    const navbarHeight = navbar?.offsetHeight || 0;
+    const targetPosition = section.offsetTop - navbarHeight;
+    
+    window.scrollTo({
+      top: targetPosition,
+      behavior: 'smooth'
+    });
+  }
+}
+
+// Track time spent on page (Analytics placeholder)
+let pageLoadTime = Date.now();
+let isActive = true;
+
+document.addEventListener('visibilitychange', () => {
+  isActive = !document.hidden;
+});
+
+window.addEventListener('beforeunload', () => {
+  const timeSpent = Math.round((Date.now() - pageLoadTime) / 1000);
+  console.log(`Time spent on page: ${timeSpent} seconds`);
+  // Here you could send analytics data to your server
+});
+
+// Detect and warn about slow connections
+if ('connection' in navigator) {
+  const connection = navigator.connection;
+  if (connection.saveData || connection.effectiveType === 'slow-2g' || connection.effectiveType === '2g') {
+    console.log('Slow connection detected - optimizing experience');
+    // Could disable particles or reduce animations
+  }
+}
+
+// Add keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  // Alt/Option + H = Home
+  if ((e.altKey || e.metaKey) && e.key === 'h') {
+    e.preventDefault();
+    smoothScrollToSection('home');
+  }
+  
+  // Alt/Option + A = About
+  if ((e.altKey || e.metaKey) && e.key === 'a') {
+    e.preventDefault();
+    smoothScrollToSection('about');
+  }
+  
+  // Alt/Option + S = Skills
+  if ((e.altKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    smoothScrollToSection('skills');
+  }
+  
+  // Alt/Option + C = Contact
+  if ((e.altKey || e.metaKey) && e.key === 'c') {
+    e.preventDefault();
+    smoothScrollToSection('contact');
+  }
+});
+
+// Performance monitoring
+if ('performance' in window) {
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const perfData = performance.getEntriesByType('navigation')[0];
+      if (perfData) {
+        console.log('⚡ Performance Metrics:');
+        console.log(`  Load Time: ${Math.round(perfData.loadEventEnd - perfData.fetchStart)}ms`);
+        console.log(`  DOM Content Loaded: ${Math.round(perfData.domContentLoadedEventEnd - perfData.fetchStart)}ms`);
+      }
+    }, 0);
+  });
+}
+
+// Easter egg - Konami code
+let konamiCode = [];
+const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
+
+document.addEventListener('keydown', (e) => {
+  konamiCode.push(e.key);
+  konamiCode = konamiCode.slice(-10);
+  
+  if (konamiCode.join(',') === konamiSequence.join(',')) {
+    showNotification('🎮 Konami Code activated! You found the easter egg! 🎉', 5000);
+    document.body.style.animation = 'rainbow 2s linear infinite';
+    
+    // Add rainbow animation
+    const rainbowStyle = document.createElement('style');
+    rainbowStyle.textContent = `
+      @keyframes rainbow {
+        0% { filter: hue-rotate(0deg); }
+        100% { filter: hue-rotate(360deg); }
+      }
+    `;
+    document.head.appendChild(rainbowStyle);
+    
+    setTimeout(() => {
+      document.body.style.animation = '';
+    }, 5000);
+    
+    konamiCode = [];
+  }
+});
+
 console.log('Welcome to Taeyoon\'s website! 🚀');
 console.log('Made with ❤️ using HTML, CSS, and JavaScript');
+console.log('💡 Tip: Try keyboard shortcuts! Alt+H (Home), Alt+A (About), Alt+S (Skills), Alt+C (Contact)');
+console.log('🎮 Easter egg: Try the Konami Code!');
 
