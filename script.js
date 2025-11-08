@@ -67,21 +67,61 @@ function createSquareFavicon() {
 // Call favicon function
 createSquareFavicon();
 
-// Loading Screen
-window.addEventListener('load', () => {
+// Loading Screen - Enhanced Version
+(function() {
   const loaderWrapper = document.querySelector('.loader-wrapper');
+  const loaderPercentage = document.querySelector('.loader-percentage');
   
-  // Minimum loading time for better UX (0.8 seconds)
-  setTimeout(() => {
-    loaderWrapper.classList.add('fade-out');
-    document.body.classList.remove('loading');
+  if (!loaderWrapper) return;
+  
+  let progress = 0;
+  const duration = 2000; // 2 seconds total loading time
+  const interval = 20; // Update every 20ms
+  const steps = duration / interval;
+  const increment = 100 / steps;
+  
+  // Animate percentage
+  const percentageInterval = setInterval(() => {
+    progress += increment;
     
-    // Remove loader from DOM after animation
-    setTimeout(() => {
-      loaderWrapper.style.display = 'none';
-    }, 500);
-  }, 800);
-});
+    if (progress >= 100) {
+      progress = 100;
+      clearInterval(percentageInterval);
+      
+      // Start fade out after reaching 100%
+      setTimeout(() => {
+        if (loaderWrapper) {
+          loaderWrapper.classList.add('fade-out');
+          document.body.classList.remove('loading');
+          
+          // Remove from DOM after animation completes
+          setTimeout(() => {
+            if (loaderWrapper && loaderWrapper.parentNode) {
+              loaderWrapper.remove();
+            }
+          }, 800);
+        }
+      }, 300);
+    }
+    
+    if (loaderPercentage) {
+      loaderPercentage.textContent = Math.floor(progress) + '%';
+    }
+  }, interval);
+  
+  // Fallback: ensure loader is removed even if something goes wrong
+  setTimeout(() => {
+    if (loaderWrapper && !loaderWrapper.classList.contains('fade-out')) {
+      loaderWrapper.classList.add('fade-out');
+      document.body.classList.remove('loading');
+      setTimeout(() => {
+        if (loaderWrapper && loaderWrapper.parentNode) {
+          loaderWrapper.remove();
+        }
+      }, 800);
+    }
+  }, duration + 1000);
+})();
 
 // Add loading class to body initially
 document.body.classList.add('loading');
