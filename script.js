@@ -502,56 +502,13 @@ emailLinks.forEach(link => {
     try {
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(email);
-        showNotification('이메일이 클립보드에 복사되었습니다! 📋');
+        console.log('Email copied to clipboard:', email);
       }
     } catch (err) {
       console.log('Clipboard copy not available');
     }
   });
 });
-
-// Show notification function
-function showNotification(message, duration = 3000) {
-  // Remove existing notification if any
-  const existing = document.querySelector('.custom-notification');
-  if (existing) existing.remove();
-  
-  const notification = document.createElement('div');
-  notification.className = 'custom-notification';
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    bottom: 2rem;
-    left: 50%;
-    transform: translateX(-50%) translateY(100px);
-    background: linear-gradient(135deg, #4a90e2, #357abd);
-    color: white;
-    padding: 1rem 2rem;
-    border-radius: 50px;
-    box-shadow: 0 10px 30px rgba(74, 144, 226, 0.4);
-    z-index: 10000;
-    font-size: 0.95rem;
-    font-weight: 500;
-    opacity: 0;
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    pointer-events: none;
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Animate in
-  setTimeout(() => {
-    notification.style.transform = 'translateX(-50%) translateY(0)';
-    notification.style.opacity = '1';
-  }, 10);
-  
-  // Animate out and remove
-  setTimeout(() => {
-    notification.style.transform = 'translateX(-50%) translateY(100px)';
-    notification.style.opacity = '0';
-    setTimeout(() => notification.remove(), 400);
-  }, duration);
-}
 
 // Smooth scroll to section with offset for navbar
 function smoothScrollToSection(sectionId) {
@@ -631,38 +588,8 @@ if ('performance' in window) {
   });
 }
 
-// Easter egg - Konami code
-let konamiCode = [];
-const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'];
-
-document.addEventListener('keydown', (e) => {
-  konamiCode.push(e.key);
-  konamiCode = konamiCode.slice(-10);
-  
-  if (konamiCode.join(',') === konamiSequence.join(',')) {
-    showNotification('🎮 Konami Code activated! You found the easter egg! 🎉', 5000);
-    document.body.style.animation = 'rainbow 2s linear infinite';
-    
-    // Add rainbow animation
-    const rainbowStyle = document.createElement('style');
-    rainbowStyle.textContent = `
-      @keyframes rainbow {
-        0% { filter: hue-rotate(0deg); }
-        100% { filter: hue-rotate(360deg); }
-      }
-    `;
-    document.head.appendChild(rainbowStyle);
-    
-    setTimeout(() => {
-      document.body.style.animation = '';
-    }, 5000);
-    
-    konamiCode = [];
-  }
-});
-
 console.log('Welcome to Taeyoon\'s website! 🚀');
 console.log('Made with ❤️ using HTML, CSS, and JavaScript');
 console.log('💡 Tip: Try keyboard shortcuts! Alt+H (Home), Alt+A (About), Alt+S (Skills), Alt+C (Contact)');
-console.log('🎮 Easter egg: Try the Konami Code!');
+
 
