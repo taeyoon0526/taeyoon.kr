@@ -38,6 +38,9 @@
     href="https://fonts.googleapis.com/css2?family=Dancing+Script&family=Fuzzy+Bubbles&family=Questrial&display=swap"
     rel="stylesheet">
 
+  <!-- Cloudflare Turnstile -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
   <!-- External CSS -->
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -396,26 +399,54 @@
             </div>
           </a>
         </div>
-        <form class="contact-form">
+
+        <!-- Contact Form -->
+        <form class="contact-form" id="contactForm">
           <h3>✉️ 메시지 보내기</h3>
+          <p class="form-description">메시지를 남겨주시면 contact@taeyoon.kr로 답변드리겠습니다.</p>
+
           <div class="form-group">
-            <label for="name">이름</label>
-            <input type="text" id="name" placeholder="홍길동" required>
+            <label for="name">이름 *</label>
+            <input type="text" id="name" name="name" placeholder="홍길동" required minlength="2" maxlength="50"
+              aria-required="true">
           </div>
+
           <div class="form-group">
-            <label for="email">이메일</label>
-            <input type="email" id="email" placeholder="example@email.com" required>
+            <label for="email">이메일 *</label>
+            <input type="email" id="email" name="email" placeholder="example@email.com" required aria-required="true">
           </div>
+
           <div class="form-group">
-            <label for="message">메시지</label>
-            <textarea id="message" placeholder="메시지를 입력해주세요..." rows="5" required></textarea>
+            <label for="message">메시지 *</label>
+            <textarea id="message" name="message" placeholder="메시지를 입력해주세요..." rows="5" required minlength="10"
+              maxlength="1000" aria-required="true"></textarea>
+            <span class="char-counter" id="charCounter">0 / 1000</span>
           </div>
-          <button type="submit" class="btn btn-primary btn-submit">
-            <span>전송하기</span>
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+
+          <!-- Honeypot field (hidden) -->
+          <input type="text" name="website" id="website" class="honeypot" tabindex="-1" autocomplete="off"
+            aria-hidden="true">
+
+          <!-- Cloudflare Turnstile -->
+          <div class="form-group">
+            <div class="cf-turnstile" data-sitekey="0x4AAAAAAAzGC8hdEB3f8J42" data-callback="onTurnstileSuccess"
+              data-error-callback="onTurnstileError" data-expired-callback="onTurnstileExpired" data-theme="dark"></div>
+          </div>
+
+          <div class="form-status" id="formStatus" role="status" aria-live="polite" aria-atomic="true"></div>
+
+          <button type="submit" class="btn btn-primary btn-submit" id="submitBtn">
+            <span id="submitText">전송하기</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" id="submitIcon">
               <path d="M14 2L7 9M14 2l-4 12-3-7-7-3 14-4z" stroke="currentColor" stroke-width="2" stroke-linecap="round"
                 stroke-linejoin="round" />
             </svg>
+            <span class="spinner" id="submitSpinner">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-dasharray="30 10" />
+              </svg>
+            </span>
           </button>
         </form>
       </div>

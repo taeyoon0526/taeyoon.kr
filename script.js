@@ -222,16 +222,6 @@ if (hamburger && navMenu) {
   }, 250));
 }
 
-// Contact form submission (prevent default for demo)
-const contactForm = document.querySelector('.contact-form');
-if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    alert('기능 준비 중입니다.');
-    contactForm.reset();
-  });
-}
-
 // ===== 5. Enhanced Multiple Typing Effect =====
 const typingWords = ['Developer', 'Student', 'Learner', 'Creator'];
 let wordIndex = 0;
@@ -585,6 +575,191 @@ if ('performance' in window) {
         console.log(`  DOM Content Loaded: ${Math.round(perfData.domContentLoadedEventEnd - perfData.fetchStart)}ms`);
       }
     }, 0);
+  });
+}
+
+// ===== Contact Form with Cloudflare Turnstile =====
+let turnstileToken = null;
+let turnstileWidgetId = null;
+let formLoadTime = Date.now(); // Track when form was loaded
+
+// Turnstile Callbacks
+window.onTurnstileSuccess = function(token) {
+  turnstileToken = token;
+  console.log('Turnstile verification successful');
+};
+
+window.onTurnstileError = function() {
+  showFormStatus('CAPTCHA 인증에 실패했습니다. 페이지를 새로고침해주세요.', 'error');
+  console.error('Turnstile verification failed');
+};
+
+window.onTurnstileExpired = function() {
+  turnstileToken = null;
+  console.warn('Turnstile token expired');
+};
+
+// Form Elements
+const contactForm = document.getElementById('contactForm');
+const submitBtn = document.getElementById('submitBtn');
+const submitText = document.getElementById('submitText');
+const submitIcon = document.getElementById('submitIcon');
+const submitSpinner = document.getElementById('submitSpinner');
+const formStatus = document.getElementById('formStatus');
+const messageField = document.getElementById('message');
+const charCounter = document.getElementById('charCounter');
+
+// Character counter for message field
+if (messageField && charCounter) {
+  messageField.addEventListener('input', () => {
+    const length = messageField.value.length;
+    const maxLength = 1000;
+    charCounter.textContent = `${length} / ${maxLength}`;
+    
+    // Color coding
+    charCounter.classList.remove('warning', 'error');
+    if (length > maxLength * 0.9) {
+      charCounter.classList.add('error');
+    } else if (length > maxLength * 0.7) {
+      charCounter.classList.add('warning');
+    }
+  });
+}
+
+// Show form status message
+function showFormStatus(message, type = 'info') {
+  formStatus.textContent = message;
+  formStatus.className = 'form-status show ' + type;
+  formStatus.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+// Hide form status message
+function hideFormStatus() {
+  formStatus.className = 'form-status';
+}
+
+// Reset Turnstile widget
+function resetTurnstile() {
+  try {
+    if (window.turnstile && turnstileWidgetId !== null) {
+      window.turnstile.reset(turnstileWidgetId);
+    }
+    turnstileToken = null;
+  } catch (error) {
+    console.error('Error resetting Turnstile:', error);
+  }
+}
+
+// Form submission handler
+if (contactForm) {
+  contactForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    // Hide previous status
+    hideFormStatus();
+    
+    // Get form data
+    const formData = {
+      name: document.getElementById('name').value.trim(),
+      email: document.getElementById('email').value.trim(),
+      message: document.getElementById('message').value.trim(),
+      website: document.getElementById('website').value // Honeypot
+    };
+    
+    // Validation
+    if (!formData.name || !formData.email || !formData.message) {
+      showFormStatus('모든 필수 항목을 입력해주세요.', 'error');
+      return;
+    }
+    
+    if (formData.name.length < 2 || formData.name.length > 50) {
+      showFormStatus('이름은 2-50자 사이여야 합니다.', 'error');
+      return;
+    }
+    
+    if (formData.message.length < 10 || formData.message.length > 1000) {
+      showFormStatus('메시지는 10-1000자 사이여야 합니다.', 'error');
+      return;
+    }
+    
+    // Check honeypot
+    if (formData.website) {
+      console.warn('Honeypot field filled - potential spam');
+      showFormStatus('전송에 실패했습니다. 다시 시도해주세요.', 'error');
+      return;
+    }
+    
+    // Check Turnstile token
+    if (!turnstileToken) {
+      showFormStatus('CAPTCHA 인증을 완료해주세요.', 'error');
+      return;
+    }
+    
+    // Disable submit button
+    submitBtn.disabled = true;
+    submitText.textContent = '전송 중...';
+    submitIcon.style.display = 'none';
+    submitSpinner.style.display = 'inline-block';
+    submitSpinner.classList.add('show');
+    
+    try {
+      // Send POST request
+      const response = await fetch('https://contact.taeyoon.kr/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          website: formData.website,
+          'cf-turnstile-response': turnstileToken,
+          t: formLoadTime // Timestamp for anti-spam
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data.success) {
+        // Success
+        showFormStatus('✅ 메시지가 성공적으로 전송되었습니다!', 'success');
+        contactForm.reset();
+        charCounter.textContent = '0 / 1000';
+        resetTurnstile();
+        formLoadTime = Date.now(); // Reset timestamp for next submission
+        
+        // Log success
+        console.log('Contact form submitted successfully');
+      } else {
+        // Server error
+        const errorMessage = data.message || '전송에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        showFormStatus('❌ ' + errorMessage, 'error');
+        console.error('Form submission failed:', data);
+      }
+      
+    } catch (error) {
+      // Network error
+      console.error('Network error:', error);
+      showFormStatus('❌ 네트워크 오류가 발생했습니다. 인터넷 연결을 확인하고 다시 시도해주세요.', 'error');
+    } finally {
+      // Re-enable submit button
+      submitBtn.disabled = false;
+      submitText.textContent = '전송하기';
+      submitIcon.style.display = 'inline';
+      submitSpinner.style.display = 'none';
+      submitSpinner.classList.remove('show');
+    }
+  });
+  
+  // Store Turnstile widget ID when ready
+  window.addEventListener('load', () => {
+    setTimeout(() => {
+      const turnstileElement = document.querySelector('.cf-turnstile');
+      if (turnstileElement && window.turnstile) {
+        turnstileWidgetId = turnstileElement.getAttribute('data-widget-id');
+      }
+    }, 1000);
   });
 }
 

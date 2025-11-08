@@ -1183,12 +1183,128 @@ a {
   min-height: 120px;
 }
 
+.form-description {
+  color: #b0b0b0;
+  font-size: 0.9rem;
+  margin: -0.5rem 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+.char-counter {
+  display: block;
+  text-align: right;
+  font-size: 0.85rem;
+  color: #888;
+  margin-top: 0.3rem;
+}
+
+.char-counter.warning {
+  color: #ff9800;
+}
+
+.char-counter.error {
+  color: #f44336;
+}
+
+/* Honeypot field - visually hidden */
+#website {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Turnstile Widget */
+.cf-turnstile {
+  margin: 0 auto;
+  max-width: 300px;
+}
+
+/* Form Status Messages */
+.form-status {
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.3s ease;
+  display: none;
+}
+
+.form-status.show {
+  display: block;
+}
+
+.form-status.success {
+  background: rgba(76, 175, 80, 0.15);
+  border: 1px solid rgba(76, 175, 80, 0.3);
+  color: #81C784;
+}
+
+.form-status.error {
+  background: rgba(244, 67, 54, 0.15);
+  border: 1px solid rgba(244, 67, 54, 0.3);
+  color: #E57373;
+}
+
+.form-status.info {
+  background: rgba(74, 144, 226, 0.15);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  color: #4a90e2;
+}
+
+/* Submit Button States */
 .btn-submit {
   margin-top: 0.5rem;
   width: 100%;
   justify-content: center;
   font-size: 1.05rem;
   padding: 1.2rem;
+  transition: all 0.3s ease;
+}
+
+.btn-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+.btn-submit:disabled:hover {
+  transform: none !important;
+  box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4) !important;
+}
+
+/* Honeypot field - visually hidden */
+.honeypot {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Spinner Animation */
+.spinner {
+  display: none;
+  animation: spin 1s linear infinite;
+}
+
+.spinner.show {
+  display: inline-block;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer */
