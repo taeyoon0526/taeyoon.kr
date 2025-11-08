@@ -1095,8 +1095,8 @@ console.log('💡 Tip: Try keyboard shortcuts! Alt+H (Home), Alt+A (About), Alt+
 })();
 
 // Add fadeInUp animation for skill cards
-const style = document.createElement('style');
-style.textContent = `
+const skillAnimationStyle = document.createElement('style');
+skillAnimationStyle.textContent = `
   @keyframes fadeInUp {
     from {
       opacity: 0;
@@ -1108,7 +1108,7 @@ style.textContent = `
     }
   }
 `;
-document.head.appendChild(style);
+document.head.appendChild(skillAnimationStyle);
 
 console.log('✨ Theme upgrade features loaded!');
 console.log('🌓 Toggle theme with the button in the navigation bar');
