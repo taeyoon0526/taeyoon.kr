@@ -588,8 +588,8 @@ let formLoadTime = Date.now(); // Track when form was loaded
 // 개발 환경 감지
 const isDevelopment = window.location.hostname === 'localhost' || 
                       window.location.hostname === '127.0.0.1' || 
-                      window.location.hostname === '' ||
-                      window.location.hostname === 'taeyoon.kr'; // 임시: 프로덕션에서도 개발 모드
+                      window.location.hostname === '';
+                      // taeyoon.kr 제거 - 프로덕션에서는 실제 Worker 사용
 
 console.log('🔍 Hostname:', window.location.hostname);
 console.log('🔍 isDevelopment:', isDevelopment);
