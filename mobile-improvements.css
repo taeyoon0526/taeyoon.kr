@@ -1,71 +1,84 @@
 /* ================================
-  MOBILE IMPROVEMENTS - 모바일 가독성 & UX 개선
+   MOBILE IMPROVEMENTS - 모바일 가독성 & UX 개선
    ================================ */
 
-/* 모바일 기본 개선 */
+/* 기본 모바일 설정 */
 @media (max-width: 768px) {
-
+  
   /* 전체 텍스트 가독성 개선 */
   body {
     font-size: 16px;
-    /* 최소 16px로 자동 줌 방지 */
     -webkit-text-size-adjust: 100%;
-    /* Safari */
     -moz-text-size-adjust: 100%;
-    /* Firefox (old) */
     -ms-text-size-adjust: 100%;
-    /* IE/Edge */
     text-size-adjust: 100%;
-    /* Standard - Chrome 54+, Edge 79+ */
+    overflow-x: hidden;
   }
 
   /* 컨테이너 패딩 개선 */
   .container {
-    padding: 0 1.5rem;
+    padding: 0 1rem;
     max-width: 100%;
+    overflow-x: hidden;
   }
 
   /* Hero 섹션 개선 */
   .hero {
-    padding: 6rem 1.5rem 3rem;
-    min-height: calc(100vh - 70px);
+    padding: 5rem 1rem 2rem;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .hero-content {
     max-width: 100%;
-    padding: 1rem;
+    padding: 1rem 0;
+    text-align: center;
   }
 
   .hero-greeting {
-    font-size: 1.1rem;
-    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    margin-bottom: 1rem;
   }
 
   .typing-text {
-    font-size: 1.5rem;
-    line-height: 1.4;
-    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    line-height: 1.3;
+    margin-bottom: 1rem;
+    word-break: keep-all;
+  }
+
+  .typing-prefix {
+    font-size: 1.2rem;
+  }
+
+  .typing-container {
+    display: block;
+    margin-top: 0.5rem;
   }
 
   .hero-subtitle {
-    font-size: 1rem;
+    font-size: 0.95rem;
     line-height: 1.6;
-    margin: 1.5rem 0 2rem;
-    max-width: 100%;
+    margin: 1rem 0 1.5rem;
+    padding: 0 0.5rem;
   }
 
   .hero-buttons {
-    gap: 1rem;
-    margin-top: 2rem;
+    flex-direction: column;
+    gap: 0.8rem;
+    margin-top: 1.5rem;
+    width: 100%;
   }
 
   /* 버튼 터치 영역 확대 */
   .btn {
-    min-height: 54px;
-    padding: 1rem 2rem;
-    font-size: 1rem;
+    min-height: 50px;
+    padding: 0.9rem 1.5rem;
+    font-size: 0.95rem;
     width: 100%;
-    max-width: 320px;
+    max-width: 280px;
     margin: 0 auto;
   }
 
@@ -74,77 +87,102 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
+  }
+
+  /* 섹션 공통 */
+  .section {
+    padding: 3rem 1rem;
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+  }
+
+  .section-description {
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+    padding: 0;
   }
 
   /* About 섹션 개선 */
   .about-content {
-    gap: 2.5rem;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .about-image {
+    order: -1;
+    max-width: 250px;
+    margin: 0 auto;
+  }
+
+  .image-wrapper {
+    max-width: 220px;
+  }
+
+  .image-placeholder {
+    width: 200px;
+    height: 200px;
   }
 
   .about-card {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1rem;
     margin: 0;
   }
 
   .about-card h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1.2rem;
-  }
-
-  .about-card p {
-    font-size: 1rem;
-    line-height: 1.8;
+    font-size: 1.3rem;
     margin-bottom: 1rem;
   }
 
+  .about-card p {
+    font-size: 0.95rem;
+    line-height: 1.7;
+    margin-bottom: 0.8rem;
+  }
+
   .about-stats {
-    margin-top: 2rem;
-    gap: 1.2rem;
+    flex-direction: column;
+    margin-top: 1.5rem;
+    gap: 1rem;
   }
 
   .stat-item {
-    padding: 1.5rem 1rem;
-    min-height: 80px;
+    padding: 1.2rem;
+    min-height: auto;
   }
 
   .stat-icon {
-    font-size: 2rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.8rem;
+    margin-bottom: 0.3rem;
   }
 
   .stat-label {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   /* Skills 섹션 개선 */
-  .section-description {
-    font-size: 1rem;
-    line-height: 1.6;
-    margin-bottom: 2rem;
-    padding: 0 0.5rem;
-  }
-
   .skill-tabs {
     display: flex;
-    gap: 0.5rem;
-    margin-bottom: 2rem;
+    gap: 0.4rem;
+    margin-bottom: 1.5rem;
     overflow-x: auto;
-    padding: 0.5rem;
+    padding: 0.3rem;
     scrollbar-width: none;
-    /* Firefox 64+ */
     -ms-overflow-style: none;
-    /* IE/Edge */
+    -webkit-overflow-scrolling: touch;
   }
 
-  /* Webkit browsers (Chrome, Safari, Edge) */
   .skill-tabs::-webkit-scrollbar {
     display: none;
   }
 
   .skill-tab {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.95rem;
+    padding: 0.6rem 1.2rem;
+    font-size: 0.85rem;
     min-width: max-content;
     white-space: nowrap;
     flex-shrink: 0;
@@ -152,145 +190,173 @@
 
   .skills-grid {
     grid-template-columns: 1fr;
-    gap: 1.2rem;
+    gap: 1rem;
   }
 
   .skill-card {
-    padding: 1.8rem 1.5rem;
+    padding: 1.5rem 1rem;
     text-align: center;
   }
 
   .skill-icon {
-    width: 70px;
-    height: 70px;
-    margin: 0 auto 1.2rem;
+    width: 60px;
+    height: 60px;
+    margin: 0 auto 1rem;
   }
 
   .skill-card h3 {
-    font-size: 1.3rem;
-    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+    margin-bottom: 0.4rem;
   }
 
   .skill-card p {
-    font-size: 1rem;
-    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    margin-bottom: 0.8rem;
   }
 
   .skill-level {
-    margin-top: 1rem;
+    margin-top: 0.8rem;
   }
 
   /* Projects 섹션 개선 */
   .projects-grid {
     grid-template-columns: 1fr;
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   .project-card {
-    margin: 0 0.5rem;
+    margin: 0;
+  }
+
+  .project-image {
+    height: 180px;
   }
 
   .project-content {
-    padding: 1.8rem 1.5rem;
+    padding: 1.5rem 1rem;
   }
 
   .project-content h3 {
-    font-size: 1.3rem;
-    margin-bottom: 1rem;
+    font-size: 1.2rem;
+    margin-bottom: 0.8rem;
   }
 
   .project-content p {
-    font-size: 1rem;
-    line-height: 1.7;
-    margin-bottom: 1.2rem;
+    font-size: 0.9rem;
+    line-height: 1.6;
+    margin-bottom: 1rem;
   }
 
   .project-tags {
-    gap: 0.6rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
   }
 
   .tag {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.8rem;
   }
 
   .project-links {
-    gap: 1rem;
+    gap: 0.8rem;
     flex-direction: column;
   }
 
   .project-link {
-    padding: 0.9rem 1.5rem;
-    font-size: 1rem;
+    padding: 0.8rem 1.2rem;
+    font-size: 0.9rem;
     width: 100%;
     justify-content: center;
   }
 
   /* Contact 섹션 개선 */
+  .contact-content {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
   .contact-intro {
     padding: 0;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
   }
 
   .contact-intro h3 {
-    font-size: 1.4rem;
-    margin-bottom: 1.2rem;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
   }
 
   .contact-intro p {
-    font-size: 1rem;
-    line-height: 1.7;
+    font-size: 0.9rem;
+    line-height: 1.6;
   }
 
   .contact-items {
-    gap: 1.2rem;
-    margin-bottom: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
   }
 
   .contact-item {
-    padding: 1.5rem;
+    padding: 1.2rem 1rem;
     margin: 0;
     text-align: left;
+    flex-direction: row;
+    gap: 1rem;
   }
 
-  .contact-item h3 {
-    font-size: 1.2rem;
-    margin-bottom: 0.5rem;
+  .contact-icon-wrapper {
+    width: 50px;
+    height: 50px;
+    flex-shrink: 0;
   }
 
-  .contact-item p {
+  .contact-details h3 {
     font-size: 1rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .contact-details p {
+    font-size: 0.85rem;
+  }
+
+  .contact-hint {
+    font-size: 0.75rem;
   }
 
   /* 폼 개선 */
   .contact-form {
-    padding: 2rem 1.5rem;
+    padding: 1.5rem 1rem;
     margin: 0;
   }
 
   .contact-form h3 {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .form-description {
+    font-size: 0.85rem;
     margin-bottom: 1.5rem;
   }
 
   .form-group {
-    margin-bottom: 1.5rem;
+    margin-bottom: 1.2rem;
   }
 
   .form-group label {
-    font-size: 1rem;
-    margin-bottom: 0.7rem;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
     display: block;
   }
 
   .form-group input,
   .form-group textarea {
     font-size: 16px;
-    /* iOS 자동 줌 방지 */
-    padding: 1rem;
-    border-radius: 8px;
+    padding: 0.8rem;
+    border-radius: 6px;
+    width: 100%;
   }
 
   .form-group input:focus,
@@ -300,184 +366,240 @@
   }
 
   .form-group textarea {
-    min-height: 150px;
+    min-height: 120px;
     resize: vertical;
   }
 
+  .char-counter {
+    font-size: 0.75rem;
+  }
+
   .submit-btn {
-    min-height: 54px;
-    padding: 1rem 2rem;
-    font-size: 1.1rem;
+    min-height: 50px;
+    padding: 0.9rem 1.5rem;
+    font-size: 1rem;
     width: 100%;
+  }
+
+  .form-status {
+    font-size: 0.9rem;
+    padding: 0.8rem;
+    margin-top: 1rem;
   }
 
   /* Navigation 개선 */
   .navbar {
-    padding: 1rem 0;
-    height: 70px;
+    padding: 0.8rem 0;
+    height: 60px;
+  }
+
+  .nav-container {
+    padding: 0 1rem;
   }
 
   .nav-logo {
-    font-size: 1.4rem;
-    padding: 0.5rem;
+    font-size: 1.3rem;
+    padding: 0.3rem;
+  }
+
+  .theme-toggle {
+    width: 40px;
+    height: 40px;
+    margin-right: 0.5rem;
+  }
+
+  .theme-toggle svg {
+    width: 18px;
+    height: 18px;
   }
 
   .hamburger {
-    padding: 0.75rem;
-    min-width: 48px;
-    min-height: 48px;
+    padding: 0.5rem;
+    min-width: 44px;
+    min-height: 44px;
   }
 
   .nav-menu {
-    top: 70px;
+    top: 60px;
     padding: 1rem 0;
+    max-height: calc(100vh - 60px);
+  }
+
+  .nav-menu li {
+    padding: 0.8rem 0;
   }
 
   .nav-link {
-    font-size: 1.1rem;
-    padding: 1rem 1.5rem;
-    min-height: 54px;
+    font-size: 1rem;
+    padding: 0.8rem 1rem;
+    min-height: 48px;
   }
 
   /* Back to Top 버튼 개선 */
   #back-to-top {
-    bottom: 1.5rem;
-    right: 1.5rem;
-    width: 54px;
-    height: 54px;
+    bottom: 1.2rem;
+    right: 1.2rem;
+    width: 50px;
+    height: 50px;
   }
 
   #back-to-top svg {
-    width: 24px;
-    height: 24px;
+    width: 22px;
+    height: 22px;
   }
 
   /* Scroll Indicator 개선 */
   .scroll-indicator {
     display: none;
-    /* 모바일에서는 숨김 */
   }
 
   /* Footer 개선 */
   .footer {
-    padding: 2.5rem 1.5rem;
+    padding: 2rem 1rem;
   }
 
   .footer p {
-    font-size: 1rem;
-    line-height: 1.6;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin-bottom: 1rem;
   }
 
   .social-links {
-    gap: 1.5rem;
-    margin-top: 1.5rem;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
   }
 
   .social-links a {
-    font-size: 1rem;
-    padding: 0.75rem 1.2rem;
-    min-width: 48px;
-    min-height: 48px;
+    font-size: 0.9rem;
+    padding: 0.6rem 1rem;
+    min-width: 44px;
+    min-height: 44px;
   }
 }
 
 /* 작은 모바일 (480px 이하) 추가 개선 */
 @media (max-width: 480px) {
-
+  
   .hero {
-    padding: 5rem 1rem 2rem;
+    padding: 4rem 0.8rem 2rem;
   }
 
+  .typing-text {
+    font-size: 1.5rem;
+  }
+
+  .hero-subtitle {
+    font-size: 0.85rem;
+    padding: 0;
+  }
+
+  .section {
+    padding: 2.5rem 0.8rem;
+  }
+
+  .section-title {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  .about-card {
+    padding: 1.2rem 0.8rem;
+  }
+
+  .about-card h3 {
+    font-size: 1.2rem;
+  }
+
+  .about-card p {
+    font-size: 0.85rem;
+  }
+
+  .skill-card {
+    padding: 1.2rem 0.8rem;
+  }
+
+  .skill-icon {
+    width: 55px;
+    height: 55px;
+  }
+
+  .skill-card h3 {
+    font-size: 1rem;
+  }
+
+  .skill-card p {
+    font-size: 0.8rem;
+  }
+
+  .contact-form {
+    padding: 1.2rem 0.8rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 0.7rem;
+  }
+
+  #back-to-top {
+    bottom: 1rem;
+    right: 1rem;
+    width: 45px;
+    height: 45px;
+  }
+
+  .btn {
+    max-width: 100%;
+    padding: 0.8rem 1.2rem;
+  }
+}
+
+/* 아주 작은 화면 (360px 이하) */
+@media (max-width: 360px) {
+  
   .typing-text {
     font-size: 1.3rem;
   }
 
-  .hero-subtitle {
-    font-size: 0.95rem;
-    padding: 0;
+  .section-title {
+    font-size: 1.4rem;
+  }
+
+  .hero {
+    padding: 3.5rem 0.5rem 1.5rem;
+  }
+
+  .container {
+    padding: 0 0.5rem;
+  }
+}
+
+/* 가로 모드 개선 */
+@media (max-width: 768px) and (orientation: landscape) {
+  
+  .hero {
+    min-height: auto;
+    padding: 3rem 1rem 2rem;
   }
 
   .section {
     padding: 2.5rem 1rem;
   }
 
-  .section-title {
-    font-size: 1.6rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .about-card {
-    padding: 1.5rem 1.2rem;
-  }
-
-  .about-card h3 {
-    font-size: 1.3rem;
-  }
-
-  .about-card p {
-    font-size: 0.95rem;
-  }
-
-  .skill-card {
-    padding: 1.5rem 1.2rem;
-  }
-
-  .skill-icon {
-    width: 60px;
-    height: 60px;
-  }
-
-  .skill-card h3 {
-    font-size: 1.2rem;
-  }
-
-  .skill-card p {
-    font-size: 0.95rem;
-  }
-
-  .contact-form {
-    padding: 1.5rem 1.2rem;
-  }
-
-  .form-group input,
-  .form-group textarea {
-    padding: 0.9rem;
-  }
-
-  #back-to-top {
-    bottom: 1rem;
-    right: 1rem;
-    width: 48px;
-    height: 48px;
-  }
-}
-
-/* 가로 모드 개선 */
-@media (max-width: 768px) and (orientation: landscape) {
-
-  .hero {
-    min-height: 100vh;
-    padding: 4rem 1.5rem 2rem;
-  }
-
-  .section {
-    padding: 3rem 1.5rem;
-  }
-
   .about-content {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1.5fr;
   }
 
   .image-placeholder {
-    width: 180px;
-    height: 180px;
+    width: 150px;
+    height: 150px;
   }
 }
 
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
-
-  /* 호버 효과 제거, 활성 상태로 대체 */
+  
   .btn:hover {
     transform: none;
   }
@@ -502,12 +624,18 @@
     transform: scale(0.98);
   }
 
-  /* 링크 터치 영역 확대 */
-  a {
-    padding: 0.2rem;
+  .nav-link:hover {
+    transform: none;
   }
 
-  /* 스크롤 성능 개선 */
+  .nav-link:active {
+    background: rgba(74, 144, 226, 0.1);
+  }
+
+  a {
+    -webkit-tap-highlight-color: rgba(74, 144, 226, 0.2);
+  }
+
   * {
     -webkit-tap-highlight-color: rgba(74, 144, 226, 0.2);
   }
