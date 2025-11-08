@@ -1,0 +1,37 @@
+# API Keys and Secrets
+.env
+.env.local
+.env.production
+*.key
+*.pem
+secrets.json
+
+# Configuration files with sensitive data
+config.local.js
+config.production.js
+
+# Deployment scripts with hardcoded credentials
+deploy-config.sh
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+.cache/
