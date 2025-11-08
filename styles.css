@@ -349,12 +349,12 @@ a {
   transition: width 0.6s, height 0.6s;
 }
 
-#back-to-top:hover::before {
+#back-to-top:is(:hover, .touch-active)::before {
   width: 80px;
   height: 80px;
 }
 
-#back-to-top:hover {
+#back-to-top:is(:hover, .touch-active) {
   transform: translateY(-8px) scale(1.1);
   box-shadow: 0 8px 25px rgba(74, 144, 226, 0.7);
 }
@@ -433,7 +433,7 @@ a {
   font-size: 1rem;
 }
 
-.nav-link:hover {
+.nav-link:is(:hover, .touch-active) {
   color: #4a90e2;
 }
 
@@ -601,7 +601,7 @@ a {
   transition: width 0.6s, height 0.6s;
 }
 
-.btn:hover::before {
+.btn:is(:hover, .touch-active)::before {
   width: 300px;
   height: 300px;
 }
@@ -617,7 +617,7 @@ a {
   transition: transform 0.3s;
 }
 
-.btn:hover svg {
+.btn:is(:hover, .touch-active) svg {
   transform: translateX(3px);
 }
 
@@ -642,12 +642,12 @@ a {
   transition: width 0.6s, height 0.6s;
 }
 
-.btn-primary:hover::before {
+.btn-primary:is(:hover, .touch-active)::before {
   width: 300px;
   height: 300px;
 }
 
-.btn-primary:hover {
+.btn-primary:is(:hover, .touch-active) {
   transform: translateY(-3px) scale(1.02);
   box-shadow: 0 12px 35px rgba(74, 144, 226, 0.7);
 }
@@ -673,11 +673,11 @@ a {
   transition: left 0.5s;
 }
 
-.btn-secondary:hover::before {
+.btn-secondary:is(:hover, .touch-active)::before {
   left: 0;
 }
 
-.btn-secondary:hover {
+.btn-secondary:is(:hover, .touch-active) {
   background: rgba(255, 255, 255, 0.15);
   border-color: rgba(255, 255, 255, 0.6);
   transform: translateY(-3px) scale(1.02);
@@ -865,7 +865,7 @@ a {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.image-placeholder:hover {
+.image-placeholder:is(:hover, .touch-active) {
   transform: scale(1.08) rotate(2deg);
   box-shadow: 0 30px 90px rgba(74, 144, 226, 0.7);
 }
@@ -954,7 +954,7 @@ a {
   transition: transform 0.3s, background 0.3s;
 }
 
-.stat-item:hover {
+.stat-item:is(:hover, .touch-active) {
   transform: translateY(-5px);
   background: rgba(74, 144, 226, 0.15);
 }
@@ -1007,7 +1007,7 @@ a {
   transition: left 0.5s;
 }
 
-.skill-card:hover::before {
+.skill-card:is(:hover, .touch-active)::before {
   left: 100%;
 }
 
@@ -1052,7 +1052,7 @@ a {
   transition-delay: 0.9s;
 }
 
-.skill-card:hover {
+.skill-card:is(:hover, .touch-active) {
   transform: translateY(-15px) scale(1.02);
   background: rgba(74, 144, 226, 0.08);
   border-color: rgba(74, 144, 226, 0.4);
@@ -1069,7 +1069,7 @@ a {
   transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-.skill-card:hover .skill-icon {
+.skill-card:is(:hover, .touch-active) .skill-icon {
   transform: scale(1.15) rotateY(360deg);
 }
 
@@ -1179,11 +1179,11 @@ a {
   transition: left 0.5s;
 }
 
-.contact-item:hover::before {
+.contact-item:is(:hover, .touch-active)::before {
   left: 100%;
 }
 
-.contact-item:hover {
+.contact-item:is(:hover, .touch-active) {
   transform: translateX(10px) scale(1.02);
   background: rgba(74, 144, 226, 0.08);
   border-color: rgba(74, 144, 226, 0.3);
@@ -1202,7 +1202,7 @@ a {
   transition: all 0.3s;
 }
 
-.contact-item:hover .contact-icon-wrapper {
+.contact-item:is(:hover, .touch-active) .contact-icon-wrapper {
   transform: scale(1.15) rotate(5deg);
   background: linear-gradient(135deg, rgba(74, 144, 226, 0.3), rgba(53, 122, 189, 0.3));
   box-shadow: 0 8px 20px rgba(74, 144, 226, 0.3);
@@ -1231,12 +1231,12 @@ a {
   color: #FFFFFF;
 }
 
-.contact-item:hover .instagram-icon {
+.contact-item:is(:hover, .touch-active) .instagram-icon {
   filter: brightness(1.2);
   transform: scale(1.05);
 }
 
-.contact-item:hover .github-icon {
+.contact-item:is(:hover, .touch-active) .github-icon {
   filter: brightness(0.9);
   transform: scale(1.05);
 }
@@ -1429,7 +1429,7 @@ a {
   transform: none !important;
 }
 
-.btn-submit:disabled:hover {
+.btn-submit:disabled:is(:hover, .touch-active) {
   transform: none !important;
   box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4) !important;
 }
@@ -1484,7 +1484,7 @@ a {
   transition: color 0.3s;
 }
 
-.social-links a:hover {
+.social-links a:is(:hover, .touch-active) {
   color: #4a90e2;
 }
 

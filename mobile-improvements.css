@@ -592,7 +592,7 @@
 /* 터치 디바이스 최적화 */
 @media (hover: none) and (pointer: coarse) {
 
-  .btn:hover {
+  .btn:is(:hover, .touch-active) {
     transform: none;
   }
 
@@ -600,7 +600,7 @@
     transform: translateY(2px) scale(0.98);
   }
 
-  .skill-card:hover {
+  .skill-card:is(:hover, .touch-active) {
     transform: none;
   }
 
@@ -608,7 +608,7 @@
     transform: translateY(-2px);
   }
 
-  .contact-item:hover {
+  .contact-item:is(:hover, .touch-active) {
     transform: none;
   }
 
@@ -616,7 +616,7 @@
     transform: scale(0.98);
   }
 
-  .nav-link:hover {
+  .nav-link:is(:hover, .touch-active) {
     transform: none;
   }
 

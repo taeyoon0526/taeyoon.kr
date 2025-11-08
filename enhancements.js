@@ -9,6 +9,17 @@
   const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || window.innerWidth <= 768;
   const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
+  if (isTouch) {
+    document.documentElement.classList.add('is-touch');
+    if (document.body) {
+      document.body.classList.add('is-touch');
+    } else {
+      document.addEventListener('DOMContentLoaded', () => {
+        document.body.classList.add('is-touch');
+      }, { once: true });
+    }
+  }
+
   // 1. 스크롤 진행률 표시
   function updateScrollProgress() {
     const scrollProgress = document.querySelector('.scroll-progress');
@@ -141,10 +152,18 @@
         // 모바일: 터치 이벤트
         el.addEventListener('touchstart', function(e) {
           const tooltip = this.getAttribute('data-tooltip');
-          if (tooltip) {
-            this.setAttribute('aria-label', tooltip);
-          }
+          if (!tooltip) return;
+
+          this.classList.add('touch-active');
+          this.setAttribute('aria-label', tooltip);
         }, { passive: true });
+
+        const clearTouchState = () => {
+          el.classList.remove('touch-active');
+        };
+
+        el.addEventListener('touchend', clearTouchState);
+        el.addEventListener('touchcancel', clearTouchState);
       } else {
         // 데스크톱: 마우스 이벤트
         el.addEventListener('mouseenter', function() {
@@ -158,6 +177,49 @@
   }
 
   initTooltips();
+
+  function enableTouchHoverFallback() {
+    if (!isTouch) return;
+
+    const selectors = [
+      '.btn',
+      '.btn-submit',
+      '.nav-link',
+      '.skill-card',
+      '.project-card',
+      '.project-link',
+      '.contact-item',
+      '.theme-toggle',
+      '.skill-tab',
+      '.social-links a',
+      '.stat-item',
+      '.tooltip',
+      '.image-placeholder',
+      '.project-tags .tag',
+      '#back-to-top'
+    ];
+
+    const touchTargets = document.querySelectorAll(selectors.join(', '));
+    const removeActiveFromAll = () => {
+      touchTargets.forEach(target => target.classList.remove('touch-active'));
+    };
+
+    touchTargets.forEach(target => {
+      target.addEventListener('touchstart', (event) => {
+        removeActiveFromAll();
+        target.classList.add('touch-active');
+      }, { passive: true });
+
+      const clear = () => {
+        target.classList.remove('touch-active');
+      };
+
+      target.addEventListener('touchend', clear);
+      target.addEventListener('touchcancel', clear);
+    });
+
+    window.addEventListener('scroll', removeActiveFromAll, { passive: true });
+  }
 
   // 6. 키보드 단축키 (데스크톱만)
   if (!isMobile) {
@@ -527,6 +589,7 @@
     enhanceFormValidation();
     enableCopyFeatures();
     initPerformanceMonitor();
+    enableTouchHoverFallback();
     
     if (!isMobile) {
       estimateReadingTime();

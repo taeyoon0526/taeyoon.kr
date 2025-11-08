@@ -154,6 +154,7 @@ let lastScroll = 0;
 const navbar = document.querySelector('.navbar');
 const scrollProgress = document.querySelector('.scroll-progress');
 const backToTopBtn = document.getElementById('back-to-top');
+const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 const handleScroll = throttle(() => {
   const currentScroll = window.pageYOffset;
@@ -442,15 +443,35 @@ document.querySelectorAll('.section').forEach(section => {
 });
 
 // ===== 9. Enhanced Hover Effects =====
-// Add ripple effect on buttons
+// Add ripple effect on buttons (pointer & touch friendly)
+const rippleStartEvent = window.PointerEvent ? 'pointerdown' : (isTouchDevice ? 'touchstart' : 'mousedown');
+
 document.querySelectorAll('.btn, .contact-item').forEach(element => {
-  element.addEventListener('click', function(e) {
-    const ripple = document.createElement('span');
+  element.addEventListener(rippleStartEvent, function(e) {
+    if (e.type === 'pointerdown' && e.button !== 0) {
+      return;
+    }
+
     const rect = this.getBoundingClientRect();
     const size = Math.max(rect.width, rect.height);
-    const x = e.clientX - rect.left - size / 2;
-    const y = e.clientY - rect.top - size / 2;
-    
+    let clientX = 0;
+    let clientY = 0;
+
+    if (e.type === 'touchstart' && e.touches && e.touches[0]) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.type === 'pointerdown') {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+
+    const x = clientX - rect.left - size / 2;
+    const y = clientY - rect.top - size / 2;
+
+    const ripple = document.createElement('span');
     ripple.style.cssText = `
       position: absolute;
       width: ${size}px;
@@ -463,10 +484,10 @@ document.querySelectorAll('.btn, .contact-item').forEach(element => {
       transform: scale(0);
       animation: ripple-animation 0.6s ease-out;
     `;
-    
+
     this.appendChild(ripple);
     setTimeout(() => ripple.remove(), 600);
-  });
+  }, { passive: true });
 });
 
 // Add CSS for ripple animation dynamically
@@ -493,7 +514,6 @@ if ('loading' in HTMLImageElement.prototype) {
 
 // ===== 11. Enhanced Skill Cards Animation =====
 const skillCards = document.querySelectorAll('.skill-card');
-const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
 skillCards.forEach((card, index) => {
   card.style.setProperty('--index', index);

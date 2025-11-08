@@ -87,7 +87,7 @@ body {
   backdrop-filter: blur(10px);
 }
 
-.theme-toggle:hover {
+.theme-toggle:is(:hover, .touch-active) {
   transform: rotate(180deg) scale(1.1);
   border-color: var(--accent-primary);
 }
@@ -182,7 +182,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
     left var(--transition-speed) var(--transition-ease);
 }
 
-.nav-link:hover::after,
+.nav-link:is(:hover, .touch-active)::after,
 .nav-link.active::after {
   width: 100%;
   left: 0;
@@ -210,7 +210,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   backdrop-filter: blur(10px);
 }
 
-.skill-tab:hover {
+.skill-tab:is(:hover, .touch-active) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
   border-color: var(--accent-primary);
@@ -229,7 +229,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   transition: all var(--transition-speed) var(--transition-ease);
 }
 
-.skill-card:hover {
+.skill-card:is(:hover, .touch-active) {
   transform: translateY(-8px) scale(1.02);
   box-shadow: var(--shadow-lg);
   border-color: var(--accent-primary);
@@ -322,7 +322,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   backdrop-filter: blur(10px);
 }
 
-.project-card:hover {
+.project-card:is(:hover, .touch-active) {
   transform: translateY(-10px);
   box-shadow: var(--shadow-lg);
 }
@@ -386,7 +386,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   transition: all var(--transition-speed) var(--transition-ease);
 }
 
-.tag:hover {
+.tag:is(:hover, .touch-active) {
   background: var(--accent-primary);
   color: white;
   transform: scale(1.05);
@@ -410,7 +410,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   transition: all var(--transition-speed) var(--transition-ease);
 }
 
-.project-link:hover {
+.project-link:is(:hover, .touch-active) {
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
@@ -466,7 +466,7 @@ body[data-theme="light"] .theme-toggle .moon-icon {
   z-index: -1;
 }
 
-.btn:hover::before {
+.btn:is(:hover, .touch-active)::before {
   width: 300%;
   height: 300%;
 }
