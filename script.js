@@ -583,20 +583,43 @@ let turnstileToken = null;
 let turnstileWidgetId = null;
 let formLoadTime = Date.now(); // Track when form was loaded
 
+// 개발 환경 감지
+const isDevelopment = window.location.hostname === 'localhost' || 
+                      window.location.hostname === '127.0.0.1' || 
+                      window.location.hostname === '';
+
+// 개발 환경 알림
+if (isDevelopment) {
+  console.log('🔧 개발 환경 모드');
+  console.log('⚠️ Turnstile CAPTCHA는 프로덕션(https://taeyoon.kr)에서만 작동합니다.');
+  console.log('💡 로컬에서는 더미 토큰을 사용합니다.');
+}
+
 // Turnstile Callbacks
 window.onTurnstileSuccess = function(token) {
   turnstileToken = token;
-  console.log('Turnstile verification successful');
+  console.log('✅ Turnstile verification successful');
+  console.log('Token:', token.substring(0, 20) + '...');
 };
 
-window.onTurnstileError = function() {
-  showFormStatus('CAPTCHA 인증에 실패했습니다. 페이지를 새로고침해주세요.', 'error');
-  console.error('Turnstile verification failed');
+window.onTurnstileError = function(error) {
+  console.error('❌ Turnstile verification failed:', error);
+  
+  // 로컬 개발 환경에서는 경고만 표시하고 더미 토큰 사용
+  if (isDevelopment) {
+    console.warn('⚠️ 로컬 환경에서 Turnstile 오류 발생 (정상)');
+    console.warn('💡 더미 토큰으로 계속 진행합니다.');
+    // 로컬에서는 더미 토큰 자동 생성
+    turnstileToken = 'DUMMY_TOKEN_FOR_LOCAL_DEVELOPMENT_' + Date.now();
+    console.log('🔑 더미 토큰 생성됨:', turnstileToken);
+  } else {
+    showFormStatus('CAPTCHA 인증에 실패했습니다. 페이지를 새로고침해주세요.', 'error');
+  }
 };
 
 window.onTurnstileExpired = function() {
   turnstileToken = null;
-  console.warn('Turnstile token expired');
+  console.warn('⏰ Turnstile token expired');
 };
 
 // Form Elements
@@ -691,7 +714,46 @@ if (contactForm) {
     
     // Check Turnstile token
     if (!turnstileToken) {
-      showFormStatus('CAPTCHA 인증을 완료해주세요.', 'error');
+      // 로컬 환경에서는 자동으로 더미 토큰 생성
+      if (isDevelopment) {
+        console.warn('⚠️ Turnstile 토큰이 없습니다. 더미 토큰 생성 중...');
+        turnstileToken = 'DUMMY_TOKEN_FOR_LOCAL_DEVELOPMENT_' + Date.now();
+        console.log('🔑 더미 토큰 생성됨:', turnstileToken);
+      } else {
+        showFormStatus('CAPTCHA 인증을 완료해주세요.', 'error');
+        return;
+      }
+    }
+    
+    // 로컬 환경에서는 실제 전송하지 않고 시뮬레이션
+    if (isDevelopment) {
+      console.log('🔧 개발 모드: 실제 전송하지 않고 시뮬레이션합니다.');
+      console.log('📝 폼 데이터:', {
+        name: formData.name,
+        email: formData.email,
+        message: formData.message.substring(0, 50) + '...',
+        turnstileToken: turnstileToken.substring(0, 30) + '...',
+        timestamp: formLoadTime
+      });
+      
+      // 2초 후 성공 시뮬레이션
+      setTimeout(() => {
+        showFormStatus('✅ [개발 모드] 메시지가 성공적으로 전송되었습니다! (시뮬레이션)', 'success');
+        contactForm.reset();
+        charCounter.textContent = '0 / 1000';
+        turnstileToken = null;
+        formLoadTime = Date.now();
+        
+        // Re-enable submit button
+        submitBtn.disabled = false;
+        submitText.textContent = '전송하기';
+        submitIcon.style.display = 'inline';
+        submitSpinner.style.display = 'none';
+        submitSpinner.classList.remove('show');
+        
+        console.log('✅ 폼 리셋 완료 (시뮬레이션)');
+      }, 2000);
+      
       return;
     }
     
