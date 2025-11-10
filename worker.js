@@ -760,8 +760,25 @@ async function handleVisitor(request, env) {
   const isAuthenticated = checkVisitorPassword(request, env);
   
   if (isAuthenticated) {
-    // Redirect to dashboard on main site
-    return Response.redirect('https://taeyoon.kr/visitor.html', 302);
+    // Fetch and serve dashboard from main site
+    try {
+      const dashboardResponse = await fetch('https://taeyoon.kr/visitor.html');
+      if (!dashboardResponse.ok) {
+        return new Response('Dashboard not found', { status: 404 });
+      }
+      
+      // Return the HTML with proper headers
+      return new Response(dashboardResponse.body, {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
+      });
+    } catch (error) {
+      console.error('Failed to fetch dashboard:', error);
+      return new Response('Dashboard not available', { status: 503 });
+    }
   }
 
   // Serve login page
