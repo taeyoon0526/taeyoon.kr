@@ -567,7 +567,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **김태윤 (Taeyoon Kim)**
 - 🌐 Website: [taeyoon.kr](https://taeyoon.kr)
-- 📧 Email: taeyoon0526@pm.me
+- 📧 Email: me@taeyoon.kr
 - 💼 GitHub: [@taeyoon0526](https://github.com/taeyoon0526)
 
 ---
