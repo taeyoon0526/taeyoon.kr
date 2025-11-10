@@ -1045,6 +1045,23 @@ export default {
     const isValidPath = url.pathname === '/contact' || url.pathname === '/';
     
     if (request.method !== 'POST' || !isValidPath) {
+      // Serve custom 404 page for invalid paths
+      try {
+        const notFoundResponse = await fetch('https://taeyoon.kr/404.html');
+        if (notFoundResponse.ok) {
+          return new Response(notFoundResponse.body, {
+            status: 404,
+            headers: {
+              'Content-Type': 'text/html; charset=utf-8',
+              'Cache-Control': 'no-cache',
+              ...getSecurityHeaders(),
+            },
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch 404 page:', error);
+      }
+      
       return jsonResponse(
         { success: false, message: 'Not Found' },
         404,
