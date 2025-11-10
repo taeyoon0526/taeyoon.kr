@@ -1,0 +1,13 @@
+# Security Headers for GitHub Pages + Cloudflare
+# https://developers.cloudflare.com/pages/how-to/add-custom-http-headers/
+
+/*
+  X-Frame-Options: SAMEORIGIN
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Visitor dashboard - stricter frame policy
+/visitor
+/visitor.html
+  X-Frame-Options: DENY
