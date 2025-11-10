@@ -205,7 +205,7 @@
   function createDeviceChip(device) {
     const normalized = (device || 'unknown').toLowerCase();
     const map = {
-      desktop: { label: '데스크톱', icon: '🖥️' },
+      desktop: { label: '데스크톱', icon: '�' },
       mobile: { label: '모바일', icon: '📱' },
       tablet: { label: '태블릿', icon: '📘' },
     };
