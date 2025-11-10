@@ -59,7 +59,47 @@
     deviceChart: document.getElementById('deviceChart'),
     countryChart: document.getElementById('countryChart'),
     hourlyChart: document.getElementById('hourlyChart'),
+    themeToggleBtn: document.getElementById('themeToggleBtn'),
   };
+
+  // 다크모드 초기화 및 토글
+  function initTheme() {
+    const savedTheme = getCookie('visitor_theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    updateThemeIcon(savedTheme);
+  }
+
+  function toggleTheme() {
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    setCookie('visitor_theme', newTheme, 365);
+    updateThemeIcon(newTheme);
+    
+    // 차트가 표시된 경우 다시 렌더링
+    if (elements.statsContent && !elements.statsContent.hidden) {
+      renderCharts();
+    }
+  }
+
+  function updateThemeIcon(theme) {
+    const icon = elements.themeToggleBtn?.querySelector('.theme-icon');
+    if (icon) {
+      icon.textContent = theme === 'dark' ? '☀️' : '🌙';
+    }
+  }
+
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+
+  function setCookie(name, value, days) {
+    const expires = new Date(Date.now() + days * 864e5).toUTCString();
+    document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict; Secure`;
+  }
 
   function setStatus(message, tone = 'info') {
     if (!elements.statusBar) return;
@@ -447,6 +487,25 @@
     renderHourlyChart();
   }
 
+  // 다크모드 대응 차트 색상 가져오기
+  function getChartColors() {
+    const theme = document.documentElement.getAttribute('data-theme') || 'light';
+    if (theme === 'dark') {
+      return {
+        textColor: '#e6edf3',
+        gridColor: '#30363d',
+        backgroundColor: 'rgba(31, 111, 235, 0.2)',
+        borderColor: '#1f6feb',
+      };
+    }
+    return {
+      textColor: '#1f2933',
+      gridColor: '#e4e7eb',
+      backgroundColor: 'rgba(37, 99, 235, 0.1)',
+      borderColor: '#2563eb',
+    };
+  }
+
   function renderDailyVisitsChart() {
     if (!elements.dailyVisitsChart) return;
     
@@ -462,6 +521,8 @@
     if (state.charts.daily) {
       state.charts.daily.destroy();
     }
+
+    const colors = getChartColors();
     
     state.charts.daily = new Chart(elements.dailyVisitsChart, {
       type: 'line',
@@ -470,8 +531,8 @@
         datasets: [{
           label: '방문 수',
           data: counts,
-          borderColor: '#2563eb',
-          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          borderColor: colors.borderColor,
+          backgroundColor: colors.backgroundColor,
           tension: 0.4,
           fill: true,
         }],
@@ -480,10 +541,20 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { 
+            display: false,
+          },
         },
         scales: {
-          y: { beginAtZero: true },
+          y: { 
+            beginAtZero: true,
+            ticks: { color: colors.textColor },
+            grid: { color: colors.gridColor },
+          },
+          x: {
+            ticks: { color: colors.textColor },
+            grid: { color: colors.gridColor },
+          },
         },
       },
     });
@@ -501,6 +572,8 @@
     if (state.charts.device) {
       state.charts.device.destroy();
     }
+
+    const colors = getChartColors();
     
     state.charts.device = new Chart(elements.deviceChart, {
       type: 'doughnut',
@@ -515,7 +588,10 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: 'bottom' },
+          legend: { 
+            position: 'bottom',
+            labels: { color: colors.textColor },
+          },
         },
       },
     });
@@ -537,6 +613,8 @@
     if (state.charts.country) {
       state.charts.country.destroy();
     }
+
+    const colors = getChartColors();
     
     state.charts.country = new Chart(elements.countryChart, {
       type: 'bar',
@@ -545,17 +623,27 @@
         datasets: [{
           label: '방문 수',
           data: sortedCountries.map(([, count]) => count),
-          backgroundColor: '#2563eb',
+          backgroundColor: colors.borderColor,
         }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { 
+            display: false,
+          },
         },
         scales: {
-          y: { beginAtZero: true },
+          y: { 
+            beginAtZero: true,
+            ticks: { color: colors.textColor },
+            grid: { color: colors.gridColor },
+          },
+          x: {
+            ticks: { color: colors.textColor },
+            grid: { color: colors.gridColor },
+          },
         },
       },
     });
@@ -573,6 +661,8 @@
     if (state.charts.hourly) {
       state.charts.hourly.destroy();
     }
+
+    const colors = getChartColors();
     
     state.charts.hourly = new Chart(elements.hourlyChart, {
       type: 'bar',
@@ -588,10 +678,20 @@
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false },
+          legend: { 
+            display: false,
+          },
         },
         scales: {
-          y: { beginAtZero: true },
+          y: { 
+            beginAtZero: true,
+            ticks: { color: colors.textColor },
+            grid: { color: colors.gridColor },
+          },
+          x: {
+            ticks: { color: colors.textColor },
+            grid: { color: colors.gridColor },
+          },
         },
       },
     });
@@ -727,6 +827,10 @@
         }
       });
     }
+
+    if (elements.themeToggleBtn) {
+      elements.themeToggleBtn.addEventListener('click', toggleTheme);
+    }
   }
 
   function initAutoRefresh() {
@@ -736,6 +840,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
     initResponsiveFilters();
     initEventListeners();
     initAutoRefresh();

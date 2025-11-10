@@ -609,31 +609,105 @@ function calculateSummary(visitors) {
 }
 
 /**
- * Check visitor dashboard password
+ * Generate secure session token
  */
-function checkVisitorPassword(request, env) {
+async function generateSessionToken(ip, userAgent) {
+  const data = `${ip}:${userAgent}:${Date.now()}:${Math.random()}`;
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/**
+ * Verify session token from KV storage
+ */
+async function verifySessionToken(token, ip, env) {
+  if (!token || !env.VISITOR_ANALYTICS) return false;
+  
+  try {
+    const sessionKey = `session:${token}`;
+    const sessionData = await env.VISITOR_ANALYTICS.get(sessionKey, 'json');
+    
+    if (!sessionData) return false;
+    
+    // Check expiration
+    if (Date.now() > sessionData.expiresAt) {
+      await env.VISITOR_ANALYTICS.delete(sessionKey);
+      return false;
+    }
+    
+    // Verify IP match (optional but recommended)
+    if (sessionData.ip !== ip) {
+      return false;
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Session verification error:', error);
+    return false;
+  }
+}
+
+/**
+ * Store session token in KV
+ */
+async function storeSessionToken(token, ip, userAgent, env) {
+  if (!env.VISITOR_ANALYTICS) return false;
+  
+  try {
+    const sessionKey = `session:${token}`;
+    const sessionData = {
+      ip,
+      userAgent,
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
+    };
+    
+    // Store with 24 hour TTL
+    await env.VISITOR_ANALYTICS.put(sessionKey, JSON.stringify(sessionData), {
+      expirationTtl: 86400,
+    });
+    
+    return true;
+  } catch (error) {
+    console.error('Session storage error:', error);
+    return false;
+  }
+}
+
+/**
+ * Check visitor dashboard authentication
+ */
+async function checkVisitorAuth(request, env) {
   if (!env.VISITOR_PASSWORD) {
     return false;
   }
 
   const cookie = request.headers.get('Cookie') || '';
-  const match = cookie.match(/visitor_auth=([^;]+)/);
-  if (match && match[1] === env.VISITOR_PASSWORD) {
-    return true;
-  }
-
-  return false;
+  const match = cookie.match(/visitor_session=([^;]+)/);
+  
+  if (!match) return false;
+  
+  const sessionToken = match[1];
+  const clientInfo = getClientInfo(request);
+  
+  return await verifySessionToken(sessionToken, clientInfo.ip, env);
 }
 
 /**
- * Set visitor auth cookie
+ * Set visitor auth session cookie
  */
-function setVisitorAuthCookie(env) {
-  if (!env.VISITOR_PASSWORD) {
-    return '';
-  }
+function setVisitorAuthCookie(sessionToken) {
+  return `visitor_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`;
+}
 
-  return `visitor_auth=${env.VISITOR_PASSWORD}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`;
+/**
+ * Clear visitor auth cookie
+ */
+function clearVisitorAuthCookie() {
+  return 'visitor_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0';
 }
 
 /**
@@ -751,7 +825,7 @@ async function handleCollect(request, env, ctx) {
 async function handleApiVisitors(request, env) {
   const origin = request.headers.get('Origin');
   
-  if (!checkVisitorPassword(request, env)) {
+  if (!await checkVisitorAuth(request, env)) {
     return new Response(JSON.stringify({ success: false, message: 'Unauthorized' }), {
       status: 401,
       headers: {
@@ -788,14 +862,23 @@ async function handleApiVisitors(request, env) {
 async function handleVisitor(request, env) {
   const url = new URL(request.url);
   const origin = request.headers.get('Origin');
+  const clientInfo = getClientInfo(request);
 
   // POST /visitor/logout
   if (url.pathname === '/visitor/logout' && request.method === 'POST') {
+    // Delete session from KV
+    const cookie = request.headers.get('Cookie') || '';
+    const match = cookie.match(/visitor_session=([^;]+)/);
+    if (match && env.VISITOR_ANALYTICS) {
+      const sessionKey = `session:${match[1]}`;
+      await env.VISITOR_ANALYTICS.delete(sessionKey);
+    }
+    
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Set-Cookie': 'visitor_auth=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',
+        'Set-Cookie': clearVisitorAuthCookie(),
         'Access-Control-Allow-Origin': origin || '*',
         'Access-Control-Allow-Credentials': 'true',
       },
@@ -819,11 +902,17 @@ async function handleVisitor(request, env) {
       }
 
       if (password === env.VISITOR_PASSWORD) {
+        // Generate secure session token
+        const sessionToken = await generateSessionToken(clientInfo.ip, clientInfo.userAgent);
+        
+        // Store session in KV
+        await storeSessionToken(sessionToken, clientInfo.ip, clientInfo.userAgent, env);
+        
         return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: {
             'Content-Type': 'application/json',
-            'Set-Cookie': setVisitorAuthCookie(env),
+            'Set-Cookie': setVisitorAuthCookie(sessionToken),
             'Access-Control-Allow-Origin': origin || '*',
             'Access-Control-Allow-Credentials': 'true',
           },
@@ -849,7 +938,7 @@ async function handleVisitor(request, env) {
   }
 
   // GET /visitor (return login page or dashboard)
-  const isAuthenticated = checkVisitorPassword(request, env);
+  const isAuthenticated = await checkVisitorAuth(request, env);
   
   if (isAuthenticated) {
     // Fetch and serve dashboard from main site

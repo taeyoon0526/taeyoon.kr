@@ -6,6 +6,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>방문자 대시보드 | taeyoon.kr</title>
   <link rel="stylesheet" href="https://taeyoon.kr/visitor.css">
+  <script>
+    // 직접 접근 차단: taeyoon.kr/visitor.html 접근 시 contact.taeyoon.kr/visitor로 리다이렉트
+    (function() {
+      if (window.location.hostname === 'taeyoon.kr' && window.location.pathname.includes('visitor')) {
+        window.location.replace('https://contact.taeyoon.kr/visitor');
+      }
+    })();
+  </script>
 </head>
 
 <body>
@@ -16,6 +24,9 @@
         <p class="dashboard-subtitle">taeyoon.kr 방문자 활동을 실시간으로 확인하세요.</p>
       </div>
       <div class="header-actions">
+        <button id="themeToggleBtn" class="btn secondary theme-toggle" title="다크모드 전환">
+          <span class="theme-icon">🌙</span>
+        </button>
         <button id="refreshBtn" class="btn secondary">새로고침</button>
         <button id="exportBtn" class="btn">CSV 내보내기</button>
         <button id="logoutBtn" class="btn danger">로그아웃</button>
