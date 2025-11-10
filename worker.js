@@ -640,13 +640,13 @@ async function generateSessionToken(ip, userAgent) {
  * Verify session token from KV storage
  */
 async function verifySessionToken(token, ip, env) {
-  if (!token || !env.VISITOR_ANALYTICS) {
+  if (!token || !env.VISITOR_ANALYTICS_KV) {
     return { valid: false, reason: 'missing_token_or_env' };
   }
   
   try {
     const sessionKey = `session:${token}`;
-    const sessionData = await env.VISITOR_ANALYTICS.get(sessionKey, 'json');
+    const sessionData = await env.VISITOR_ANALYTICS_KV.get(sessionKey, 'json');
     
     if (!sessionData) {
       return { valid: false, reason: 'session_not_found' };
@@ -654,7 +654,7 @@ async function verifySessionToken(token, ip, env) {
     
     // Check expiration
     if (Date.now() > sessionData.expiresAt) {
-      await env.VISITOR_ANALYTICS.delete(sessionKey);
+      await env.VISITOR_ANALYTICS_KV.delete(sessionKey);
       return { valid: false, reason: 'session_expired' };
     }
     
@@ -681,7 +681,7 @@ async function verifySessionToken(token, ip, env) {
  * Store session token in KV
  */
 async function storeSessionToken(token, ip, userAgent, env) {
-  if (!env.VISITOR_ANALYTICS) return false;
+  if (!env.VISITOR_ANALYTICS_KV) return false;
   
   try {
     const sessionKey = `session:${token}`;
@@ -693,7 +693,7 @@ async function storeSessionToken(token, ip, userAgent, env) {
     };
     
     // Store with 24 hour TTL
-    await env.VISITOR_ANALYTICS.put(sessionKey, JSON.stringify(sessionData), {
+    await env.VISITOR_ANALYTICS_KV.put(sessionKey, JSON.stringify(sessionData), {
       expirationTtl: 86400,
     });
     
@@ -711,7 +711,7 @@ async function getVisitorAuthResult(request, env) {
   const cookie = request.headers.get('Cookie') || '';
   console.log('[AUTH DEBUG] Cookie header:', cookie);
   console.log('[AUTH DEBUG] VISITOR_PASSWORD exists:', !!env.VISITOR_PASSWORD);
-  console.log('[AUTH DEBUG] VISITOR_ANALYTICS exists:', !!env.VISITOR_ANALYTICS);
+  console.log('[AUTH DEBUG] VISITOR_ANALYTICS exists:', !!env.VISITOR_ANALYTICS_KV);
   
   if (!env.VISITOR_PASSWORD) {
     return { authenticated: false, reason: 'password_not_configured' };
@@ -923,9 +923,9 @@ async function handleVisitor(request, env) {
     // Delete session from KV
     const cookie = request.headers.get('Cookie') || '';
     const match = cookie.match(/visitor_session=([^;]+)/);
-    if (match && env.VISITOR_ANALYTICS) {
+    if (match && env.VISITOR_ANALYTICS_KV) {
       const sessionKey = `session:${match[1]}`;
-      await env.VISITOR_ANALYTICS.delete(sessionKey);
+      await env.VISITOR_ANALYTICS_KV.delete(sessionKey);
     }
     
     return new Response(JSON.stringify({ success: true }), {

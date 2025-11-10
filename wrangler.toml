@@ -8,7 +8,7 @@ binding = "VISITOR_LOG"
 id = "121c27d4ffbd44e393abbbf2fb9eb586"
 
 [[kv_namespaces]]
-binding = "VISITOR_ANALYTICS"
+binding = "VISITOR_ANALYTICS_KV"
 id = "9cd1faa2076f43749f314d08e009b111"
 
 # Environment Variables
