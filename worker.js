@@ -563,10 +563,28 @@ function setVisitorAuthCookie(env) {
  * Handle /collect endpoint (beacon data ingestion)
  */
 async function handleCollect(request, env, ctx) {
+  const origin = request.headers.get('Origin');
+  
+  // Handle CORS preflight
+  if (request.method === 'OPTIONS') {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '86400',
+      },
+    });
+  }
+
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ success: false, message: 'Method not allowed' }), {
       status: 405,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin || '*',
+      },
     });
   }
 
@@ -577,7 +595,10 @@ async function handleCollect(request, env, ctx) {
     if (!event || !sessionId || !url || !time) {
       return new Response(JSON.stringify({ success: false, message: 'Missing required fields' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': origin || '*',
+        },
       });
     }
 
@@ -601,19 +622,28 @@ async function handleCollect(request, env, ctx) {
     if (!stored) {
       return new Response(JSON.stringify({ success: false, message: 'Storage failed' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': origin || '*',
+        },
       });
     }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin || '*',
+      },
     });
   } catch (error) {
     console.error('Collect endpoint error:', error);
     return new Response(JSON.stringify({ success: false, message: 'Server error' }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin || '*',
+      },
     });
   }
 }
