@@ -98,6 +98,7 @@
         headers: { 'Content-Type': 'application/json' },
         body,
         mode: 'cors',
+        credentials: 'omit',
         keepalive: true,
       }).catch(() => {
         // network errors are ignored for analytics
