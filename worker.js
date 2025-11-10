@@ -823,6 +823,26 @@ async function handleVisitor(request, env) {
   const clientInfo = getClientInfo(request);
   const normalizedIp = normalizeIp(clientInfo.ip);
 
+  // Debug endpoint to check current IP (accessible without authentication)
+  if (request.method === 'GET' && url.pathname === '/visitor/check-ip') {
+    return new Response(JSON.stringify({
+      originalIp: clientInfo.ip || 'unknown',
+      normalizedIp: normalizedIp || 'unknown',
+      allowedIps: ALLOWED_VISITOR_IPS,
+      isAllowed: isAllowedVisitorIp(normalizedIp),
+      cfConnectingIp: request.headers.get('CF-Connecting-IP'),
+      xForwardedFor: request.headers.get('X-Forwarded-For'),
+      xRealIp: request.headers.get('X-Real-IP'),
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
   console.log('[VISITOR ACCESS ATTEMPT]', {
     originalIp: clientInfo.ip || 'unknown',
     normalizedIp: normalizedIp || 'unknown',
@@ -875,26 +895,6 @@ async function handleVisitor(request, env) {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
-      },
-    });
-  }
-
-  // Debug endpoint to check current IP
-  if (request.method === 'GET' && url.pathname === '/visitor/check-ip') {
-    return new Response(JSON.stringify({
-      originalIp: clientInfo.ip || 'unknown',
-      normalizedIp: normalizedIp || 'unknown',
-      allowedIps: ALLOWED_VISITOR_IPS,
-      isAllowed: isAllowedVisitorIp(normalizedIp),
-      cfConnectingIp: request.headers.get('CF-Connecting-IP'),
-      xForwardedFor: request.headers.get('X-Forwarded-For'),
-      xRealIp: request.headers.get('X-Real-IP'),
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'no-cache',
-        'Access-Control-Allow-Origin': '*',
       },
     });
   }
