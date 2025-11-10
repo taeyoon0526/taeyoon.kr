@@ -18,20 +18,22 @@
 
 ```bash
 # KV namespace 생성
-wrangler kv:namespace create "VISITOR_LOG"
+wrangler kv namespace create "VISITOR_LOG"
 
-# 출력된 ID를 복사하세요
-# 예: { binding = "VISITOR_LOG", id = "abc123..." }
+# Wrangler가 자동으로 wrangler.toml에 추가할지 물어봅니다
+# "yes"를 선택하면 2단계를 건너뛸 수 있습니다
 ```
 
-### 2️⃣ wrangler.toml 수정 (1분)
+### 2️⃣ wrangler.toml 확인 (선택사항)
 
-기존 `wrangler.toml`에 다음 추가:
+1단계에서 자동 추가를 선택했다면 이 단계를 건너뛰세요.
+
+수동으로 추가하려면 `wrangler.toml`에 다음 추가:
 
 ```toml
-kv_namespaces = [
-  { binding = "VISITOR_LOG", id = "YOUR_KV_NAMESPACE_ID" }  # 1단계에서 복사한 ID
-]
+[[kv_namespaces]]
+binding = "VISITOR_LOG"
+id = "121c27d4ffbd44e393abbbf2fb9eb586"  # 1단계에서 생성된 ID
 ```
 
 ### 3️⃣ 비밀번호 설정 (1분)
@@ -103,10 +105,10 @@ curl -X POST https://contact.taeyoon.kr/collect \
 
 ```bash
 # KV 바인딩 확인
-wrangler kv:namespace list
+wrangler kv namespace list
 
 # wrangler.toml의 kv_namespaces 확인
-cat wrangler.toml | grep -A 2 "kv_namespaces"
+cat wrangler.toml | grep -A 3 "kv_namespaces"
 ```
 
 ### 대시보드 로그인 실패
@@ -148,14 +150,16 @@ wrangler tail --format pretty
 # Worker 로그 보기
 wrangler tail
 
+```bash
 # KV 데이터 확인
-wrangler kv:key list --namespace-id=YOUR_NAMESPACE_ID
+wrangler kv key list --namespace-id=121c27d4ffbd44e393abbbf2fb9eb586
 
 # Worker 버전 롤백
 wrangler rollback
 
 # 환경 변수 확인
 wrangler secret list
+```
 ```
 
 ---

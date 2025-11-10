@@ -45,35 +45,41 @@ taeyoon.kr 방문자 추적 시스템은 Cloudflare Workers + KV Storage를 사�
 
 ```bash
 # Wrangler CLI로 KV namespace 생성
-wrangler kv:namespace create "VISITOR_LOG"
+wrangler kv namespace create "VISITOR_LOG"
 
-# Production 환경용
-wrangler kv:namespace create "VISITOR_LOG" --preview false
+# Wrangler가 자동으로 wrangler.toml에 추가할지 물어봅니다
+# "yes"를 선택하면 자동으로 설정됩니다
 ```
 
 출력 예시:
 ```
-🌀 Creating namespace with title "worker-VISITOR_LOG"
-✨ Success! Created KV namespace VISITOR_LOG
-⚠️  Add the following to your wrangler.toml:
-kv_namespaces = [
-  { binding = "VISITOR_LOG", id = "abc123..." }
-]
+🌀 Creating namespace with title "VISITOR_LOG"
+✨ Success!
+To access your new KV Namespace in your Worker, add the following snippet:
+{
+  "kv_namespaces": [
+    {
+      "binding": "VISITOR_LOG",
+      "id": "121c27d4ffbd44e393abbbf2fb9eb586"
+    }
+  ]
+}
+✔ Would you like Wrangler to add it on your behalf? … yes
 ```
 
 ### 2. wrangler.toml 설정
 
-`wrangler.toml` 파일에 다음 내용 추가:
+1단계에서 자동 추가를 선택하지 않았다면, `wrangler.toml` 파일에 다음 내용 추가:
 
 ```toml
 name = "contact-worker"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-# KV Namespace 바인딩
-kv_namespaces = [
-  { binding = "VISITOR_LOG", id = "YOUR_KV_NAMESPACE_ID" }
-]
+# KV Namespace 바인딩 (자동 추가되었으면 이미 있음)
+[[kv_namespaces]]
+binding = "VISITOR_LOG"
+id = "121c27d4ffbd44e393abbbf2fb9eb586"  # 생성된 실제 ID
 
 # Environment Variables
 [vars]
@@ -241,10 +247,10 @@ wrangler secret put ALLOWED_ORIGINS
 
 ```bash
 # 저장된 키 목록 확인
-wrangler kv:key list --namespace-id=YOUR_NAMESPACE_ID
+wrangler kv key list --namespace-id=121c27d4ffbd44e393abbbf2fb9eb586
 
 # 특정 키 값 조회
-wrangler kv:key get "KEY_NAME" --namespace-id=YOUR_NAMESPACE_ID
+wrangler kv key get "KEY_NAME" --namespace-id=121c27d4ffbd44e393abbbf2fb9eb586
 ```
 
 ---
@@ -268,9 +274,9 @@ KV는 90일 TTL로 자동 만료되지만, 수동 정리가 필요한 경우:
 
 ```bash
 # 모든 키 삭제 (주의!)
-wrangler kv:key list --namespace-id=YOUR_NAMESPACE_ID | \
+wrangler kv key list --namespace-id=121c27d4ffbd44e393abbbf2fb9eb586 | \
   jq -r '.[].name' | \
-  xargs -I {} wrangler kv:key delete {} --namespace-id=YOUR_NAMESPACE_ID
+  xargs -I {} wrangler kv key delete {} --namespace-id=121c27d4ffbd44e393abbbf2fb9eb586
 ```
 
 ---

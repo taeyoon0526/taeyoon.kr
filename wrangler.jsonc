@@ -1,11 +1,18 @@
 {
-  "name": "contact-form",
-  "main": "worker.js",
-  "compatibility_date": "2025-11-08",
-  "compatibility_flags": [
-    "nodejs_compat"
-  ],
-  "vars": {
-    "ALLOWED_ORIGIN": "https://taeyoon.kr"
-  }
+	"name": "contact-form",
+	"main": "worker.js",
+	"compatibility_date": "2025-11-08",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	"vars": {
+		"ALLOWED_ORIGIN": "https://taeyoon.kr"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "VISITOR_LOG",
+			"id": "121c27d4ffbd44e393abbbf2fb9eb586",
+			"remote": true
+		}
+	]
 }
