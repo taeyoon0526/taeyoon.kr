@@ -1,5 +1,5 @@
 (() => {
-  const API_ENDPOINT = '/api/visitors';
+  const API_ENDPOINT = 'https://contact.taeyoon.kr/api/visitors';
   const REFRESH_INTERVAL_MS = 60_000;
 
   const state = {
@@ -274,7 +274,7 @@
       });
 
       if (response.status === 401) {
-        window.location.href = '/visitor?auth=required';
+        window.location.href = 'https://contact.taeyoon.kr/visitor?auth=required';
         return;
       }
 
@@ -344,12 +344,12 @@
 
   async function handleLogout() {
     try {
-      const response = await fetch('/visitor/logout', {
+      const response = await fetch('https://contact.taeyoon.kr/visitor/logout', {
         method: 'POST',
         credentials: 'include',
       });
       if (response.ok) {
-        window.location.href = '/visitor';
+        window.location.href = 'https://contact.taeyoon.kr/visitor';
       } else {
         setStatus('로그아웃에 실패했습니다.', 'error');
       }

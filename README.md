@@ -29,6 +29,11 @@
 
 ### 🔧 기능
 - **Contact Form**: Cloudflare Turnstile CAPTCHA + Resend API 이메일 전송
+- **Visitor Tracking**: 실시간 방문자 분석 대시보드 (KV Storage)
+  - 방문 이벤트 추적 (enter, ping, leave)
+  - IP, 국가, 기기, 체류 시간 기록
+  - 비밀번호 보호 관리자 대시보드
+  - CSV 내보내기, 필터링, 통계 요약
 - **Keyboard Shortcuts**: 
   - `Alt + H`: Home 섹션으로 이동
   - `Alt + A`: About 섹션으로 이동
@@ -65,6 +70,7 @@
 
 ### Backend
 - **Cloudflare Workers**: Serverless 백엔드
+- **Cloudflare KV**: 방문자 데이터 저장소 (90일 TTL)
 - **Resend API**: 이메일 전송 서비스
 - **Cloudflare Turnstile**: CAPTCHA 서비스
 
@@ -100,7 +106,28 @@
 
 ### 프로덕션 배포
 
-자세한 배포 가이드는 [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)를 참조하세요.
+자세한 배포 가이드는 다음 문서를 참조하세요:
+- **일반 배포**: [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md)
+- **방문자 추적 시스템**: [VISITOR_DEPLOYMENT.md](VISITOR_DEPLOYMENT.md)
+
+---
+
+## 🔍 Visitor Tracking System
+
+방문자 추적 시스템은 실시간으로 웹사이트 방문 데이터를 수집하고 분석합니다.
+
+### 접속 방법
+1. 브라우저에서 `https://contact.taeyoon.kr/visitor` 접속
+2. 설정한 비밀번호 입력
+3. 대시보드에서 실시간 데이터 확인
+
+### 주요 기능
+- 📊 **실시간 통계**: 총 방문 수, 고유 세션, 평균 체류시간, 상위 국가
+- 🔍 **필터링**: 국가, 페이지, 날짜별 필터
+- 📥 **CSV 내보내기**: 데이터 다운로드
+- 🔄 **자동 새로고침**: 60초마다 자동 갱신
+
+자세한 내용은 [VISITOR_DEPLOYMENT.md](VISITOR_DEPLOYMENT.md)를 참조하세요.
 
 ---
 

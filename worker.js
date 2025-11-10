@@ -425,6 +425,442 @@ Referer: ${clientInfo.referer}
   }
 }
 
+// ===== Visitor Tracking Functions =====
+
+/**
+ * Store visitor event in KV
+ */
+async function storeVisitorEvent(event, env) {
+  if (!env.VISITOR_LOG) {
+    console.warn('VISITOR_LOG KV namespace not bound');
+    return false;
+  }
+
+  try {
+    const key = `${Date.now()}-${crypto.randomUUID()}`;
+    await env.VISITOR_LOG.put(key, JSON.stringify(event), {
+      expirationTtl: 60 * 60 * 24 * 90, // 90 days
+    });
+    return true;
+  } catch (error) {
+    console.error('Failed to store visitor event:', error);
+    return false;
+  }
+}
+
+/**
+ * Retrieve all visitor logs from KV
+ */
+async function getVisitorLogs(env, filters = {}) {
+  if (!env.VISITOR_LOG) {
+    return [];
+  }
+
+  try {
+    const list = await env.VISITOR_LOG.list({ limit: 1000 });
+    const keys = list.keys.map(k => k.name);
+    
+    const records = await Promise.all(
+      keys.map(async (key) => {
+        const value = await env.VISITOR_LOG.get(key);
+        if (!value) return null;
+        try {
+          return JSON.parse(value);
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    let visitors = records.filter(r => r !== null);
+
+    // Apply filters
+    if (filters.country) {
+      visitors = visitors.filter(v => v.country === filters.country);
+    }
+    if (filters.page) {
+      visitors = visitors.filter(v => v.url === filters.page);
+    }
+    if (filters.date) {
+      const targetDate = new Date(filters.date).toISOString().split('T')[0];
+      visitors = visitors.filter(v => {
+        const eventDate = new Date(v.time).toISOString().split('T')[0];
+        return eventDate === targetDate;
+      });
+    }
+
+    // Sort by time descending
+    visitors.sort((a, b) => new Date(b.time) - new Date(a.time));
+
+    return visitors;
+  } catch (error) {
+    console.error('Failed to retrieve visitor logs:', error);
+    return [];
+  }
+}
+
+/**
+ * Calculate summary statistics
+ */
+function calculateSummary(visitors) {
+  const enterEvents = visitors.filter(v => v.event === 'enter');
+  const leaveEvents = visitors.filter(v => v.event === 'leave' && typeof v.duration === 'number');
+  const uniqueSessions = new Set(visitors.map(v => v.sessionId)).size;
+  
+  const avgDuration = leaveEvents.length > 0
+    ? leaveEvents.reduce((sum, v) => sum + v.duration, 0) / leaveEvents.length
+    : 0;
+
+  const countryMap = {};
+  visitors.forEach(v => {
+    if (v.country) {
+      countryMap[v.country] = (countryMap[v.country] || 0) + 1;
+    }
+  });
+
+  const topCountries = Object.entries(countryMap)
+    .map(([country, count]) => ({ country, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 5);
+
+  return {
+    totalVisitors: enterEvents.length,
+    uniqueSessions,
+    averageDuration: Math.round(avgDuration),
+    topCountries,
+  };
+}
+
+/**
+ * Check visitor dashboard password
+ */
+function checkVisitorPassword(request, env) {
+  if (!env.VISITOR_PASSWORD) {
+    return false;
+  }
+
+  const cookie = request.headers.get('Cookie') || '';
+  const match = cookie.match(/visitor_auth=([^;]+)/);
+  if (match && match[1] === env.VISITOR_PASSWORD) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Set visitor auth cookie
+ */
+function setVisitorAuthCookie(env) {
+  if (!env.VISITOR_PASSWORD) {
+    return '';
+  }
+
+  return `visitor_auth=${env.VISITOR_PASSWORD}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`;
+}
+
+/**
+ * Handle /collect endpoint (beacon data ingestion)
+ */
+async function handleCollect(request, env, ctx) {
+  if (request.method !== 'POST') {
+    return new Response(JSON.stringify({ success: false, message: 'Method not allowed' }), {
+      status: 405,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  try {
+    const body = await request.json();
+    const { event, sessionId, device, url, referrer, time, duration } = body;
+
+    if (!event || !sessionId || !url || !time) {
+      return new Response(JSON.stringify({ success: false, message: 'Missing required fields' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const clientInfo = getClientInfo(request);
+    
+    const record = {
+      event,
+      sessionId,
+      ip: clientInfo.ip || 'Unknown',
+      country: clientInfo.country || 'Unknown',
+      device: device || 'Unknown',
+      url,
+      referrer: referrer || null,
+      ua: clientInfo.userAgent || 'Unknown',
+      time,
+      duration: typeof duration === 'number' ? duration : null,
+    };
+
+    const stored = await storeVisitorEvent(record, env);
+
+    if (!stored) {
+      return new Response(JSON.stringify({ success: false, message: 'Storage failed' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('Collect endpoint error:', error);
+    return new Response(JSON.stringify({ success: false, message: 'Server error' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+/**
+ * Handle /api/visitors endpoint (data retrieval)
+ */
+async function handleApiVisitors(request, env) {
+  if (!checkVisitorPassword(request, env)) {
+    return new Response(JSON.stringify({ success: false, message: 'Unauthorized' }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+
+  const url = new URL(request.url);
+  const filters = {
+    country: url.searchParams.get('country') || '',
+    page: url.searchParams.get('page') || '',
+    date: url.searchParams.get('date') || '',
+  };
+
+  const visitors = await getVisitorLogs(env, filters);
+  const summary = calculateSummary(visitors);
+
+  return new Response(JSON.stringify({ visitors, summary }), {
+    status: 200,
+    headers: { 'Content-Type': 'application/json' },
+  });
+}
+
+/**
+ * Handle /visitor endpoint (login page and auth)
+ */
+async function handleVisitor(request, env) {
+  const url = new URL(request.url);
+
+  // POST /visitor/logout
+  if (url.pathname === '/visitor/logout' && request.method === 'POST') {
+    return new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Set-Cookie': 'visitor_auth=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',
+      },
+    });
+  }
+
+  // POST /visitor (login)
+  if (request.method === 'POST') {
+    try {
+      const body = await request.json();
+      const { password } = body;
+
+      if (!env.VISITOR_PASSWORD) {
+        return new Response(JSON.stringify({ success: false, message: 'Password not configured' }), {
+          status: 500,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
+      if (password === env.VISITOR_PASSWORD) {
+        return new Response(JSON.stringify({ success: true }), {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/json',
+            'Set-Cookie': setVisitorAuthCookie(env),
+          },
+        });
+      }
+
+      return new Response(JSON.stringify({ success: false, message: 'Invalid password' }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    } catch {
+      return new Response(JSON.stringify({ success: false, message: 'Invalid request' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
+  // GET /visitor (return login page or dashboard)
+  const isAuthenticated = checkVisitorPassword(request, env);
+  
+  if (isAuthenticated) {
+    // Serve dashboard (visitor.html)
+    try {
+      const dashboardHtml = await env.ASSETS.fetch(new Request('https://placeholder/visitor.html', request));
+      return dashboardHtml;
+    } catch {
+      return new Response('Dashboard not found', { status: 404 });
+    }
+  }
+
+  // Serve login page
+  const loginHtml = `
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>방문자 대시보드 로그인</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 400px;
+    }
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 0.5rem;
+      color: #1f2933;
+    }
+    p {
+      color: #52616b;
+      margin-bottom: 2rem;
+      font-size: 0.95rem;
+    }
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: #323f4b;
+      font-size: 0.9rem;
+    }
+    input[type="password"] {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 2px solid #e4e7eb;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.2s;
+    }
+    input[type="password"]:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    button {
+      width: 100%;
+      padding: 0.85rem;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 1.5rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 0.75rem;
+      border-radius: 8px;
+      margin-top: 1rem;
+      font-size: 0.9rem;
+      display: none;
+    }
+    .error.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>🔒 방문자 대시보드</h1>
+    <p>비밀번호를 입력하여 접속하세요.</p>
+    <form id="loginForm">
+      <label for="password">비밀번호</label>
+      <input type="password" id="password" name="password" required autofocus>
+      <button type="submit" id="submitBtn">로그인</button>
+    </form>
+    <div id="error" class="error"></div>
+  </div>
+  <script>
+    const form = document.getElementById('loginForm');
+    const errorDiv = document.getElementById('error');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      
+      errorDiv.textContent = '';
+      errorDiv.classList.remove('show');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '로그인 중...';
+
+      try {
+        const response = await fetch('/visitor', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          window.location.href = '/visitor';
+        } else {
+          errorDiv.textContent = '비밀번호가 올바르지 않습니다.';
+          errorDiv.classList.add('show');
+        }
+      } catch (error) {
+        errorDiv.textContent = '로그인 요청 중 오류가 발생했습니다.';
+        errorDiv.classList.add('show');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '로그인';
+      }
+    });
+  </script>
+</body>
+</html>
+  `;
+
+  return new Response(loginHtml, {
+    status: 200,
+    headers: { 'Content-Type': 'text/html; charset=utf-8' },
+  });
+}
+
 // ===== Main Handler =====
 
 export default {
@@ -435,6 +871,17 @@ export default {
     const clientInfo = getClientInfo(request);
     const allowedOrigins = getAllowedOrigins(env);
     const workerOrigin = `${url.protocol}//${url.host}`;
+
+    // Route visitor tracking endpoints
+    if (url.pathname === '/collect') {
+      return handleCollect(request, env, ctx);
+    }
+    if (url.pathname === '/api/visitors') {
+      return handleApiVisitors(request, env);
+    }
+    if (url.pathname.startsWith('/visitor')) {
+      return handleVisitor(request, env);
+    }
 
     // Enforce HTTPS
     try {
