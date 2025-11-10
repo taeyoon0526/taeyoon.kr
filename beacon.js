@@ -81,17 +81,7 @@
     const payload = buildPayload(event, extra);
     const body = JSON.stringify(payload);
 
-    if (navigator.sendBeacon) {
-      try {
-        const blob = new Blob([body], { type: 'application/json' });
-        if (navigator.sendBeacon(COLLECT_ENDPOINT, blob)) {
-          return;
-        }
-      } catch (_) {
-        // fall through to fetch
-      }
-    }
-
+    // Use fetch with keepalive instead of sendBeacon to control credentials
     if (typeof fetch === 'function') {
       fetch(COLLECT_ENDPOINT, {
         method: 'POST',
