@@ -760,13 +760,8 @@ async function handleVisitor(request, env) {
   const isAuthenticated = checkVisitorPassword(request, env);
   
   if (isAuthenticated) {
-    // Serve dashboard (visitor.html)
-    try {
-      const dashboardHtml = await env.ASSETS.fetch(new Request('https://placeholder/visitor.html', request));
-      return dashboardHtml;
-    } catch {
-      return new Response('Dashboard not found', { status: 404 });
-    }
+    // Redirect to dashboard on main site
+    return Response.redirect('https://taeyoon.kr/visitor.html', 302);
   }
 
   // Serve login page
