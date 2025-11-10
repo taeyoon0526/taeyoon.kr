@@ -652,10 +652,16 @@ async function handleCollect(request, env, ctx) {
  * Handle /api/visitors endpoint (data retrieval)
  */
 async function handleApiVisitors(request, env) {
+  const origin = request.headers.get('Origin');
+  
   if (!checkVisitorPassword(request, env)) {
     return new Response(JSON.stringify({ success: false, message: 'Unauthorized' }), {
       status: 401,
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Credentials': 'true',
+      },
     });
   }
 
@@ -671,7 +677,11 @@ async function handleApiVisitors(request, env) {
 
   return new Response(JSON.stringify({ visitors, summary }), {
     status: 200,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': origin || '*',
+      'Access-Control-Allow-Credentials': 'true',
+    },
   });
 }
 
@@ -680,6 +690,7 @@ async function handleApiVisitors(request, env) {
  */
 async function handleVisitor(request, env) {
   const url = new URL(request.url);
+  const origin = request.headers.get('Origin');
 
   // POST /visitor/logout
   if (url.pathname === '/visitor/logout' && request.method === 'POST') {
@@ -688,6 +699,8 @@ async function handleVisitor(request, env) {
       headers: {
         'Content-Type': 'application/json',
         'Set-Cookie': 'visitor_auth=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0',
+        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Credentials': 'true',
       },
     });
   }
@@ -701,7 +714,10 @@ async function handleVisitor(request, env) {
       if (!env.VISITOR_PASSWORD) {
         return new Response(JSON.stringify({ success: false, message: 'Password not configured' }), {
           status: 500,
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': origin || '*',
+          },
         });
       }
 
@@ -711,18 +727,26 @@ async function handleVisitor(request, env) {
           headers: {
             'Content-Type': 'application/json',
             'Set-Cookie': setVisitorAuthCookie(env),
+            'Access-Control-Allow-Origin': origin || '*',
+            'Access-Control-Allow-Credentials': 'true',
           },
         });
       }
 
       return new Response(JSON.stringify({ success: false, message: 'Invalid password' }), {
         status: 401,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': origin || '*',
+        },
       });
     } catch {
       return new Response(JSON.stringify({ success: false, message: 'Invalid request' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': origin || '*',
+        },
       });
     }
   }
