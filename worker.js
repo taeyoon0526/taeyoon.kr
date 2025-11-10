@@ -950,7 +950,8 @@ export default {
     if (url.pathname === '/api/visitors') {
       return handleApiVisitors(request, env);
     }
-    if (url.pathname.startsWith('/visitor')) {
+    // Only handle /visitor and /visitor/logout, not /visitor.js or /visitor.css
+    if (url.pathname === '/visitor' || url.pathname === '/visitor/logout') {
       return handleVisitor(request, env);
     }
 
