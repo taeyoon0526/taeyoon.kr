@@ -565,14 +565,19 @@ function setVisitorAuthCookie(env) {
 async function handleCollect(request, env, ctx) {
   const origin = request.headers.get('Origin');
   
+  // CORS headers for /collect endpoint (no credentials)
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': 'https://taeyoon.kr',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
   // Handle CORS preflight
   if (request.method === 'OPTIONS') {
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
+        ...corsHeaders,
         'Access-Control-Max-Age': '86400',
       },
     });
@@ -583,7 +588,7 @@ async function handleCollect(request, env, ctx) {
       status: 405,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
+        ...corsHeaders,
       },
     });
   }
@@ -597,7 +602,7 @@ async function handleCollect(request, env, ctx) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
+          ...corsHeaders,
         },
       });
     }
@@ -624,7 +629,7 @@ async function handleCollect(request, env, ctx) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
+          ...corsHeaders,
         },
       });
     }
@@ -633,7 +638,7 @@ async function handleCollect(request, env, ctx) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
+        ...corsHeaders,
       },
     });
   } catch (error) {
@@ -642,7 +647,7 @@ async function handleCollect(request, env, ctx) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
+        ...corsHeaders,
       },
     });
   }
