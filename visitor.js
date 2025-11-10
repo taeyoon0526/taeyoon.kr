@@ -107,6 +107,13 @@
     document.cookie = `${name}=${value}; expires=${expires}; path=/; SameSite=Strict; Secure`;
   }
 
+  function escapeHTML(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
   function setStatus(message, tone = 'info') {
     if (!elements.statusBar) return;
     if (!message) {

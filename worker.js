@@ -823,6 +823,14 @@ async function handleVisitor(request, env) {
   const clientInfo = getClientInfo(request);
   const normalizedIp = normalizeIp(clientInfo.ip);
 
+  console.log('[VISITOR ACCESS ATTEMPT]', {
+    originalIp: clientInfo.ip || 'unknown',
+    normalizedIp: normalizedIp || 'unknown',
+    allowedIps: ALLOWED_VISITOR_IPS,
+    isAllowed: isAllowedVisitorIp(normalizedIp),
+    path: url.pathname,
+  });
+
   if (!isAllowedVisitorIp(normalizedIp)) {
     console.warn('[VISITOR BLOCKED]', {
       requestIp: clientInfo.ip || 'unknown',
@@ -832,7 +840,7 @@ async function handleVisitor(request, env) {
       method: request.method,
     });
     
-    // Serve custom 404 page
+    // Serve custom 404 page with debug info in header
     try {
       const notFoundResponse = await fetch('https://taeyoon.kr/404.html');
       if (notFoundResponse.ok) {
@@ -841,6 +849,8 @@ async function handleVisitor(request, env) {
           headers: {
             'Content-Type': 'text/html; charset=utf-8',
             'Cache-Control': 'no-cache',
+            'X-Debug-Your-IP': clientInfo.ip || 'unknown',
+            'X-Debug-Normalized-IP': normalizedIp || 'unknown',
           },
         });
       }
@@ -865,6 +875,26 @@ async function handleVisitor(request, env) {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
+  // Debug endpoint to check current IP
+  if (request.method === 'GET' && url.pathname === '/visitor/check-ip') {
+    return new Response(JSON.stringify({
+      originalIp: clientInfo.ip || 'unknown',
+      normalizedIp: normalizedIp || 'unknown',
+      allowedIps: ALLOWED_VISITOR_IPS,
+      isAllowed: isAllowedVisitorIp(normalizedIp),
+      cfConnectingIp: request.headers.get('CF-Connecting-IP'),
+      xForwardedFor: request.headers.get('X-Forwarded-For'),
+      xRealIp: request.headers.get('X-Real-IP'),
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   }
