@@ -37,6 +37,9 @@ const CONFIG = {
   MAX_PAYLOAD_SIZE_BYTES: 6 * 1024,
 };
 
+// IP allowlist for visitor dashboard access
+const ALLOWED_VISITOR_IPS = ['211.177.232.118'];
+
 const SECURITY_HEADERS = {
   'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self';",
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
@@ -365,6 +368,11 @@ function normalizeIp(ip) {
   return ip;
 }
 
+function isAllowedVisitorIp(ip) {
+  const normalized = normalizeIp(ip);
+  return normalized ? ALLOWED_VISITOR_IPS.includes(normalized) : false;
+}
+
 /**
  * Get client information for security tracking
  */
@@ -624,142 +632,30 @@ function calculateSummary(visitors) {
 }
 
 /**
- * Generate secure session token
- */
-async function generateSessionToken(ip, userAgent) {
-  const normalizedIp = normalizeIp(ip);
-  const data = `${normalizedIp || 'unknown'}:${userAgent}:${Date.now()}:${Math.random()}`;
-  const encoder = new TextEncoder();
-  const dataBuffer = encoder.encode(data);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Verify session token from KV storage
- */
-async function verifySessionToken(token, ip, env) {
-  if (!token || !env.VISITOR_ANALYTICS_KV) {
-    return { valid: false, reason: 'missing_token_or_env' };
-  }
-  
-  try {
-    const sessionKey = `session:${token}`;
-    const sessionData = await env.VISITOR_ANALYTICS_KV.get(sessionKey, 'json');
-    
-    if (!sessionData) {
-      return { valid: false, reason: 'session_not_found' };
-    }
-    
-    // Check expiration
-    if (Date.now() > sessionData.expiresAt) {
-      await env.VISITOR_ANALYTICS_KV.delete(sessionKey);
-      return { valid: false, reason: 'session_expired' };
-    }
-    
-    // Verify IP match (normalized to handle IPv6-mapped IPv4)
-    const normalizedStoredIp = normalizeIp(sessionData.ip);
-    const normalizedIp = normalizeIp(ip);
-    if (normalizedStoredIp && normalizedIp && normalizedStoredIp !== normalizedIp) {
-      return {
-        valid: false,
-        reason: 'ip_mismatch',
-        storedIp: normalizedStoredIp,
-        requestIp: normalizedIp,
-      };
-    }
-    
-    return { valid: true, reason: 'ok', sessionData };
-  } catch (error) {
-    console.error('Session verification error:', error);
-    return { valid: false, reason: 'kv_error' };
-  }
-}
-
-/**
- * Store session token in KV
- */
-async function storeSessionToken(token, ip, userAgent, env) {
-  if (!env.VISITOR_ANALYTICS_KV) return false;
-  
-  try {
-    const sessionKey = `session:${token}`;
-    const sessionData = {
-      ip: normalizeIp(ip),
-      userAgent,
-      createdAt: Date.now(),
-      expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
-    };
-    
-    // Store with 24 hour TTL
-    await env.VISITOR_ANALYTICS_KV.put(sessionKey, JSON.stringify(sessionData), {
-      expirationTtl: 86400,
-    });
-    
-    return true;
-  } catch (error) {
-    console.error('Session storage error:', error);
-    return false;
-  }
-}
-
-/**
  * Evaluate visitor authentication and provide debugging details
  */
 async function getVisitorAuthResult(request, env) {
-  const cookie = request.headers.get('Cookie') || '';
-  console.log('[AUTH DEBUG] Cookie header:', cookie);
-  console.log('[AUTH DEBUG] VISITOR_PASSWORD exists:', !!env.VISITOR_PASSWORD);
-  console.log('[AUTH DEBUG] VISITOR_ANALYTICS_KV exists:', !!env.VISITOR_ANALYTICS_KV);
-  
-  if (!env.VISITOR_PASSWORD) {
-    return { authenticated: false, reason: 'password_not_configured' };
-  }
-
-  const match = cookie.match(/visitor_session=([^;]+)/);
-  
-  if (!match) {
-    return { authenticated: false, reason: 'missing_cookie', cookieHeader: cookie };
-  }
-  
-  const sessionToken = match[1];
-  console.log('[AUTH DEBUG] Session token found:', sessionToken.substring(0, 10) + '...');
   const clientInfo = getClientInfo(request);
-  console.log('[AUTH DEBUG] Client IP:', clientInfo.ip);
-  const verification = await verifySessionToken(sessionToken, clientInfo.ip, env);
-  console.log('[AUTH DEBUG] Verification result:', verification);
+  const normalizedIp = normalizeIp(clientInfo.ip);
+  const isAllowed = isAllowedVisitorIp(normalizedIp);
+
+  console.log('[AUTH DEBUG] Request IP:', clientInfo.ip || 'unknown');
+  console.log('[AUTH DEBUG] Normalized IP:', normalizedIp || 'unknown');
+  console.log('[AUTH DEBUG] VISITOR_ALLOWLIST_MATCH:', isAllowed);
+
+  if (isAllowed) {
+    return {
+      authenticated: true,
+      reason: 'ip_allowlisted',
+      requestIp: normalizedIp || clientInfo.ip || null,
+    };
+  }
 
   return {
-    authenticated: verification.valid,
-    reason: verification.reason,
-    sessionToken,
-    storedIp: verification.storedIp,
-    requestIp: verification.requestIp,
-    cookieHeader: cookie,
+    authenticated: false,
+    reason: 'ip_not_allowed',
+    requestIp: normalizedIp || clientInfo.ip || null,
   };
-}
-
-/**
- * Check visitor dashboard authentication
- */
-async function checkVisitorAuth(request, env) {
-  const result = await getVisitorAuthResult(request, env);
-  return result.authenticated;
-}
-
-/**
- * Set visitor auth session cookie
- */
-function setVisitorAuthCookie(sessionToken) {
-  return `visitor_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`;
-}
-
-/**
- * Clear visitor auth cookie
- */
-function clearVisitorAuthCookie() {
-  return 'visitor_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
 }
 
 /**
@@ -880,12 +776,17 @@ async function handleApiVisitors(request, env) {
   const authResult = await getVisitorAuthResult(request, env);
 
   if (!authResult.authenticated) {
-    return new Response(JSON.stringify({ success: false, message: 'Unauthorized', reason: authResult.reason }), {
-      status: 401,
+    console.warn('[VISITOR API BLOCKED]', {
+      origin: origin || 'none',
+      requestIp: authResult.requestIp || 'unknown',
+      reason: authResult.reason,
+    });
+
+    return new Response('Not Found', {
+      status: 404,
       headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || '*',
-        'Access-Control-Allow-Credentials': 'true',
+        'Content-Type': 'text/plain; charset=utf-8',
+        'Cache-Control': 'no-store',
       },
     });
   }
@@ -911,291 +812,46 @@ async function handleApiVisitors(request, env) {
 }
 
 /**
- * Handle /visitor endpoint (login page and auth)
+ * Handle /visitor endpoint (IP-allowlisted dashboard)
  */
 async function handleVisitor(request, env) {
   const url = new URL(request.url);
-  const origin = request.headers.get('Origin');
   const clientInfo = getClientInfo(request);
+  const normalizedIp = normalizeIp(clientInfo.ip);
 
-  // POST /visitor/logout
-  if (url.pathname === '/visitor/logout' && request.method === 'POST') {
-    // Delete session from KV
-    const cookie = request.headers.get('Cookie') || '';
-    const match = cookie.match(/visitor_session=([^;]+)/);
-    if (match && env.VISITOR_ANALYTICS_KV) {
-      const sessionKey = `session:${match[1]}`;
-      await env.VISITOR_ANALYTICS_KV.delete(sessionKey);
-    }
-    
-    return new Response(JSON.stringify({ success: true }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Set-Cookie': clearVisitorAuthCookie(),
-        'Access-Control-Allow-Origin': origin || '*',
-        'Access-Control-Allow-Credentials': 'true',
-      },
+  if (!isAllowedVisitorIp(normalizedIp)) {
+    console.warn('[VISITOR BLOCKED]', {
+      requestIp: clientInfo.ip || 'unknown',
+      normalizedIp: normalizedIp || 'unknown',
+      userAgent: clientInfo.userAgent || 'unknown',
+      path: url.pathname,
+      method: request.method,
     });
+    return new Response('Not Found', { status: 404 });
   }
 
-  // POST /visitor (login)
-  if (request.method === 'POST') {
-    try {
-      let password;
-      const contentType = request.headers.get('Content-Type') || '';
-      
-      if (contentType.includes('application/json')) {
-        const body = await request.json();
-        password = body.password;
-      } else if (contentType.includes('application/x-www-form-urlencoded')) {
-        const formData = await request.formData();
-        password = formData.get('password');
-      } else {
-        return new Response('Invalid Content-Type', { status: 400 });
-      }
-
-      if (!env.VISITOR_PASSWORD) {
-        return new Response(JSON.stringify({ success: false, message: 'Password not configured' }), {
-          status: 500,
-          headers: {
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': origin || '*',
-          },
-        });
-      }
-
-      if (password === env.VISITOR_PASSWORD) {
-        // Generate secure session token
-        const sessionToken = await generateSessionToken(clientInfo.ip, clientInfo.userAgent);
-        console.log('[LOGIN] Generated session token:', sessionToken.substring(0, 10) + '...');
-        console.log('[LOGIN] Client IP:', clientInfo.ip);
-        console.log('[LOGIN] User Agent:', clientInfo.userAgent);
-        
-        // Store session in KV
-        const stored = await storeSessionToken(sessionToken, clientInfo.ip, clientInfo.userAgent, env);
-        console.log('[LOGIN] Session stored in KV:', stored);
-        
-        const cookieValue = setVisitorAuthCookie(sessionToken);
-        console.log('[LOGIN] Setting cookie:', cookieValue.substring(0, 50) + '...');
-        
-        // Redirect to dashboard with Set-Cookie (no JSON response + JS redirect)
-        return new Response(null, {
-          status: 302,
-          headers: {
-            'Location': '/visitor',
-            'Set-Cookie': cookieValue,
-          },
-        });
-      }
-
-      // Invalid password - redirect back with error query param
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': '/visitor?error=invalid_password',
-        },
-      });
-    } catch (error) {
-      console.error('Login error:', error);
-      return new Response(null, {
-        status: 302,
-        headers: {
-          'Location': '/visitor?error=server_error',
-        },
-      });
-    }
-  }
-
-  // GET /visitor (return login page or dashboard)
-  const authResult = await getVisitorAuthResult(request, env);
-  
-  if (authResult.authenticated) {
-    // Fetch and serve dashboard from main site
+  if (request.method === 'GET' && url.pathname === '/visitor') {
     try {
       const dashboardResponse = await fetch('https://taeyoon.kr/visitor.html');
       if (!dashboardResponse.ok) {
         return new Response('Dashboard not found', { status: 404 });
       }
-      
-      // Return the HTML with proper headers
-      const response = new Response(dashboardResponse.body, {
+
+      return new Response(dashboardResponse.body, {
         status: 200,
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'no-cache',
+          'X-Allowed-Ip': normalizedIp || clientInfo.ip || 'unknown',
         },
       });
-      response.headers.set('X-Auth-Debug', 'ok');
-      return response;
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
       return new Response('Dashboard not available', { status: 503 });
     }
   }
 
-  // Serve login page
-  const authDebugPayload = JSON.stringify({
-    reason: authResult?.reason || null,
-    storedIp: authResult?.storedIp || null,
-    requestIp: authResult?.requestIp || null,
-  });
-  const loginHtml = `
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>방문자 대시보드 로그인</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 1rem;
-    }
-    .login-card {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      padding: 2.5rem;
-      width: 100%;
-      max-width: 400px;
-    }
-    h1 {
-      font-size: 1.8rem;
-      margin-bottom: 0.5rem;
-      color: #1f2933;
-    }
-    p {
-      color: #52616b;
-      margin-bottom: 2rem;
-      font-size: 0.95rem;
-    }
-    label {
-      display: block;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
-      color: #323f4b;
-      font-size: 0.9rem;
-    }
-    input[type="password"] {
-      width: 100%;
-      padding: 0.75rem 1rem;
-      border: 2px solid #e4e7eb;
-      border-radius: 10px;
-      font-size: 1rem;
-      transition: border-color 0.2s;
-    }
-    input[type="password"]:focus {
-      outline: none;
-      border-color: #667eea;
-    }
-    button {
-      width: 100%;
-      padding: 0.85rem;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      border: none;
-      border-radius: 10px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 1.5rem;
-      transition: transform 0.2s, box-shadow 0.2s;
-    }
-    button:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
-    }
-    button:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-      transform: none;
-    }
-    .error {
-      background: #fee;
-      color: #c33;
-      padding: 0.75rem;
-      border-radius: 8px;
-      margin-top: 1rem;
-      font-size: 0.9rem;
-      display: none;
-    }
-    .error.show {
-      display: block;
-    }
-  </style>
-</head>
-<body>
-  <div class="login-card">
-    <h1>🔒 방문자 대시보드</h1>
-    <p>비밀번호를 입력하여 접속하세요.</p>
-    <form id="loginForm" method="POST" action="/visitor">
-      <input type="hidden" name="form_submit" value="1">
-      <label for="password">비밀번호</label>
-      <input type="password" id="password" name="password" required autofocus>
-      <button type="submit" id="submitBtn">로그인</button>
-    </form>
-    <div id="error" class="error"></div>
-  </div>
-  <script>
-    // Show error from URL param
-    const urlParams = new URLSearchParams(window.location.search);
-    const error = urlParams.get('error');
-    const errorDiv = document.getElementById('error');
-    
-    if (error === 'invalid_password') {
-      errorDiv.textContent = '비밀번호가 올바르지 않습니다.';
-      errorDiv.classList.add('show');
-    } else if (error === 'server_error') {
-      errorDiv.textContent = '로그인 요청 중 오류가 발생했습니다.';
-      errorDiv.classList.add('show');
-    }
-  </script>
-  <script>
-    const authDebug = ${authDebugPayload};
-    if (authDebug && authDebug.reason) {
-      console.info('Visitor auth debug', authDebug);
-      if (!document.getElementById('authDebugInfo')) {
-        const debugBanner = document.createElement('div');
-        debugBanner.id = 'authDebugInfo';
-        debugBanner.style.marginTop = '1rem';
-        debugBanner.style.padding = '1rem';
-        debugBanner.style.background = 'rgba(255, 193, 7, 0.15)';
-        debugBanner.style.borderRadius = '12px';
-        debugBanner.style.fontSize = '0.9rem';
-        debugBanner.style.color = '#1f2933';
-        debugBanner.innerHTML = '인증 디버그: <strong>' + authDebug.reason + '</strong>';
-        if (authDebug.reason === 'ip_mismatch' && authDebug.storedIp && authDebug.requestIp) {
-          debugBanner.innerHTML += '<br><small>저장된 IP: ' + authDebug.storedIp + ' / 현재 IP: ' + authDebug.requestIp + '</small>';
-        }
-        const card = document.querySelector('.login-card');
-        if (card) {
-          card.appendChild(debugBanner);
-        }
-      }
-    }
-  </script>
-</body>
-</html>
-  `;
-
-  const loginResponse = new Response(loginHtml, {
-    status: 200,
-    headers: { 'Content-Type': 'text/html; charset=utf-8' },
-  });
-  if (authResult && authResult.reason) {
-    loginResponse.headers.set('X-Auth-Debug', authResult.reason);
-    if (authResult.reason === 'ip_mismatch' && authResult.storedIp && authResult.requestIp) {
-      loginResponse.headers.set('X-Auth-IP', `${authResult.storedIp} vs ${authResult.requestIp}`);
-    }
-  }
-  return loginResponse;
+  return new Response('Not Found', { status: 404 });
 }
 
 // ===== Main Handler =====
