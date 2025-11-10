@@ -640,31 +640,40 @@ async function generateSessionToken(ip, userAgent) {
  * Verify session token from KV storage
  */
 async function verifySessionToken(token, ip, env) {
-  if (!token || !env.VISITOR_ANALYTICS) return false;
+  if (!token || !env.VISITOR_ANALYTICS) {
+    return { valid: false, reason: 'missing_token_or_env' };
+  }
   
   try {
     const sessionKey = `session:${token}`;
     const sessionData = await env.VISITOR_ANALYTICS.get(sessionKey, 'json');
     
-    if (!sessionData) return false;
+    if (!sessionData) {
+      return { valid: false, reason: 'session_not_found' };
+    }
     
     // Check expiration
     if (Date.now() > sessionData.expiresAt) {
       await env.VISITOR_ANALYTICS.delete(sessionKey);
-      return false;
+      return { valid: false, reason: 'session_expired' };
     }
     
     // Verify IP match (normalized to handle IPv6-mapped IPv4)
     const normalizedStoredIp = normalizeIp(sessionData.ip);
     const normalizedIp = normalizeIp(ip);
     if (normalizedStoredIp && normalizedIp && normalizedStoredIp !== normalizedIp) {
-      return false;
+      return {
+        valid: false,
+        reason: 'ip_mismatch',
+        storedIp: normalizedStoredIp,
+        requestIp: normalizedIp,
+      };
     }
     
-    return true;
+    return { valid: true, reason: 'ok', sessionData };
   } catch (error) {
     console.error('Session verification error:', error);
-    return false;
+    return { valid: false, reason: 'kv_error' };
   }
 }
 
@@ -696,22 +705,39 @@ async function storeSessionToken(token, ip, userAgent, env) {
 }
 
 /**
- * Check visitor dashboard authentication
+ * Evaluate visitor authentication and provide debugging details
  */
-async function checkVisitorAuth(request, env) {
+async function getVisitorAuthResult(request, env) {
   if (!env.VISITOR_PASSWORD) {
-    return false;
+    return { authenticated: false, reason: 'password_not_configured' };
   }
 
   const cookie = request.headers.get('Cookie') || '';
   const match = cookie.match(/visitor_session=([^;]+)/);
   
-  if (!match) return false;
+  if (!match) {
+    return { authenticated: false, reason: 'missing_cookie' };
+  }
   
   const sessionToken = match[1];
   const clientInfo = getClientInfo(request);
-  
-  return await verifySessionToken(sessionToken, clientInfo.ip, env);
+  const verification = await verifySessionToken(sessionToken, clientInfo.ip, env);
+
+  return {
+    authenticated: verification.valid,
+    reason: verification.reason,
+    sessionToken,
+    storedIp: verification.storedIp,
+    requestIp: verification.requestIp,
+  };
+}
+
+/**
+ * Check visitor dashboard authentication
+ */
+async function checkVisitorAuth(request, env) {
+  const result = await getVisitorAuthResult(request, env);
+  return result.authenticated;
 }
 
 /**
@@ -843,8 +869,10 @@ async function handleCollect(request, env, ctx) {
 async function handleApiVisitors(request, env) {
   const origin = request.headers.get('Origin');
   
-  if (!await checkVisitorAuth(request, env)) {
-    return new Response(JSON.stringify({ success: false, message: 'Unauthorized' }), {
+  const authResult = await getVisitorAuthResult(request, env);
+
+  if (!authResult.authenticated) {
+    return new Response(JSON.stringify({ success: false, message: 'Unauthorized', reason: authResult.reason }), {
       status: 401,
       headers: {
         'Content-Type': 'application/json',
@@ -956,9 +984,9 @@ async function handleVisitor(request, env) {
   }
 
   // GET /visitor (return login page or dashboard)
-  const isAuthenticated = await checkVisitorAuth(request, env);
+  const authResult = await getVisitorAuthResult(request, env);
   
-  if (isAuthenticated) {
+  if (authResult.authenticated) {
     // Fetch and serve dashboard from main site
     try {
       const dashboardResponse = await fetch('https://taeyoon.kr/visitor.html');
@@ -967,13 +995,15 @@ async function handleVisitor(request, env) {
       }
       
       // Return the HTML with proper headers
-      return new Response(dashboardResponse.body, {
+      const response = new Response(dashboardResponse.body, {
         status: 200,
         headers: {
           'Content-Type': 'text/html; charset=utf-8',
           'Cache-Control': 'no-cache',
         },
       });
+      response.headers.set('X-Auth-Debug', 'ok');
+      return response;
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
       return new Response('Dashboard not available', { status: 503 });
@@ -1125,10 +1155,17 @@ async function handleVisitor(request, env) {
 </html>
   `;
 
-  return new Response(loginHtml, {
+  const loginResponse = new Response(loginHtml, {
     status: 200,
     headers: { 'Content-Type': 'text/html; charset=utf-8' },
   });
+  if (authResult && authResult.reason) {
+    loginResponse.headers.set('X-Auth-Debug', authResult.reason);
+    if (authResult.reason === 'ip_mismatch' && authResult.storedIp && authResult.requestIp) {
+      loginResponse.headers.set('X-Auth-IP', `${authResult.storedIp} vs ${authResult.requestIp}`);
+    }
+  }
+  return loginResponse;
 }
 
 // ===== Main Handler =====
