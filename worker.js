@@ -708,20 +708,27 @@ async function storeSessionToken(token, ip, userAgent, env) {
  * Evaluate visitor authentication and provide debugging details
  */
 async function getVisitorAuthResult(request, env) {
+  const cookie = request.headers.get('Cookie') || '';
+  console.log('[AUTH DEBUG] Cookie header:', cookie);
+  console.log('[AUTH DEBUG] VISITOR_PASSWORD exists:', !!env.VISITOR_PASSWORD);
+  console.log('[AUTH DEBUG] VISITOR_ANALYTICS exists:', !!env.VISITOR_ANALYTICS);
+  
   if (!env.VISITOR_PASSWORD) {
     return { authenticated: false, reason: 'password_not_configured' };
   }
 
-  const cookie = request.headers.get('Cookie') || '';
   const match = cookie.match(/visitor_session=([^;]+)/);
   
   if (!match) {
-    return { authenticated: false, reason: 'missing_cookie' };
+    return { authenticated: false, reason: 'missing_cookie', cookieHeader: cookie };
   }
   
   const sessionToken = match[1];
+  console.log('[AUTH DEBUG] Session token found:', sessionToken.substring(0, 10) + '...');
   const clientInfo = getClientInfo(request);
+  console.log('[AUTH DEBUG] Client IP:', clientInfo.ip);
   const verification = await verifySessionToken(sessionToken, clientInfo.ip, env);
+  console.log('[AUTH DEBUG] Verification result:', verification);
 
   return {
     authenticated: verification.valid,
@@ -729,6 +736,7 @@ async function getVisitorAuthResult(request, env) {
     sessionToken,
     storedIp: verification.storedIp,
     requestIp: verification.requestIp,
+    cookieHeader: cookie,
   };
 }
 
@@ -960,16 +968,23 @@ async function handleVisitor(request, env) {
       if (password === env.VISITOR_PASSWORD) {
         // Generate secure session token
         const sessionToken = await generateSessionToken(clientInfo.ip, clientInfo.userAgent);
+        console.log('[LOGIN] Generated session token:', sessionToken.substring(0, 10) + '...');
+        console.log('[LOGIN] Client IP:', clientInfo.ip);
+        console.log('[LOGIN] User Agent:', clientInfo.userAgent);
         
         // Store session in KV
-        await storeSessionToken(sessionToken, clientInfo.ip, clientInfo.userAgent, env);
+        const stored = await storeSessionToken(sessionToken, clientInfo.ip, clientInfo.userAgent, env);
+        console.log('[LOGIN] Session stored in KV:', stored);
+        
+        const cookieValue = setVisitorAuthCookie(sessionToken);
+        console.log('[LOGIN] Setting cookie:', cookieValue.substring(0, 50) + '...');
         
         // Redirect to dashboard with Set-Cookie (no JSON response + JS redirect)
         return new Response(null, {
           status: 302,
           headers: {
             'Location': '/visitor',
-            'Set-Cookie': setVisitorAuthCookie(sessionToken),
+            'Set-Cookie': cookieValue,
           },
         });
       }
