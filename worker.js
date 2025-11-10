@@ -934,8 +934,18 @@ async function handleVisitor(request, env) {
   // POST /visitor (login)
   if (request.method === 'POST') {
     try {
-      const body = await request.json();
-      const { password } = body;
+      let password;
+      const contentType = request.headers.get('Content-Type') || '';
+      
+      if (contentType.includes('application/json')) {
+        const body = await request.json();
+        password = body.password;
+      } else if (contentType.includes('application/x-www-form-urlencoded')) {
+        const formData = await request.formData();
+        password = formData.get('password');
+      } else {
+        return new Response('Invalid Content-Type', { status: 400 });
+      }
 
       if (!env.VISITOR_PASSWORD) {
         return new Response(JSON.stringify({ success: false, message: 'Password not configured' }), {
@@ -964,19 +974,19 @@ async function handleVisitor(request, env) {
         });
       }
 
-      return new Response(JSON.stringify({ success: false, message: 'Invalid password' }), {
-        status: 401,
+      // Invalid password - redirect back with error query param
+      return new Response(null, {
+        status: 302,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': origin || '*',
+          'Location': '/visitor?error=invalid_password',
         },
       });
-    } catch {
-      return new Response(JSON.stringify({ success: false, message: 'Invalid request' }), {
-        status: 400,
+    } catch (error) {
+      console.error('Login error:', error);
+      return new Response(null, {
+        status: 302,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': origin || '*',
+          'Location': '/visitor?error=server_error',
         },
       });
     }
@@ -1110,7 +1120,8 @@ async function handleVisitor(request, env) {
   <div class="login-card">
     <h1>🔒 방문자 대시보드</h1>
     <p>비밀번호를 입력하여 접속하세요.</p>
-    <form id="loginForm">
+    <form id="loginForm" method="POST" action="/visitor">
+      <input type="hidden" name="form_submit" value="1">
       <label for="password">비밀번호</label>
       <input type="password" id="password" name="password" required autofocus>
       <button type="submit" id="submitBtn">로그인</button>
@@ -1118,49 +1129,18 @@ async function handleVisitor(request, env) {
     <div id="error" class="error"></div>
   </div>
   <script>
-    const form = document.getElementById('loginForm');
+    // Show error from URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
     const errorDiv = document.getElementById('error');
-    const submitBtn = document.getElementById('submitBtn');
-
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const password = document.getElementById('password').value;
-      
-      errorDiv.textContent = '';
-      errorDiv.classList.remove('show');
-      submitBtn.disabled = true;
-      submitBtn.textContent = '로그인 중...';
-
-      try {
-        const response = await fetch('/visitor', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ password }),
-          redirect: 'manual',
-        });
-
-        // Handle redirect (302) - browser will follow automatically with cookies
-        if (response.type === 'opaqueredirect' || response.status === 302) {
-          window.location.href = '/visitor';
-          return;
-        }
-
-        // Handle error responses
-        if (response.status === 401) {
-          errorDiv.textContent = '비밀번호가 올바르지 않습니다.';
-          errorDiv.classList.add('show');
-        } else if (!response.ok) {
-          errorDiv.textContent = '로그인 요청 중 오류가 발생했습니다.';
-          errorDiv.classList.add('show');
-        }
-      } catch (error) {
-        errorDiv.textContent = '로그인 요청 중 오류가 발생했습니다.';
-        errorDiv.classList.add('show');
-      } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = '로그인';
-      }
-    });
+    
+    if (error === 'invalid_password') {
+      errorDiv.textContent = '비밀번호가 올바르지 않습니다.';
+      errorDiv.classList.add('show');
+    } else if (error === 'server_error') {
+      errorDiv.textContent = '로그인 요청 중 오류가 발생했습니다.';
+      errorDiv.classList.add('show');
+    }
   </script>
   <script>
     const authDebug = ${authDebugPayload};
