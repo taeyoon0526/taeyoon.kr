@@ -511,6 +511,12 @@ function calculateSummary(visitors) {
     ? leaveEvents.reduce((sum, v) => sum + v.duration, 0) / leaveEvents.length
     : 0;
 
+  // Calculate average page load time from enter events with performance data
+  const enterWithPerf = enterEvents.filter(v => v.performance && typeof v.performance.pageLoadTime === 'number');
+  const avgLoadTime = enterWithPerf.length > 0
+    ? enterWithPerf.reduce((sum, v) => sum + v.performance.pageLoadTime, 0) / enterWithPerf.length
+    : 0;
+
   const countryMap = {};
   visitors.forEach(v => {
     if (v.country) {
@@ -527,6 +533,7 @@ function calculateSummary(visitors) {
     totalVisitors: enterEvents.length,
     uniqueSessions,
     averageDuration: Math.round(avgDuration),
+    averageLoadTime: Math.round(avgLoadTime),
     topCountries,
   };
 }
@@ -595,7 +602,7 @@ async function handleCollect(request, env, ctx) {
 
   try {
     const body = await request.json();
-    const { event, sessionId, device, url, referrer, time, duration } = body;
+    const { event, sessionId, device, url, referrer, time, duration, performance } = body;
 
     if (!event || !sessionId || !url || !time) {
       return new Response(JSON.stringify({ success: false, message: 'Missing required fields' }), {
@@ -621,6 +628,18 @@ async function handleCollect(request, env, ctx) {
       time,
       duration: typeof duration === 'number' ? duration : null,
     };
+
+    // Add performance metrics if provided (only for 'enter' events)
+    if (performance && typeof performance === 'object') {
+      record.performance = {
+        pageLoadTime: performance.pageLoadTime || null,
+        domReadyTime: performance.domReadyTime || null,
+        dnsTime: performance.dnsTime || null,
+        tcpTime: performance.tcpTime || null,
+        requestTime: performance.requestTime || null,
+        renderTime: performance.renderTime || null,
+      };
+    }
 
     const stored = await storeVisitorEvent(record, env);
 

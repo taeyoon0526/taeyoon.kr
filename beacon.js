@@ -14,7 +14,15 @@
     return;
   }
 
-  sendEvent('enter');
+  // Wait for page to fully load before sending enter event with performance data
+  if (document.readyState === 'complete') {
+    sendEvent('enter');
+  } else {
+    window.addEventListener('load', () => {
+      // Small delay to ensure performance.timing is populated
+      setTimeout(() => sendEvent('enter'), 100);
+    });
+  }
 
   const pingTimer = window.setInterval(() => {
     pingCount += 1;
@@ -61,6 +69,29 @@
     return 'Desktop';
   }
 
+  function getPerformanceMetrics() {
+    if (!window.performance || !window.performance.timing) {
+      return null;
+    }
+
+    const timing = window.performance.timing;
+    const navigationStart = timing.navigationStart;
+
+    // Calculate metrics only if page has fully loaded
+    if (timing.loadEventEnd === 0) {
+      return null;
+    }
+
+    return {
+      pageLoadTime: timing.loadEventEnd - navigationStart,
+      domReadyTime: timing.domContentLoadedEventEnd - navigationStart,
+      dnsTime: timing.domainLookupEnd - timing.domainLookupStart,
+      tcpTime: timing.connectEnd - timing.connectStart,
+      requestTime: timing.responseEnd - timing.requestStart,
+      renderTime: timing.domComplete - timing.domLoading,
+    };
+  }
+
   function buildPayload(event, extra) {
     const now = new Date();
     const payload = {
@@ -74,6 +105,15 @@
     if (typeof extra.duration === 'number') {
       payload.duration = extra.duration;
     }
+    
+    // Add performance metrics only for 'enter' event
+    if (event === 'enter') {
+      const perf = getPerformanceMetrics();
+      if (perf) {
+        payload.performance = perf;
+      }
+    }
+    
     return payload;
   }
 

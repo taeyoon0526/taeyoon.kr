@@ -22,6 +22,7 @@
     totalVisitors: document.getElementById('totalVisitorsValue'),
     uniqueSessions: document.getElementById('uniqueSessionsValue'),
     averageDuration: document.getElementById('averageDurationValue'),
+    averageLoadTime: document.getElementById('averageLoadTimeValue'),
     topCountriesList: document.getElementById('topCountriesList'),
     lastUpdated: document.getElementById('lastUpdated'),
     tableBody: document.getElementById('visitorTableBody'),
@@ -78,6 +79,16 @@
     return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
   }
 
+  function formatPerformance(milliseconds) {
+    if (typeof milliseconds !== 'number' || Number.isNaN(milliseconds) || milliseconds <= 0) {
+      return '—';
+    }
+    if (milliseconds < 1000) {
+      return Math.round(milliseconds) + 'ms';
+    }
+    return (milliseconds / 1000).toFixed(2) + 's';
+  }
+
   function formatDateTime(isoString) {
     if (!isoString) return '—';
     const date = new Date(isoString);
@@ -115,6 +126,9 @@
     }
     if (elements.averageDuration) {
       elements.averageDuration.textContent = formatDuration(Math.round(state.summary.averageDuration));
+    }
+    if (elements.averageLoadTime) {
+      elements.averageLoadTime.textContent = formatPerformance(state.summary.averageLoadTime);
     }
     if (elements.topCountriesList) {
       elements.topCountriesList.innerHTML = '';
@@ -194,6 +208,9 @@
 
       const durationCell = createElement('td', 'mono-cell', formatDuration(record.duration));
 
+      const pageLoadCell = createElement('td', 'mono-cell', formatPerformance(record.performance?.pageLoadTime));
+      const domReadyCell = createElement('td', 'mono-cell', formatPerformance(record.performance?.domReadyTime));
+
       const referrerCell = createElement('td', null, formatReferrer(record.referrer));
 
       const uaCell = createElement('td');
@@ -201,7 +218,7 @@
 
       const timeCell = createElement('td', 'mono-cell', formatDateTime(record.time));
 
-      tr.append(eventCell, ipCell, countryCell, deviceCell, pageCell, durationCell, referrerCell, uaCell, timeCell);
+      tr.append(eventCell, ipCell, countryCell, deviceCell, pageCell, durationCell, pageLoadCell, domReadyCell, referrerCell, uaCell, timeCell);
       elements.tableBody.appendChild(tr);
     });
 
