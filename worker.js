@@ -431,27 +431,19 @@ Referer: ${clientInfo.referer}
  * Store visitor event in KV
  */
 async function storeVisitorEvent(event, env) {
-  console.log('[storeVisitorEvent] Called with event:', JSON.stringify(event));
-  
   if (!env.VISITOR_LOG) {
-    console.warn('[storeVisitorEvent] VISITOR_LOG KV namespace not bound');
+    console.warn('VISITOR_LOG KV namespace not bound');
     return false;
   }
-  
-  console.log('[storeVisitorEvent] VISITOR_LOG is bound');
 
   try {
     const key = `${Date.now()}-${crypto.randomUUID()}`;
-    console.log('[storeVisitorEvent] Storing with key:', key);
-    
     await env.VISITOR_LOG.put(key, JSON.stringify(event), {
       expirationTtl: 60 * 60 * 24 * 90, // 90 days
     });
-    
-    console.log('[storeVisitorEvent] Successfully stored');
     return true;
   } catch (error) {
-    console.error('[storeVisitorEvent] Failed to store visitor event:', error);
+    console.error('Failed to store visitor event:', error);
     return false;
   }
 }
