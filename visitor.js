@@ -176,7 +176,6 @@
       const eventCell = createElement('td');
       eventCell.appendChild(createEventBadge(record.event));
 
-      const sessionCell = createElement('td', 'mono-cell', record.sessionId || '—');
       const ipCell = createElement('td', 'mono-cell', record.ip || '—');
 
       const countryCell = createElement('td');
@@ -202,7 +201,7 @@
 
       const timeCell = createElement('td', 'mono-cell', formatDateTime(record.time));
 
-      tr.append(eventCell, sessionCell, ipCell, countryCell, deviceCell, pageCell, durationCell, referrerCell, uaCell, timeCell);
+      tr.append(eventCell, ipCell, countryCell, deviceCell, pageCell, durationCell, referrerCell, uaCell, timeCell);
       elements.tableBody.appendChild(tr);
     });
 
