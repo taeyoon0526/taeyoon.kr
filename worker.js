@@ -954,13 +954,12 @@ async function handleVisitor(request, env) {
         // Store session in KV
         await storeSessionToken(sessionToken, clientInfo.ip, clientInfo.userAgent, env);
         
-        return new Response(JSON.stringify({ success: true }), {
-          status: 200,
+        // Redirect to dashboard with Set-Cookie (no JSON response + JS redirect)
+        return new Response(null, {
+          status: 302,
           headers: {
-            'Content-Type': 'application/json',
+            'Location': '/visitor',
             'Set-Cookie': setVisitorAuthCookie(sessionToken),
-            'Access-Control-Allow-Origin': origin || '*',
-            'Access-Control-Allow-Credentials': 'true',
           },
         });
       }
@@ -1137,14 +1136,21 @@ async function handleVisitor(request, env) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ password }),
+          redirect: 'manual',
         });
 
-        const data = await response.json();
-
-        if (data.success) {
+        // Handle redirect (302) - browser will follow automatically with cookies
+        if (response.type === 'opaqueredirect' || response.status === 302) {
           window.location.href = '/visitor';
-        } else {
+          return;
+        }
+
+        // Handle error responses
+        if (response.status === 401) {
           errorDiv.textContent = '비밀번호가 올바르지 않습니다.';
+          errorDiv.classList.add('show');
+        } else if (!response.ok) {
+          errorDiv.textContent = '로그인 요청 중 오류가 발생했습니다.';
           errorDiv.classList.add('show');
         }
       } catch (error) {
