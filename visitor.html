@@ -4,7 +4,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0;url=https://contact.taeyoon.kr/visitor">
+  <script>
+    if (window.location.hostname === 'taeyoon.kr') {
+      window.location.replace('https://contact.taeyoon.kr/visitor');
+    }
+  </script>
   <title>방문자 대시보드 | taeyoon.kr</title>
   <link rel="stylesheet" href="https://taeyoon.kr/visitor.css">
 </head>
