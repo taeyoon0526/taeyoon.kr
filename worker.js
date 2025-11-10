@@ -1011,6 +1011,11 @@ async function handleVisitor(request, env) {
   }
 
   // Serve login page
+  const authDebugPayload = JSON.stringify({
+    reason: authResult?.reason || null,
+    storedIp: authResult?.storedIp || null,
+    requestIp: authResult?.requestIp || null,
+  });
   const loginHtml = `
 <!DOCTYPE html>
 <html lang="ko">
@@ -1150,6 +1155,30 @@ async function handleVisitor(request, env) {
         submitBtn.textContent = '로그인';
       }
     });
+  </script>
+  <script>
+    const authDebug = ${authDebugPayload};
+    if (authDebug && authDebug.reason) {
+      console.info('Visitor auth debug', authDebug);
+      if (!document.getElementById('authDebugInfo')) {
+        const debugBanner = document.createElement('div');
+        debugBanner.id = 'authDebugInfo';
+        debugBanner.style.marginTop = '1rem';
+        debugBanner.style.padding = '1rem';
+        debugBanner.style.background = 'rgba(255, 193, 7, 0.15)';
+        debugBanner.style.borderRadius = '12px';
+        debugBanner.style.fontSize = '0.9rem';
+        debugBanner.style.color = '#1f2933';
+        debugBanner.innerHTML = '인증 디버그: <strong>' + authDebug.reason + '</strong>';
+        if (authDebug.reason === 'ip_mismatch' && authDebug.storedIp && authDebug.requestIp) {
+          debugBanner.innerHTML += '<br><small>저장된 IP: ' + authDebug.storedIp + ' / 현재 IP: ' + authDebug.requestIp + '</small>';
+        }
+        const card = document.querySelector('.login-card');
+        if (card) {
+          card.appendChild(debugBanner);
+        }
+      }
+    }
   </script>
 </body>
 </html>
