@@ -4,6 +4,7 @@
   background-color: #f5f7fb;
 }
 
+
 * {
   box-sizing: border-box;
 }
@@ -69,6 +70,30 @@ body {
   color: #2563eb;
   border: 1px solid rgba(37, 99, 235, 0.2);
   box-shadow: none;
+}
+
+.btn.tertiary {
+  background: rgba(37, 99, 235, 0.08);
+  color: #1f46a2;
+  box-shadow: none;
+  border: 1px solid rgba(37, 99, 235, 0.12);
+}
+
+.filter-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.filter-toggle::after {
+  content: '▾';
+  font-size: 0.75rem;
+  transform: translateY(1px);
+}
+
+.filter-toggle[aria-expanded="false"]::after {
+  content: '▸';
+  transform: none;
 }
 
 .btn.danger {
@@ -220,6 +245,21 @@ body {
   gap: 0.75rem;
 }
 
+.filter-form.collapsed {
+  display: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
 .table-section {
   background: #ffffff;
   border-radius: 18px;
@@ -259,10 +299,29 @@ body {
   font-size: 0.92rem;
   border-bottom: 1px solid rgba(226, 232, 240, 0.7);
   vertical-align: middle;
+  word-break: break-word;
+}
+
+.mono-cell {
+  font-family: 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  font-size: 0.88rem;
 }
 
 .visitor-table tbody tr:hover {
   background: rgba(37, 99, 235, 0.05);
+}
+
+
+.link-inline {
+  color: #2563eb;
+  text-decoration: none;
+  word-break: break-word;
+  display: inline-block;
+  max-width: 100%;
+}
+
+.link-inline:hover {
+  text-decoration: underline;
 }
 
 .country-flag {
@@ -367,6 +426,10 @@ body {
     align-items: stretch;
   }
 
+  .filter-toggle {
+    display: inline-flex;
+  }
+
   .filter-group {
     width: 100%;
   }
@@ -388,14 +451,118 @@ body {
 
 @media (max-width: 720px) {
   .dashboard-header h1 {
-    font-size: 1.6rem;
+    font-size: 1.55rem;
   }
 
   .summary-grid {
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  body {
+    font-size: 15px;
+  }
+
+  .dashboard-container {
+    padding: 1.75rem 1rem 2.25rem;
+    gap: 1.5rem;
+  }
+
+  .dashboard-header {
+    gap: 1rem;
+  }
+
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-card {
+    padding: 1.1rem 1.25rem;
+  }
+
+  .filters-card {
+    padding: 1.15rem;
+    gap: 1rem;
+  }
+
+  .filter-actions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .filter-actions .btn {
+    flex: 1;
+  }
+
+  .table-section {
+    padding: 1.1rem;
+  }
+
+  .table-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.35rem;
+  }
+
+  .table-wrapper {
+    overflow: visible;
   }
 
   .visitor-table {
-    min-width: 760px;
+    border-collapse: separate;
+    border-spacing: 0;
+    min-width: 0;
+  }
+
+  .visitor-table thead {
+    display: none;
+  }
+
+  .visitor-table tbody tr {
+    display: block;
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    margin-bottom: 1.25rem;
+  }
+
+  .visitor-table tbody tr:last-child {
+    margin-bottom: 0;
+  }
+
+  .visitor-table tbody tr:hover {
+    background: #ffffff;
+  }
+
+  .visitor-table td {
+    display: block;
+    padding: 0.55rem 0;
+    border: none;
+    font-size: 0.95rem;
+  }
+
+  .visitor-table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 0.25rem;
+  }
+
+  .visitor-table td[data-label="이벤트"] {
+    padding-top: 0;
+  }
+
+  .visitor-table td[data-label="User Agent"] {
+    font-size: 0.88rem;
+    color: #475569;
+  }
+
+  .visitor-table td:last-child {
+    padding-bottom: 0;
   }
 }

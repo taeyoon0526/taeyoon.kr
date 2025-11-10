@@ -28,6 +28,7 @@
     tableBody: document.getElementById('visitorTableBody'),
     emptyState: document.getElementById('emptyState'),
     filterForm: document.getElementById('filterForm'),
+    filterToggle: document.getElementById('filterToggleBtn'),
     countrySelect: document.getElementById('filterCountry'),
     pageSelect: document.getElementById('filterPage'),
     dateInput: document.getElementById('filterDate'),
@@ -103,7 +104,7 @@
     if (!url) return '직접 방문';
     try {
       const parsed = new URL(url);
-  return parsed.hostname + parsed.pathname;
+      return parsed.hostname + parsed.pathname;
     } catch (_) {
       return url;
     }
@@ -157,6 +158,45 @@
     elements.emptyState.hidden = hasData;
   }
 
+  function setFilterFormVisibility(expanded) {
+    if (!elements.filterForm || !elements.filterToggle) return;
+    if (expanded) {
+      elements.filterForm.classList.remove('collapsed');
+      elements.filterToggle.setAttribute('aria-expanded', 'true');
+      elements.filterToggle.textContent = '필터 접기';
+    } else {
+      elements.filterForm.classList.add('collapsed');
+      elements.filterToggle.setAttribute('aria-expanded', 'false');
+      elements.filterToggle.textContent = '필터 열기';
+    }
+  }
+
+  function initResponsiveFilters() {
+    if (!elements.filterToggle || !elements.filterForm) return;
+    const mediaQuery = window.matchMedia('(max-width: 640px)');
+
+    const handleChange = (event) => {
+      if (event.matches) {
+        setFilterFormVisibility(false);
+      } else {
+        setFilterFormVisibility(true);
+      }
+    };
+
+    handleChange(mediaQuery);
+
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange);
+    } else {
+      mediaQuery.addListener(handleChange);
+    }
+
+    elements.filterToggle.addEventListener('click', () => {
+      const isExpanded = !elements.filterForm.classList.contains('collapsed');
+      setFilterFormVisibility(!isExpanded);
+    });
+  }
+
   function createEventBadge(eventType) {
     const badge = createElement('span', 'event-pill event-' + eventType, eventType);
     return badge;
@@ -165,12 +205,12 @@
   function createDeviceChip(device) {
     const normalized = (device || 'unknown').toLowerCase();
     const map = {
-      desktop: { label: '데스크톱', icon: '�️' },
+      desktop: { label: '데스크톱', icon: '🖥️' },
       mobile: { label: '모바일', icon: '📱' },
       tablet: { label: '태블릿', icon: '📘' },
     };
     const info = map[normalized] || { label: '기타', icon: '🌐' };
-  const chip = createElement('span', 'device-chip ' + normalized, info.icon + ' ' + info.label);
+    const chip = createElement('span', 'device-chip ' + normalized, info.icon + ' ' + info.label);
     return chip;
   }
 
@@ -189,41 +229,53 @@
 
       const eventCell = createElement('td');
       eventCell.appendChild(createEventBadge(record.event));
+      eventCell.dataset.label = '이벤트';
 
       const ipCell = createElement('td', 'mono-cell', record.ip || '—');
+      ipCell.dataset.label = 'IP';
 
       const countryCell = createElement('td');
       const flag = createElement('span', 'country-flag', countryToFlag(record.country));
       const code = createElement('span', null, record.country || '—');
       countryCell.append(flag, code);
+      countryCell.dataset.label = '국가';
 
       const deviceCell = createElement('td');
       deviceCell.appendChild(createDeviceChip(record.device));
+      deviceCell.dataset.label = '기기';
 
       const pageCell = createElement('td');
       pageCell.appendChild(createElement('a', null, record.url || '—'));
       pageCell.firstChild.href = record.url || '#';
       pageCell.firstChild.target = '_blank';
       pageCell.firstChild.rel = 'noreferrer';
+      pageCell.firstChild.classList.add('link-inline');
+      pageCell.dataset.label = '페이지';
 
       const durationCell = createElement('td', 'mono-cell', formatDuration(record.duration));
+      durationCell.dataset.label = '체류시간';
 
       const pageLoadCell = createElement('td', 'mono-cell', formatPerformance(record.performance?.pageLoadTime));
       const domReadyCell = createElement('td', 'mono-cell', formatPerformance(record.performance?.domReadyTime));
+      pageLoadCell.dataset.label = '페이지 로드';
+      domReadyCell.dataset.label = 'DOM 준비';
 
       const referrerCell = createElement('td', null, formatReferrer(record.referrer));
+      referrerCell.dataset.label = '리퍼러';
 
       const uaCell = createElement('td');
       uaCell.textContent = record.ua || '—';
+      uaCell.dataset.label = 'User Agent';
 
       const timeCell = createElement('td', 'mono-cell', formatDateTime(record.time));
+      timeCell.dataset.label = '시간';
 
       tr.append(eventCell, ipCell, countryCell, deviceCell, pageCell, durationCell, pageLoadCell, domReadyCell, referrerCell, uaCell, timeCell);
       elements.tableBody.appendChild(tr);
     });
 
     if (elements.resultCount) {
-  elements.resultCount.textContent = state.visitors.length.toLocaleString() + '개 결과';
+      elements.resultCount.textContent = state.visitors.length.toLocaleString() + '개 결과';
     }
 
     renderEmptyState();
@@ -295,7 +347,7 @@
       }
 
       if (!response.ok) {
-  throw new Error('HTTP ' + response.status);
+        throw new Error('HTTP ' + response.status);
       }
 
       const payload = await response.json();
@@ -305,6 +357,10 @@
       populateFilterOptions();
       renderSummary();
       renderTable();
+
+      if (showStatus && window.matchMedia('(max-width: 640px)').matches) {
+        setFilterFormVisibility(false);
+      }
 
       if (showStatus) {
         setStatus('총 ' + state.visitors.length.toLocaleString() + '개의 레코드를 불러왔습니다.');
@@ -325,34 +381,40 @@
       return;
     }
 
-    const headers = [
-      'event',
-      'sessionId',
-      'ip',
-      'country',
-      'device',
-      'url',
-      'duration',
-      'referrer',
-      'userAgent',
-      'time',
+    const columns = [
+      { header: 'event', accessor: 'event' },
+      { header: 'sessionId', accessor: 'sessionId' },
+      { header: 'ip', accessor: 'ip' },
+      { header: 'country', accessor: 'country' },
+      { header: 'device', accessor: 'device' },
+      { header: 'url', accessor: 'url' },
+      { header: 'duration', accessor: 'duration' },
+      { header: 'referrer', accessor: 'referrer' },
+      { header: 'userAgent', accessor: 'ua' },
+      { header: 'time', accessor: 'time' },
+      { header: 'pageLoadTime', accessor: 'performance.pageLoadTime' },
+      { header: 'domReadyTime', accessor: 'performance.domReadyTime' },
+      { header: 'dnsTime', accessor: 'performance.dnsTime' },
+      { header: 'tcpTime', accessor: 'performance.tcpTime' },
+      { header: 'requestTime', accessor: 'performance.requestTime' },
+      { header: 'renderTime', accessor: 'performance.renderTime' },
     ];
 
     const rows = state.visitors.map((record) => {
-      return headers.map((header) => {
-        const value = record[header] ?? '';
-        const stringValue = typeof value === 'number' ? String(value) : value;
-        return '"' + String(stringValue).replaceAll('"', '""') + '"';
+      return columns.map(({ accessor }) => {
+        const value = accessor.split('.').reduce((acc, key) => (acc && acc[key] !== undefined ? acc[key] : ''), record);
+        const normalized = typeof value === 'number' ? String(value) : value || '';
+        return '"' + String(normalized).replaceAll('"', '""') + '"';
       }).join(',');
     });
 
-    const csvContent = [headers.join(','), ...rows].join('\n');
+    const csvContent = [columns.map((col) => col.header).join(','), ...rows].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     const timestamp = new Date().toISOString().replace(/[:T]/g, '-').split('.')[0];
     link.href = url;
-  link.setAttribute('download', 'taeyoon-visitors-' + timestamp + '.csv');
+    link.setAttribute('download', 'taeyoon-visitors-' + timestamp + '.csv');
     link.click();
     URL.revokeObjectURL(url);
     setStatus('CSV 파일로 내보냈습니다.');
@@ -413,6 +475,7 @@
   }
 
   document.addEventListener('DOMContentLoaded', () => {
+    initResponsiveFilters();
     initEventListeners();
     initAutoRefresh();
     loadVisitors(true);

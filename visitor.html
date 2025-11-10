@@ -57,9 +57,11 @@
           <h2>필터</h2>
           <p class="filters-meta">원하는 조건으로 방문 데이터를 필터링하세요.</p>
         </div>
+        <button type="button" class="btn tertiary filter-toggle" id="filterToggleBtn" aria-expanded="true"
+          aria-controls="filterForm">필터 접기</button>
         <div class="loading-indicator" id="loadingIndicator">불러오는 중...</div>
       </div>
-      <form id="filterForm" class="filter-form">
+      <form id="filterForm" class="filter-form" novalidate>
         <div class="filter-group">
           <label for="filterCountry">국가</label>
           <select id="filterCountry" name="country">
