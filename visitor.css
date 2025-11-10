@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   font-family: 'Inter', 'Pretendard', 'Apple SD Gothic Neo', 'Noto Sans KR', sans-serif;
-  
+
   /* Light mode colors */
   --bg-gradient-start: #f5f7fb;
   --bg-gradient-end: #eef1f8;
@@ -27,7 +27,7 @@
 /* Dark mode colors */
 [data-theme="dark"] {
   color-scheme: dark;
-  
+
   --bg-gradient-start: #0d1117;
   --bg-gradient-end: #161b22;
   --bg-primary: #1c2128;

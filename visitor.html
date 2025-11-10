@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="https://taeyoon.kr/visitor.css">
   <script>
     // 직접 접근 차단: taeyoon.kr/visitor.html 접근 시 contact.taeyoon.kr/visitor로 리다이렉트
-    (function() {
+    (function () {
       if (window.location.hostname === 'taeyoon.kr' && window.location.pathname.includes('visitor')) {
         window.location.replace('https://contact.taeyoon.kr/visitor');
       }
