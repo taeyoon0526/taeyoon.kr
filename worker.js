@@ -700,14 +700,14 @@ async function checkVisitorAuth(request, env) {
  * Set visitor auth session cookie
  */
 function setVisitorAuthCookie(sessionToken) {
-  return `visitor_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400`;
+  return `visitor_session=${sessionToken}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=86400`;
 }
 
 /**
  * Clear visitor auth cookie
  */
 function clearVisitorAuthCookie() {
-  return 'visitor_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0';
+  return 'visitor_session=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0';
 }
 
 /**
