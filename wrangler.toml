@@ -13,6 +13,7 @@ id = "9cd1faa2076f43749f314d08e009b111"
 
 # Environment Variables
 [vars]
+ALLOWED_ORIGIN = "https://taeyoon.kr"
 ALLOWED_ORIGINS = "https://taeyoon.kr"
 
 # Secrets (wrangler secret put 명령으로 설정)
