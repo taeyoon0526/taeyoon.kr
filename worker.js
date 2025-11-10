@@ -570,7 +570,7 @@ async function handleCollect(request, env, ctx) {
     return new Response(null, {
       status: 204,
       headers: {
-        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Access-Control-Max-Age': '86400',
@@ -583,7 +583,7 @@ async function handleCollect(request, env, ctx) {
       status: 405,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
       },
     });
   }
@@ -597,7 +597,7 @@ async function handleCollect(request, env, ctx) {
         status: 400,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': origin || '*',
+          'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
         },
       });
     }
@@ -624,7 +624,7 @@ async function handleCollect(request, env, ctx) {
         status: 500,
         headers: {
           'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': origin || '*',
+          'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
         },
       });
     }
@@ -633,7 +633,7 @@ async function handleCollect(request, env, ctx) {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
       },
     });
   } catch (error) {
@@ -642,7 +642,7 @@ async function handleCollect(request, env, ctx) {
       status: 500,
       headers: {
         'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': origin || '*',
+        'Access-Control-Allow-Origin': origin || 'https://taeyoon.kr',
       },
     });
   }
