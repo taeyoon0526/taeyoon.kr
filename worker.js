@@ -352,12 +352,27 @@ async function verifyTurnstile(token, ip, env, siteKey = null) {
 }
 
 /**
+ * Normalize IP address to handle IPv6-mapped IPv4 values
+ */
+function normalizeIp(ip) {
+  if (!ip) return null;
+  if (ip.includes(':')) {
+    const ipv4Match = ip.match(/::ffff:(\d+\.\d+\.\d+\.\d+)$/i);
+    if (ipv4Match) {
+      return ipv4Match[1];
+    }
+  }
+  return ip;
+}
+
+/**
  * Get client information for security tracking
  */
 function getClientInfo(request) {
   const headers = request.headers;
+  const rawIp = headers.get('CF-Connecting-IP') || headers.get('X-Forwarded-For') || headers.get('X-Real-IP') || null;
   return {
-    ip: headers.get('CF-Connecting-IP') || headers.get('X-Forwarded-For') || headers.get('X-Real-IP') || null,
+    ip: normalizeIp(rawIp),
     country: headers.get('CF-IPCountry') || 'Unknown',
     userAgent: headers.get('User-Agent') || 'Unknown',
     referer: headers.get('Referer') || 'Direct',
@@ -612,7 +627,8 @@ function calculateSummary(visitors) {
  * Generate secure session token
  */
 async function generateSessionToken(ip, userAgent) {
-  const data = `${ip}:${userAgent}:${Date.now()}:${Math.random()}`;
+  const normalizedIp = normalizeIp(ip);
+  const data = `${normalizedIp || 'unknown'}:${userAgent}:${Date.now()}:${Math.random()}`;
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
   const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
@@ -638,8 +654,10 @@ async function verifySessionToken(token, ip, env) {
       return false;
     }
     
-    // Verify IP match (optional but recommended)
-    if (sessionData.ip !== ip) {
+    // Verify IP match (normalized to handle IPv6-mapped IPv4)
+    const normalizedStoredIp = normalizeIp(sessionData.ip);
+    const normalizedIp = normalizeIp(ip);
+    if (normalizedStoredIp && normalizedIp && normalizedStoredIp !== normalizedIp) {
       return false;
     }
     
@@ -659,7 +677,7 @@ async function storeSessionToken(token, ip, userAgent, env) {
   try {
     const sessionKey = `session:${token}`;
     const sessionData = {
-      ip,
+      ip: normalizeIp(ip),
       userAgent,
       createdAt: Date.now(),
       expiresAt: Date.now() + (24 * 60 * 60 * 1000), // 24 hours
