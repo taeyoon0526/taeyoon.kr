@@ -46,7 +46,6 @@
     dateInput: document.getElementById('filterDate'),
     refreshBtn: document.getElementById('refreshBtn'),
     exportBtn: document.getElementById('exportBtn'),
-    logoutBtn: document.getElementById('logoutBtn'),
     resultCount: document.getElementById('resultCount'),
     pagination: document.getElementById('pagination'),
     paginationInfo: document.getElementById('paginationInfo'),
@@ -60,6 +59,13 @@
     countryChart: document.getElementById('countryChart'),
     hourlyChart: document.getElementById('hourlyChart'),
     themeToggleBtn: document.getElementById('themeToggleBtn'),
+    toggleIpManagementBtn: document.getElementById('toggleIpManagementBtn'),
+    ipManagementContent: document.getElementById('ipManagementContent'),
+    currentIp: document.getElementById('currentIp'),
+    allowedIpList: document.getElementById('allowedIpList'),
+    ipManagementForm: document.getElementById('ipManagementForm'),
+    ipInput: document.getElementById('ipInput'),
+    ipManagementStatus: document.getElementById('ipManagementStatus'),
   };
 
   // 다크모드 초기화 및 토글
@@ -831,6 +837,133 @@
     if (elements.themeToggleBtn) {
       elements.themeToggleBtn.addEventListener('click', toggleTheme);
     }
+
+    if (elements.toggleIpManagementBtn) {
+      elements.toggleIpManagementBtn.addEventListener('click', () => {
+        const isHidden = elements.ipManagementContent.hidden;
+        elements.ipManagementContent.hidden = !isHidden;
+        elements.toggleIpManagementBtn.textContent = isHidden ? 'IP 관리 숨기기' : 'IP 관리 펼치기';
+        if (isHidden) {
+          loadAllowedIps();
+          loadCurrentIp();
+        }
+      });
+    }
+
+    if (elements.ipManagementForm) {
+      elements.ipManagementForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const action = e.submitter.dataset.action;
+        const ip = elements.ipInput.value.trim();
+        
+        if (!ip) {
+          showIpStatus('IP 주소를 입력해주세요.', 'error');
+          return;
+        }
+
+        await manageIp(action, ip);
+      });
+    }
+  }
+
+  async function loadCurrentIp() {
+    try {
+      const response = await fetch('https://api.ipify.org?format=json');
+      const data = await response.json();
+      if (elements.currentIp) {
+        elements.currentIp.textContent = data.ip;
+      }
+    } catch (error) {
+      console.error('Failed to load current IP:', error);
+      if (elements.currentIp) {
+        elements.currentIp.textContent = '확인 실패';
+      }
+    }
+  }
+
+  async function loadAllowedIps() {
+    try {
+      const response = await fetch('https://contact.taeyoon.kr/visitor/allowed-ips', {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to load allowed IPs');
+      }
+
+      const data = await response.json();
+      
+      if (data.success && data.ips) {
+        renderAllowedIps(data.ips);
+      }
+    } catch (error) {
+      console.error('Failed to load allowed IPs:', error);
+      showIpStatus('허용된 IP 목록을 불러오지 못했습니다.', 'error');
+    }
+  }
+
+  function renderAllowedIps(ips) {
+    if (!elements.allowedIpList) return;
+
+    elements.allowedIpList.innerHTML = '';
+
+    if (!ips || ips.length === 0) {
+      elements.allowedIpList.innerHTML = '<li style="text-align: center; color: var(--text-muted);">허용된 IP가 없습니다.</li>';
+      return;
+    }
+
+    ips.forEach((ip, index) => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <div>
+          <span class="ip-address">${escapeHTML(ip)}</span>
+          <span class="ip-label">#${index + 1}</span>
+        </div>
+      `;
+      elements.allowedIpList.appendChild(li);
+    });
+  }
+
+  async function manageIp(action, ip) {
+    try {
+      showIpStatus('처리 중...', 'info');
+
+      const response = await fetch('https://contact.taeyoon.kr/visitor/manage-ips', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ action, ip }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        showIpStatus(data.message, 'success');
+        if (data.ips) {
+          renderAllowedIps(data.ips);
+        }
+        elements.ipInput.value = '';
+      } else {
+        showIpStatus(data.message || '작업에 실패했습니다.', 'error');
+      }
+    } catch (error) {
+      console.error('IP management error:', error);
+      showIpStatus('서버 오류가 발생했습니다.', 'error');
+    }
+  }
+
+  function showIpStatus(message, type) {
+    if (!elements.ipManagementStatus) return;
+
+    elements.ipManagementStatus.textContent = message;
+    elements.ipManagementStatus.className = `ip-status show ${type}`;
+
+    setTimeout(() => {
+      elements.ipManagementStatus.classList.remove('show');
+    }, 5000);
   }
 
   function initAutoRefresh() {

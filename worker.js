@@ -38,7 +38,11 @@ const CONFIG = {
 };
 
 // IP allowlist for visitor dashboard access
-const ALLOWED_VISITOR_IPS = ['211.177.232.118'];
+// Allowed visitor IPs for dashboard access
+const ALLOWED_VISITOR_IPS = [
+  '211.177.232.118', // WiFi
+  '118.235.5.139',   // Mobile data
+];
 
 const SECURITY_HEADERS = {
   'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self';",
@@ -827,7 +831,42 @@ async function handleVisitor(request, env) {
       path: url.pathname,
       method: request.method,
     });
+    
+    // Serve custom 404 page
+    try {
+      const notFoundResponse = await fetch('https://taeyoon.kr/404.html');
+      if (notFoundResponse.ok) {
+        return new Response(notFoundResponse.body, {
+          status: 404,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-cache',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch 404 page:', error);
+    }
+    
     return new Response('Not Found', { status: 404 });
+  }
+
+  // Handle IP management API
+  if (request.method === 'POST' && url.pathname === '/visitor/manage-ips') {
+    return handleIpManagement(request, env);
+  }
+
+  if (request.method === 'GET' && url.pathname === '/visitor/allowed-ips') {
+    return new Response(JSON.stringify({ 
+      success: true, 
+      ips: ALLOWED_VISITOR_IPS 
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+      },
+    });
   }
 
   if (request.method === 'GET' && url.pathname === '/visitor') {
@@ -854,6 +893,92 @@ async function handleVisitor(request, env) {
   return new Response('Not Found', { status: 404 });
 }
 
+/**
+ * Handle IP allowlist management
+ */
+async function handleIpManagement(request, env) {
+  try {
+    const body = await request.json();
+    const { action, ip } = body;
+
+    if (!action || !ip) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Missing action or ip' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const normalizedIp = normalizeIp(ip);
+    
+    if (action === 'add') {
+      if (ALLOWED_VISITOR_IPS.includes(normalizedIp)) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'IP already exists' 
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      
+      ALLOWED_VISITOR_IPS.push(normalizedIp);
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'IP added successfully',
+        ips: ALLOWED_VISITOR_IPS 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    
+    if (action === 'remove') {
+      const index = ALLOWED_VISITOR_IPS.indexOf(normalizedIp);
+      if (index === -1) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'IP not found' 
+        }), {
+          status: 404,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      
+      ALLOWED_VISITOR_IPS.splice(index, 1);
+      
+      return new Response(JSON.stringify({ 
+        success: true, 
+        message: 'IP removed successfully',
+        ips: ALLOWED_VISITOR_IPS 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Invalid action' 
+    }), {
+      status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  } catch (error) {
+    console.error('IP management error:', error);
+    return new Response(JSON.stringify({ 
+      success: false, 
+      message: 'Server error' 
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
+}
+
 // ===== Main Handler =====
 
 export default {
@@ -872,8 +997,8 @@ export default {
     if (url.pathname === '/api/visitors') {
       return handleApiVisitors(request, env);
     }
-    // Only handle /visitor and /visitor/logout, not /visitor.js or /visitor.css
-    if (url.pathname === '/visitor' || url.pathname === '/visitor/logout') {
+    // Handle /visitor routes (dashboard, IP management)
+    if (url.pathname.startsWith('/visitor')) {
       return handleVisitor(request, env);
     }
 
