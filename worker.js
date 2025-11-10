@@ -711,7 +711,7 @@ async function getVisitorAuthResult(request, env) {
   const cookie = request.headers.get('Cookie') || '';
   console.log('[AUTH DEBUG] Cookie header:', cookie);
   console.log('[AUTH DEBUG] VISITOR_PASSWORD exists:', !!env.VISITOR_PASSWORD);
-  console.log('[AUTH DEBUG] VISITOR_ANALYTICS exists:', !!env.VISITOR_ANALYTICS_KV);
+  console.log('[AUTH DEBUG] VISITOR_ANALYTICS_KV exists:', !!env.VISITOR_ANALYTICS_KV);
   
   if (!env.VISITOR_PASSWORD) {
     return { authenticated: false, reason: 'password_not_configured' };
