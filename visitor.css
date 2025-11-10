@@ -566,3 +566,87 @@ body {
     padding-bottom: 0;
   }
 }
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(226, 232, 240, 0.5);
+}
+
+.pagination-info {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #475569;
+  min-width: 5rem;
+  text-align: center;
+}
+
+.page-size-select {
+  border: 1px solid rgba(148, 163, 184, 0.6);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  color: #0f172a;
+  cursor: pointer;
+}
+
+.stats-card {
+  background: #ffffff;
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.06);
+  padding: 1.5rem;
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.stats-header h2 {
+  margin: 0;
+  font-size: 1.3rem;
+}
+
+.stats-content {
+  margin-top: 1.5rem;
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.chart-container {
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 1.25rem;
+  min-height: 300px;
+}
+
+.chart-container h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1rem;
+  color: #475569;
+}
+
+.chart-container canvas {
+  max-height: 250px;
+}
+
+@media (max-width: 960px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination {
+    flex-wrap: wrap;
+  }
+}

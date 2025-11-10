@@ -9,6 +9,8 @@
  * - RESEND_API_KEY: Resend API key for sending emails
  * - ALLOWED_ORIGIN: CORS allowed origin (default: https://taeyoon.kr)
  * - SECURITY_WEBHOOK_URL (optional): Endpoint to receive JSON-formatted security alerts
+ * - DISCORD_WEBHOOK_URL (optional): Discord webhook for visitor notifications
+ * - DISCORD_NOTIFY_EVENTS (optional): Comma-separated events to notify (default: enter,leave)
  * 
  * Features:
  * - Cloudflare Turnstile CAPTCHA verification
@@ -211,6 +213,74 @@ function scheduleSecurityLog(ctx, promise) {
     ctx.waitUntil(promise);
   } else {
     promise.catch((error) => console.error('Security log error (no ctx):', error));
+  }
+}
+
+/**
+ * Send Discord notification for visitor events
+ */
+async function sendDiscordNotification(event, data, env) {
+  if (!env.DISCORD_WEBHOOK_URL) return;
+  
+  const notifyEvents = (env.DISCORD_NOTIFY_EVENTS || 'enter,leave').split(',').map(e => e.trim());
+  if (!notifyEvents.includes(event)) return;
+  
+  try {
+    const emoji = {
+      enter: '🚪',
+      leave: '👋',
+      ping: '💓',
+    }[event] || '📊';
+    
+    const color = {
+      enter: 0x22c55e,  // green
+      leave: 0xef4444,  // red
+      ping: 0xfbbf24,   // yellow
+    }[event] || 0x3b82f6; // blue
+    
+    const title = {
+      enter: '새 방문자',
+      leave: '방문 종료',
+      ping: '활동 중',
+    }[event] || '이벤트';
+    
+    const fields = [
+      { name: '🌍 국가', value: data.country || 'Unknown', inline: true },
+      { name: '📱 기기', value: data.device || 'Unknown', inline: true },
+      { name: '🔗 페이지', value: data.url ? `[링크](${data.url})` : 'Unknown', inline: false },
+    ];
+    
+    if (data.duration) {
+      const mins = Math.floor(data.duration / 60);
+      const secs = data.duration % 60;
+      fields.push({ name: '⏱️ 체류시간', value: `${mins}:${String(secs).padStart(2, '0')}`, inline: true });
+    }
+    
+    if (data.performance?.pageLoadTime) {
+      fields.push({ 
+        name: '⚡ 로드 시간', 
+        value: `${Math.round(data.performance.pageLoadTime)}ms`, 
+        inline: true 
+      });
+    }
+    
+    const embed = {
+      title: `${emoji} ${title}`,
+      color: color,
+      fields: fields,
+      footer: {
+        text: `Session: ${data.sessionId?.substring(0, 8) || 'Unknown'}`,
+      },
+      timestamp: new Date().toISOString(),
+    };
+    
+    await fetch(env.DISCORD_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ embeds: [embed] }),
+    });
+  } catch (error) {
+    console.error('Discord webhook error:', error);
   }
 }
 
@@ -652,6 +722,9 @@ async function handleCollect(request, env, ctx) {
         },
       });
     }
+
+    // Send Discord notification (non-blocking)
+    ctx.waitUntil(sendDiscordNotification(event, record, env));
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,

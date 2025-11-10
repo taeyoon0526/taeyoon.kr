@@ -111,9 +111,49 @@
         </table>
       </div>
       <div id="emptyState" class="empty-state" hidden>조건에 맞는 방문 기록이 없습니다.</div>
+
+      <div class="pagination" id="pagination" hidden>
+        <button id="prevPageBtn" class="btn secondary">이전</button>
+        <span class="pagination-info" id="paginationInfo">1 / 1</span>
+        <button id="nextPageBtn" class="btn secondary">다음</button>
+        <select id="pageSizeSelect" class="page-size-select">
+          <option value="50">50개씩</option>
+          <option value="100" selected>100개씩</option>
+          <option value="200">200개씩</option>
+          <option value="500">500개씩</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="stats-card">
+      <div class="stats-header">
+        <h2>📊 상세 통계</h2>
+        <button id="toggleStatsBtn" class="btn tertiary">차트 보기</button>
+      </div>
+      <div id="statsContent" class="stats-content" hidden>
+        <div class="chart-grid">
+          <div class="chart-container">
+            <h3>일별 방문 추이</h3>
+            <canvas id="dailyVisitsChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>기기별 분포</h3>
+            <canvas id="deviceChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>상위 국가</h3>
+            <canvas id="countryChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <h3>시간대별 방문</h3>
+            <canvas id="hourlyChart"></canvas>
+          </div>
+        </div>
+      </div>
     </section>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script type="module" src="https://taeyoon.kr/visitor.js"></script>
 </body>
 

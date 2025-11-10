@@ -4,6 +4,7 @@
 
   const state = {
     visitors: [],
+    allVisitors: [],
     summary: null,
     filters: {
       country: '',
@@ -13,6 +14,17 @@
     options: {
       countries: new Set(),
       pages: new Set(),
+    },
+    pagination: {
+      currentPage: 1,
+      pageSize: 100,
+      totalPages: 1,
+    },
+    charts: {
+      daily: null,
+      device: null,
+      country: null,
+      hourly: null,
     },
   };
 
@@ -36,6 +48,17 @@
     exportBtn: document.getElementById('exportBtn'),
     logoutBtn: document.getElementById('logoutBtn'),
     resultCount: document.getElementById('resultCount'),
+    pagination: document.getElementById('pagination'),
+    paginationInfo: document.getElementById('paginationInfo'),
+    prevPageBtn: document.getElementById('prevPageBtn'),
+    nextPageBtn: document.getElementById('nextPageBtn'),
+    pageSizeSelect: document.getElementById('pageSizeSelect'),
+    toggleStatsBtn: document.getElementById('toggleStatsBtn'),
+    statsContent: document.getElementById('statsContent'),
+    dailyVisitsChart: document.getElementById('dailyVisitsChart'),
+    deviceChart: document.getElementById('deviceChart'),
+    countryChart: document.getElementById('countryChart'),
+    hourlyChart: document.getElementById('hourlyChart'),
   };
 
   function setStatus(message, tone = 'info') {
@@ -218,13 +241,18 @@
     if (!elements.tableBody) return;
     elements.tableBody.innerHTML = '';
 
-    if (!state.visitors.length) {
+    const startIndex = (state.pagination.currentPage - 1) * state.pagination.pageSize;
+    const endIndex = startIndex + state.pagination.pageSize;
+    const pageVisitors = state.allVisitors.slice(startIndex, endIndex);
+
+    if (!pageVisitors.length) {
       if (elements.resultCount) elements.resultCount.textContent = '0개 결과';
       renderEmptyState();
+      renderPagination();
       return;
     }
 
-    state.visitors.forEach((record) => {
+    pageVisitors.forEach((record) => {
       const tr = document.createElement('tr');
 
       const eventCell = createElement('td');
@@ -275,10 +303,38 @@
     });
 
     if (elements.resultCount) {
-      elements.resultCount.textContent = state.visitors.length.toLocaleString() + '개 결과';
+      const start = startIndex + 1;
+      const end = Math.min(endIndex, state.allVisitors.length);
+      elements.resultCount.textContent = `${start.toLocaleString()}-${end.toLocaleString()} / ${state.allVisitors.length.toLocaleString()}개`;
     }
 
     renderEmptyState();
+    renderPagination();
+  }
+
+  function renderPagination() {
+    if (!elements.pagination) return;
+    
+    const hasData = state.allVisitors.length > 0;
+    const needsPagination = state.allVisitors.length > state.pagination.pageSize;
+    
+    elements.pagination.hidden = !hasData || !needsPagination;
+    
+    if (!hasData || !needsPagination) return;
+    
+    state.pagination.totalPages = Math.ceil(state.allVisitors.length / state.pagination.pageSize);
+    
+    if (elements.paginationInfo) {
+      elements.paginationInfo.textContent = `${state.pagination.currentPage} / ${state.pagination.totalPages}`;
+    }
+    
+    if (elements.prevPageBtn) {
+      elements.prevPageBtn.disabled = state.pagination.currentPage === 1;
+    }
+    
+    if (elements.nextPageBtn) {
+      elements.nextPageBtn.disabled = state.pagination.currentPage === state.pagination.totalPages;
+    }
   }
 
   function populateFilterOptions() {
@@ -352,11 +408,14 @@
 
       const payload = await response.json();
       state.visitors = payload.visitors || [];
+      state.allVisitors = [...state.visitors];
       state.summary = payload.summary || null;
+      state.pagination.currentPage = 1;
 
       populateFilterOptions();
       renderSummary();
       renderTable();
+      renderCharts();
 
       if (showStatus && window.matchMedia('(max-width: 640px)').matches) {
         setFilterFormVisibility(false);
@@ -373,6 +432,169 @@
     } finally {
       toggleLoading(false);
     }
+  }
+
+  function renderCharts() {
+    if (!state.allVisitors.length) return;
+    
+    // 일별 방문 추이
+    renderDailyVisitsChart();
+    // 기기별 분포
+    renderDeviceChart();
+    // 국가별 분포
+    renderCountryChart();
+    // 시간대별 방문
+    renderHourlyChart();
+  }
+
+  function renderDailyVisitsChart() {
+    if (!elements.dailyVisitsChart) return;
+    
+    const dailyData = {};
+    state.allVisitors.forEach(visitor => {
+      const date = new Date(visitor.time).toLocaleDateString('ko-KR');
+      dailyData[date] = (dailyData[date] || 0) + 1;
+    });
+    
+    const sortedDates = Object.keys(dailyData).sort((a, b) => new Date(a) - new Date(b)).slice(-14);
+    const counts = sortedDates.map(date => dailyData[date]);
+    
+    if (state.charts.daily) {
+      state.charts.daily.destroy();
+    }
+    
+    state.charts.daily = new Chart(elements.dailyVisitsChart, {
+      type: 'line',
+      data: {
+        labels: sortedDates,
+        datasets: [{
+          label: '방문 수',
+          data: counts,
+          borderColor: '#2563eb',
+          backgroundColor: 'rgba(37, 99, 235, 0.1)',
+          tension: 0.4,
+          fill: true,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          y: { beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  function renderDeviceChart() {
+    if (!elements.deviceChart) return;
+    
+    const deviceData = {};
+    state.allVisitors.forEach(visitor => {
+      const device = visitor.device || 'unknown';
+      deviceData[device] = (deviceData[device] || 0) + 1;
+    });
+    
+    if (state.charts.device) {
+      state.charts.device.destroy();
+    }
+    
+    state.charts.device = new Chart(elements.deviceChart, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(deviceData),
+        datasets: [{
+          data: Object.values(deviceData),
+          backgroundColor: ['#6366f1', '#10b981', '#f472b6', '#94a3b8'],
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom' },
+        },
+      },
+    });
+  }
+
+  function renderCountryChart() {
+    if (!elements.countryChart) return;
+    
+    const countryData = {};
+    state.allVisitors.forEach(visitor => {
+      const country = visitor.country || 'Unknown';
+      countryData[country] = (countryData[country] || 0) + 1;
+    });
+    
+    const sortedCountries = Object.entries(countryData)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+    
+    if (state.charts.country) {
+      state.charts.country.destroy();
+    }
+    
+    state.charts.country = new Chart(elements.countryChart, {
+      type: 'bar',
+      data: {
+        labels: sortedCountries.map(([country]) => country),
+        datasets: [{
+          label: '방문 수',
+          data: sortedCountries.map(([, count]) => count),
+          backgroundColor: '#2563eb',
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          y: { beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  function renderHourlyChart() {
+    if (!elements.hourlyChart) return;
+    
+    const hourlyData = Array(24).fill(0);
+    state.allVisitors.forEach(visitor => {
+      const hour = new Date(visitor.time).getHours();
+      hourlyData[hour]++;
+    });
+    
+    if (state.charts.hourly) {
+      state.charts.hourly.destroy();
+    }
+    
+    state.charts.hourly = new Chart(elements.hourlyChart, {
+      type: 'bar',
+      data: {
+        labels: Array.from({ length: 24 }, (_, i) => `${i}시`),
+        datasets: [{
+          label: '방문 수',
+          data: hourlyData,
+          backgroundColor: '#10b981',
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+        },
+        scales: {
+          y: { beginAtZero: true },
+        },
+      },
+    });
   }
 
   function exportCsv() {
@@ -465,6 +687,45 @@
 
     if (elements.logoutBtn) {
       elements.logoutBtn.addEventListener('click', handleLogout);
+    }
+
+    if (elements.prevPageBtn) {
+      elements.prevPageBtn.addEventListener('click', () => {
+        if (state.pagination.currentPage > 1) {
+          state.pagination.currentPage--;
+          renderTable();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    }
+
+    if (elements.nextPageBtn) {
+      elements.nextPageBtn.addEventListener('click', () => {
+        if (state.pagination.currentPage < state.pagination.totalPages) {
+          state.pagination.currentPage++;
+          renderTable();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    }
+
+    if (elements.pageSizeSelect) {
+      elements.pageSizeSelect.addEventListener('change', (e) => {
+        state.pagination.pageSize = parseInt(e.target.value);
+        state.pagination.currentPage = 1;
+        renderTable();
+      });
+    }
+
+    if (elements.toggleStatsBtn) {
+      elements.toggleStatsBtn.addEventListener('click', () => {
+        const isHidden = elements.statsContent.hidden;
+        elements.statsContent.hidden = !isHidden;
+        elements.toggleStatsBtn.textContent = isHidden ? '차트 숨기기' : '차트 보기';
+        if (isHidden) {
+          renderCharts();
+        }
+      });
     }
   }
 
