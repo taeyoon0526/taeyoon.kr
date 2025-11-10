@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>방문자 대시보드 | taeyoon.kr</title>
+  <link rel="stylesheet" href="visitor.css">
+</head>
+
+<body>
+  <div class="dashboard-container">
+    <header class="dashboard-header">
+      <div>
+        <h1>방문자 분석 대시보드</h1>
+        <p class="dashboard-subtitle">taeyoon.kr 방문자 활동을 실시간으로 확인하세요.</p>
+      </div>
+      <div class="header-actions">
+        <button id="refreshBtn" class="btn secondary">새로고침</button>
+        <button id="exportBtn" class="btn">CSV 내보내기</button>
+        <button id="logoutBtn" class="btn danger">로그아웃</button>
+      </div>
+    </header>
+
+    <div id="statusBar" class="status-bar" role="status" aria-live="polite"></div>
+
+    <section class="summary-grid">
+      <article class="summary-card">
+        <span class="summary-label">총 방문 수</span>
+        <span class="summary-value" id="totalVisitorsValue">0</span>
+        <span class="summary-meta">수집된 이벤트 중 방문(enter) 기준</span>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">고유 세션</span>
+        <span class="summary-value" id="uniqueSessionsValue">0</span>
+        <span class="summary-meta">sessionId 기반 고유 방문자 수</span>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">평균 체류시간</span>
+        <span class="summary-value" id="averageDurationValue">00:00</span>
+        <span class="summary-meta">leave 이벤트 기준(분:초)</span>
+      </article>
+      <article class="summary-card">
+        <span class="summary-label">상위 국가</span>
+        <ul class="summary-top-list" id="topCountriesList"></ul>
+      </article>
+    </section>
+
+    <section class="filters-card">
+      <div class="filters-header">
+        <div>
+          <h2>필터</h2>
+          <p class="filters-meta">원하는 조건으로 방문 데이터를 필터링하세요.</p>
+        </div>
+        <div class="loading-indicator" id="loadingIndicator">불러오는 중...</div>
+      </div>
+      <form id="filterForm" class="filter-form">
+        <div class="filter-group">
+          <label for="filterCountry">국가</label>
+          <select id="filterCountry" name="country">
+            <option value="">모든 국가</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterPage">페이지</label>
+          <select id="filterPage" name="page">
+            <option value="">모든 페이지</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label for="filterDate">날짜</label>
+          <input type="date" id="filterDate" name="date">
+        </div>
+        <div class="filter-actions">
+          <button type="submit" class="btn secondary">적용</button>
+          <button type="reset" class="btn secondary">초기화</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="table-section">
+      <div class="table-meta">
+        <span id="resultCount">0개 결과</span>
+        <span id="lastUpdated">최근 업데이트: —</span>
+      </div>
+      <div class="table-wrapper">
+        <table class="visitor-table">
+          <thead>
+            <tr>
+              <th>이벤트</th>
+              <th>세션</th>
+              <th>IP</th>
+              <th>국가</th>
+              <th>기기</th>
+              <th>페이지</th>
+              <th>체류시간</th>
+              <th>리퍼러</th>
+              <th>User Agent</th>
+              <th>시간</th>
+            </tr>
+          </thead>
+          <tbody id="visitorTableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty-state" hidden>조건에 맞는 방문 기록이 없습니다.</div>
+    </section>
+  </div>
+
+  <script type="module" src="visitor.js"></script>
+</body>
+
+</html>
