@@ -449,14 +449,6 @@ function escapeHtml(text) {
 }
 
 /**
- * Validate email format
- */
-function isValidEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-}
-
-/**
  * Verify Cloudflare Turnstile token
  */
 async function verifyTurnstile(token, ip, env, siteKey = null) {
