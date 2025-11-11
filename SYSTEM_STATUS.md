@@ -152,7 +152,7 @@ npx wrangler kv:key get --binding=SECURITY_DATA "rate_limits"
 - **해결**: `wrangler.json` 사용
 
 ### ✅ 해결된 문제들
-- Jekyll build 오류 (Liquid 문법 충돌) → `{% raw %}` 태그로 해결
+- Jekyll build 오류 (Liquid 문법 충돌) → raw 태그로 해결
 - CORS 오류 (favicon.ico) → Inline SVG로 해결
 - Dashboard 설정 덮어쓰기 → JSON 설정 파일로 해결
 
