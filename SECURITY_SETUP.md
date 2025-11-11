@@ -132,7 +132,7 @@ rate_limits          - Rate Limit 상태
 - **Path Traversal**: `..`, `//`, `\\`
 - **SQL Injection**: `union select`, `select from`, `insert into`, `drop table`
 - **Code Injection**: `<?php`, `<%`, `eval(`, `exec(`
-- **Template Injection**: `${`, `<%=`, `{{`
+- **Template Injection**: `${`, `<%=`, `{% raw %}{{{% endraw %}`
 
 ## 8. 모니터링
 
