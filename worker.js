@@ -1208,7 +1208,65 @@ async function sendSecuritySummaryEmail(env, recipient = 'me@taeyoon.kr') {
     return false;
   }
   const summary = buildSecuritySummary();
-  const body = `<pre>${JSON.stringify(summary, null, 2)}</pre>`;
+  const now = new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' });
+  
+  const body = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+    .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px; }
+    .header h1 { margin: 0; font-size: 24px; }
+    .header p { margin: 10px 0 0; opacity: 0.9; font-size: 14px; }
+    .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 30px; }
+    .stat-card { background: #f8f9fa; padding: 20px; border-radius: 8px; border-left: 4px solid #667eea; }
+    .stat-card .label { font-size: 12px; color: #666; text-transform: uppercase; margin-bottom: 5px; }
+    .stat-card .value { font-size: 28px; font-weight: bold; color: #667eea; }
+    .alert { background: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; border-radius: 8px; margin-bottom: 20px; }
+    .alert.danger { background: #f8d7da; border-color: #dc3545; }
+    .footer { text-align: center; color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🛡️ 보안 모니터링 요약</h1>
+    <p>${now}</p>
+  </div>
+  
+  ${summary.totalBlockedIps > 0 ? `<div class="alert danger">⚠️ <strong>${summary.totalBlockedIps}개의 IP가 차단되었습니다!</strong></div>` : ''}
+  
+  <div class="stats">
+    <div class="stat-card">
+      <div class="label">차단된 IP</div>
+      <div class="value">${summary.totalBlockedIps}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">의심 활동</div>
+      <div class="value">${summary.totalSuspiciousIps}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Rate Limit</div>
+      <div class="value">${summary.totalRateLimitedIps}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">화이트리스트</div>
+      <div class="value">${summary.whitelistSize}</div>
+    </div>
+  </div>
+  
+  <div class="alert">
+    <strong>최고 위험 점수:</strong> ${summary.highestRiskScore} / 100
+  </div>
+  
+  <div class="footer">
+    <p>이 이메일은 taeyoon.kr 보안 시스템에서 자동으로 발송되었습니다.</p>
+    <p><a href="https://contact-form.still-firefly-1daa.workers.dev/visitor/security" style="color: #667eea;">보안 대시보드 보기</a></p>
+  </div>
+</body>
+</html>`;
+
   try {
     const res = await fetch(CONFIG.RESEND_API_URL, {
       method: 'POST',
@@ -1219,7 +1277,7 @@ async function sendSecuritySummaryEmail(env, recipient = 'me@taeyoon.kr') {
       body: JSON.stringify({
         from: CONFIG.EMAIL_FROM,
         to: [recipient],
-        subject: `Security Summary - ${new Date().toLocaleString()}`,
+        subject: `🛡️ 보안 요약 리포트 - ${now}`,
         html: body,
       }),
     });
