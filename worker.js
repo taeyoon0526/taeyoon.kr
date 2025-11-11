@@ -47,6 +47,7 @@ const ALLOWED_VISITOR_IPS = [
   '211.177.232.118', // WiFi (IPv4)
   '118.235.5.139',   // Mobile data (IPv4)
   '2001:e60:914e:29d1:65a3:21d4:9aaa:ac64', // WiFi (IPv6)
+  '127.0.0.1',       // Localhost (개발용 - 배포 전 제거)
 ];
 
 const SECURITY_HEADERS = {
