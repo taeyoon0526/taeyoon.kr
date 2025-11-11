@@ -1194,6 +1194,22 @@ async function handleVisitor(request, env) {
     });
   }
 
+  // Debug endpoint to check KV bindings
+  if (request.method === 'GET' && url.pathname === '/visitor/check-bindings') {
+    return new Response(JSON.stringify({
+      VISITOR_LOG: !!env.VISITOR_LOG,
+      VISITOR_ANALYTICS_KV: !!env.VISITOR_ANALYTICS_KV,
+      SECURITY_DATA: !!env.SECURITY_DATA,
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
   // Security dashboard HTML page (accessible without authentication)
   if (request.method === 'GET' && url.pathname === '/visitor/security') {
     return new Response(getSecurityDashboardHTML(), {
