@@ -40,8 +40,14 @@ id = "여기에_생성된_ID를_붙여넣으세요"
 ## 3. 배포
 
 ```bash
-npx wrangler deploy
+# JSON 설정 파일로 배포 (권장)
+npx wrangler deploy --config wrangler.json
+
+# 또는 자동 스크립트 사용
+./deploy.sh
 ```
+
+> **중요**: `wrangler.toml` 대신 `wrangler.json`을 사용하세요. TOML 파싱 버그로 인해 일부 바인딩이 누락될 수 있습니다.
 
 ## 4. 보안 대시보드 접속
 
