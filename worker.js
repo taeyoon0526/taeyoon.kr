@@ -259,6 +259,12 @@ function trackSuspiciousActivity(ip, reason) {
   // Block if too many suspicious activities
   if (record.count >= CONFIG.SUSPICIOUS_PATTERN_LIMIT) {
     blockIp(ip, 'multiple_suspicious_activities', CONFIG.BLOCK_DURATION_MS);
+    console.warn('[SECURITY] IP auto-blocked:', {
+      ip,
+      reason: 'multiple_suspicious_activities',
+      totalIncidents: record.count,
+      recentIncidents: record.incidents.length,
+    });
     return true;
   }
   
@@ -942,6 +948,49 @@ async function handleVisitor(request, env) {
       xForwardedFor: request.headers.get('X-Forwarded-For'),
       xRealIp: request.headers.get('X-Real-IP'),
     }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  // Security stats endpoint (accessible without authentication for monitoring)
+  if (request.method === 'GET' && url.pathname === '/visitor/security-stats') {
+    const stats = {
+      blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({
+        ip,
+        reason: data.reason,
+        blockedAt: new Date(data.blockedAt).toISOString(),
+        until: new Date(data.until).toISOString(),
+        remainingMs: Math.max(0, data.until - Date.now()),
+      })),
+      suspiciousActivities: Array.from(suspiciousActivityStore.entries()).map(([ip, data]) => ({
+        ip,
+        count: data.count,
+        firstSeen: new Date(data.firstSeen).toISOString(),
+        lastSeen: new Date(data.lastSeen).toISOString(),
+        recentIncidents: data.incidents.slice(-10).map(inc => ({
+          reason: inc.reason,
+          timestamp: new Date(inc.timestamp).toISOString(),
+        })),
+      })),
+      rateLimits: Array.from(rateLimitStore.entries()).map(([ip, data]) => ({
+        ip,
+        count: data.count,
+        firstAttempt: new Date(data.firstAttempt).toISOString(),
+        blockedUntil: data.blockedUntil ? new Date(data.blockedUntil).toISOString() : null,
+      })),
+      summary: {
+        totalBlockedIps: blockedIpsStore.size,
+        totalSuspiciousIps: suspiciousActivityStore.size,
+        totalRateLimitedIps: rateLimitStore.size,
+      },
+    };
+
+    return new Response(JSON.stringify(stats), {
       status: 200,
       headers: {
         'Content-Type': 'application/json',
