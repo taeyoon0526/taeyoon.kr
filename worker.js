@@ -35,6 +35,10 @@ const CONFIG = {
   RATE_LIMIT_WINDOW_MS: 60 * 1000,
   RATE_LIMIT_BLOCK_MS: 5 * 60 * 1000,
   MAX_PAYLOAD_SIZE_BYTES: 6 * 1024,
+  // Enhanced security settings
+  MAX_REQUEST_SIZE: 10 * 1024, // 10KB max request size
+  SUSPICIOUS_PATTERN_LIMIT: 5, // Max suspicious requests before blocking
+  BLOCK_DURATION_MS: 30 * 60 * 1000, // 30 minutes block
 };
 
 // IP allowlist for visitor dashboard access
@@ -56,9 +60,22 @@ const SECURITY_HEADERS = {
   'Cross-Origin-Resource-Policy': 'same-site',
   'Cache-Control': 'no-store',
   'Pragma': 'no-cache',
+  'X-XSS-Protection': '1; mode=block',
+  'X-Permitted-Cross-Domain-Policies': 'none',
 };
 
 const rateLimitStore = new Map();
+const suspiciousActivityStore = new Map();
+const blockedIpsStore = new Map();
+
+// Suspicious patterns for detection
+const SUSPICIOUS_PATTERNS = [
+  /<script|javascript:|onerror|onload|onclick/i,
+  /(\.\.|\/\/|\\\\)/,
+  /union.*select|select.*from|insert.*into|drop.*table/i,
+  /<\?php|<%|eval\(|exec\(/i,
+  /\$\{|<%=|{{/,
+];
 
 // ===== Helper Functions =====
 
@@ -189,6 +206,96 @@ function applyRateLimit(ip, now = Date.now()) {
   }
 
   return { limited: false };
+}
+
+/**
+ * Check if IP is permanently blocked
+ */
+function isIpBlocked(ip, now = Date.now()) {
+  const blocked = blockedIpsStore.get(ip);
+  if (!blocked) return false;
+  
+  if (now > blocked.until) {
+    blockedIpsStore.delete(ip);
+    return false;
+  }
+  
+  return true;
+}
+
+/**
+ * Block an IP address
+ */
+function blockIp(ip, reason, duration = CONFIG.BLOCK_DURATION_MS) {
+  const now = Date.now();
+  blockedIpsStore.set(ip, {
+    reason,
+    blockedAt: now,
+    until: now + duration,
+  });
+}
+
+/**
+ * Track suspicious activity
+ */
+function trackSuspiciousActivity(ip, reason) {
+  const now = Date.now();
+  let record = suspiciousActivityStore.get(ip);
+  
+  if (!record) {
+    record = { count: 0, incidents: [], firstSeen: now };
+    suspiciousActivityStore.set(ip, record);
+  }
+  
+  record.count += 1;
+  record.incidents.push({ reason, timestamp: now });
+  record.lastSeen = now;
+  
+  // Keep only recent incidents (last hour)
+  record.incidents = record.incidents.filter(
+    inc => now - inc.timestamp < 60 * 60 * 1000
+  );
+  
+  // Block if too many suspicious activities
+  if (record.count >= CONFIG.SUSPICIOUS_PATTERN_LIMIT) {
+    blockIp(ip, 'multiple_suspicious_activities', CONFIG.BLOCK_DURATION_MS);
+    return true;
+  }
+  
+  return false;
+}
+
+/**
+ * Detect suspicious patterns in request data
+ */
+function detectSuspiciousPatterns(data) {
+  const dataStr = JSON.stringify(data).toLowerCase();
+  
+  for (const pattern of SUSPICIOUS_PATTERNS) {
+    if (pattern.test(dataStr)) {
+      return true;
+    }
+  }
+  
+  return false;
+}
+
+/**
+ * Validate email format strictly
+ */
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  
+  // Strict email validation
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+  
+  if (!emailRegex.test(email)) return false;
+  if (email.length > 254) return false;
+  
+  const [localPart, domain] = email.split('@');
+  if (localPart.length > 64) return false;
+  
+  return true;
 }
 
 async function logSecurityEvent(eventType, details, env) {
@@ -942,7 +1049,35 @@ async function handleIpManagement(request, env) {
       });
     }
 
+    // Validate IP format (IPv4 or IPv6)
+    const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+    const ipv6Regex = /^([0-9a-fA-F]{0,4}:){7}[0-9a-fA-F]{0,4}$/;
+    
+    if (!ipv4Regex.test(ip) && !ipv6Regex.test(ip)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Invalid IP address format' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     const normalizedIp = normalizeIp(ip);
+    
+    // Prevent removing your own IP
+    const clientInfo = getClientInfo(request);
+    const currentNormalizedIp = normalizeIp(clientInfo.ip);
+    
+    if (action === 'remove' && normalizedIp === currentNormalizedIp) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Cannot remove your own IP address' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     
     if (action === 'add') {
       if (ALLOWED_VISITOR_IPS.includes(normalizedIp)) {
@@ -955,7 +1090,20 @@ async function handleIpManagement(request, env) {
         });
       }
       
+      // Limit total IPs
+      if (ALLOWED_VISITOR_IPS.length >= 20) {
+        return new Response(JSON.stringify({ 
+          success: false, 
+          message: 'Maximum number of allowed IPs reached (20)' 
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+      
       ALLOWED_VISITOR_IPS.push(normalizedIp);
+      
+      console.log('[IP MANAGEMENT] IP added:', normalizedIp);
       
       return new Response(JSON.stringify({ 
         success: true, 
@@ -980,6 +1128,8 @@ async function handleIpManagement(request, env) {
       }
       
       ALLOWED_VISITOR_IPS.splice(index, 1);
+      
+      console.log('[IP MANAGEMENT] IP removed:', normalizedIp);
       
       return new Response(JSON.stringify({ 
         success: true, 
@@ -1162,6 +1312,26 @@ export default {
     // Rate limiting per IP
     const rateLimitStatus = applyRateLimit(clientInfo.ip);
     const logIP = clientInfo.ip || 'Unknown';
+    
+    // Check if IP is blocked
+    if (isIpBlocked(logIP)) {
+      scheduleSecurityLog(
+        ctx,
+        logSecurityEvent('ip_blocked', {
+          ip: logIP,
+          userAgent: clientInfo.userAgent,
+          path: url.pathname,
+        }, env)
+      );
+
+      return jsonResponse(
+        { success: false, message: '접근이 차단되었습니다.' },
+        403,
+        origin,
+        env
+      );
+    }
+    
     if (rateLimitStatus.limited) {
       scheduleSecurityLog(
         ctx,
@@ -1224,6 +1394,7 @@ export default {
       try {
         body = JSON.parse(rawBody);
       } catch (error) {
+        trackSuspiciousActivity(logIP, 'malformed_json');
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('malformed_json', {
@@ -1234,6 +1405,26 @@ export default {
         );
         return jsonResponse(
           { success: false, message: '잘못된 데이터 형식입니다.' },
+          400,
+          origin,
+          env
+        );
+      }
+
+      // Detect suspicious patterns in request body
+      if (detectSuspiciousPatterns(body)) {
+        const blocked = trackSuspiciousActivity(logIP, 'suspicious_pattern_detected');
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('suspicious_pattern', {
+            ip: logIP,
+            origin: origin || 'none',
+            blocked,
+          }, env)
+        );
+        
+        return jsonResponse(
+          { success: false, message: '잘못된 요청입니다.' },
           400,
           origin,
           env
@@ -1252,6 +1443,17 @@ export default {
         );
       }
 
+      // Strict email validation
+      if (!isValidEmail(email)) {
+        trackSuspiciousActivity(logIP, 'invalid_email_format');
+        return jsonResponse(
+          { success: false, message: '올바른 이메일 주소를 입력해주세요.' },
+          400,
+          origin,
+          env
+        );
+      }
+
       // Validation: Name length
       if (name.length < 2 || name.length > 50) {
         return jsonResponse(
@@ -1262,10 +1464,11 @@ export default {
         );
       }
 
-      // Validation: Email format
-      if (!isValidEmail(email)) {
+      // Additional name validation (no special characters except spaces, hyphens, apostrophes)
+      if (!/^[a-zA-Z가-힣\s'\-]+$/.test(name)) {
+        trackSuspiciousActivity(logIP, 'invalid_name_characters');
         return jsonResponse(
-          { success: false, message: '올바른 이메일 주소를 입력해주세요.' },
+          { success: false, message: '이름에 허용되지 않은 문자가 포함되어 있습니다.' },
           400,
           origin,
           env
@@ -1285,6 +1488,8 @@ export default {
       // Anti-spam: Honeypot check
       if (website) {
         console.warn('Honeypot triggered:', { name, email });
+        trackSuspiciousActivity(logIP, 'honeypot_triggered');
+        blockIp(logIP, 'honeypot_triggered', CONFIG.BLOCK_DURATION_MS);
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('honeypot_triggered', {
@@ -1306,6 +1511,7 @@ export default {
         const submissionTime = Date.now() - parseInt(t, 10);
         if (submissionTime < CONFIG.MIN_SUBMISSION_TIME) {
           console.warn('Too fast submission:', { name, email, submissionTime });
+          trackSuspiciousActivity(logIP, 'suspicious_speed');
           scheduleSecurityLog(
             ctx,
             logSecurityEvent('suspicious_speed', {
@@ -1326,6 +1532,7 @@ export default {
 
       // Verify Turnstile token
       if (!turnstileToken) {
+        trackSuspiciousActivity(logIP, 'missing_turnstile_token');
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('missing_turnstile_token', {
@@ -1373,6 +1580,7 @@ export default {
       );
 
       if (!turnstileResult.success) {
+        trackSuspiciousActivity(logIP, 'turnstile_failed');
         scheduleSecurityLog(
           ctx,
       logSecurityEvent('turnstile_failed', {
