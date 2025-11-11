@@ -1346,6 +1346,46 @@ async function handleVisitor(request, env) {
     });
   }
 
+  // Manual trigger: send security summary email (protected by origin or allowlist)
+  if (request.method === 'POST' && url.pathname === '/visitor/security-summary') {
+    // Allow only same-origin or allowed visitor IPs
+    const origin = request.headers.get('Origin');
+    const clientIp = normalizeIp(clientInfo.ip);
+    if (!(isAllowedVisitorIp(clientIp) || (origin && getAllowedOrigins(env).includes(origin)))) {
+      return new Response(JSON.stringify({ success: false, message: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+    }
+    // Load KV first
+    if (env.SECURITY_DATA) await loadSecurityDataFromKV(env);
+    const snapshot = {
+      blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+      suspiciousActivities: Array.from(suspiciousActivityStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+      rateLimits: Array.from(rateLimitStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+      reputation: getReputationSnapshot(),
+      trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+      summary: buildSecuritySummary(),
+    };
+    const sent = await sendSecuritySummaryEmail(env, 'me@taeyoon.kr');
+    return new Response(JSON.stringify({ success: sent, snapshot }), { status: sent ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  // Mark an IP as trusted (manual)
+  if (request.method === 'POST' && url.pathname === '/visitor/trust-ip') {
+    const body = await request.json().catch(() => ({}));
+    if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    markTrustedIp(body.ip, body.reason || 'manual', false);
+    await saveSecurityDataToKV(env);
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+
+  // Remove trusted IP
+  if (request.method === 'POST' && url.pathname === '/visitor/untrust-ip') {
+    const body = await request.json().catch(() => ({}));
+    if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    unmarkTrustedIp(body.ip);
+    await saveSecurityDataToKV(env);
+    return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  }
+
   // Security stats endpoint (accessible without authentication for monitoring)
   if (request.method === 'GET' && url.pathname === '/visitor/security-stats') {
     // Load persisted data from KV first
@@ -1355,46 +1395,6 @@ async function handleVisitor(request, env) {
       await loadSecurityDataFromKV(env);
     } else {
       console.warn('[SECURITY_STATS] SECURITY_DATA binding not available');
-    }
-
-    // Manual trigger: send security summary email (protected by origin or allowlist)
-    if (request.method === 'POST' && url.pathname === '/visitor/security-summary') {
-      // Allow only same-origin or allowed visitor IPs
-      const origin = request.headers.get('Origin');
-      const clientIp = normalizeIp(clientInfo.ip);
-      if (!(isAllowedVisitorIp(clientIp) || (origin && getAllowedOrigins(env).includes(origin)))) {
-        return new Response(JSON.stringify({ success: false, message: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
-      }
-      // Load KV first
-      if (env.SECURITY_DATA) await loadSecurityDataFromKV(env);
-      const snapshot = {
-        blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
-        suspiciousActivities: Array.from(suspiciousActivityStore.entries()).map(([ip, data]) => ({ ip, ...data })),
-        rateLimits: Array.from(rateLimitStore.entries()).map(([ip, data]) => ({ ip, ...data })),
-        reputation: getReputationSnapshot(),
-        trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
-        summary: buildSecuritySummary(),
-      };
-      const sent = await sendSecuritySummaryEmail(env, 'me@taeyoon.kr');
-      return new Response(JSON.stringify({ success: sent, snapshot }), { status: sent ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
-    }
-
-    // Mark an IP as trusted (manual)
-    if (request.method === 'POST' && url.pathname === '/visitor/trust-ip') {
-      const body = await request.json().catch(() => ({}));
-      if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-      markTrustedIp(body.ip, body.reason || 'manual', false);
-      await saveSecurityDataToKV(env);
-      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    }
-
-    // Remove trusted IP
-    if (request.method === 'POST' && url.pathname === '/visitor/untrust-ip') {
-      const body = await request.json().catch(() => ({}));
-      if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-      unmarkTrustedIp(body.ip);
-      await saveSecurityDataToKV(env);
-      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
     }
 
     const stats = {
