@@ -77,6 +77,35 @@ const SUSPICIOUS_PATTERNS = [
   /\$\{|<%=|{{/,
 ];
 
+/**
+ * Serve 404 page
+ */
+async function serve404Page(additionalHeaders = {}) {
+  try {
+    const notFoundResponse = await fetch('https://taeyoon.kr/404.html');
+    if (notFoundResponse.ok) {
+      return new Response(notFoundResponse.body, {
+        status: 404,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
+          ...additionalHeaders,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Failed to fetch 404 page:', error);
+  }
+  
+  return new Response('Not Found', {
+    status: 404,
+    headers: {
+      'Content-Type': 'text/plain; charset=utf-8',
+      ...additionalHeaders,
+    },
+  });
+}
+
 // ===== Helper Functions =====
 
 function getAllowedOrigins(env) {
@@ -1018,24 +1047,10 @@ async function handleVisitor(request, env) {
     });
     
     // Serve custom 404 page with debug info in header
-    try {
-      const notFoundResponse = await fetch('https://taeyoon.kr/404.html');
-      if (notFoundResponse.ok) {
-        return new Response(notFoundResponse.body, {
-          status: 404,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-            'Cache-Control': 'no-cache',
-            'X-Debug-Your-IP': clientInfo.ip || 'unknown',
-            'X-Debug-Normalized-IP': normalizedIp || 'unknown',
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch 404 page:', error);
-    }
-    
-    return new Response('Not Found', { status: 404 });
+    return await serve404Page({
+      'X-Debug-Your-IP': clientInfo.ip || 'unknown',
+      'X-Debug-Normalized-IP': normalizedIp || 'unknown',
+    });
   }
 
   // Handle IP management API
@@ -1060,7 +1075,7 @@ async function handleVisitor(request, env) {
     try {
       const dashboardResponse = await fetch('https://taeyoon.kr/visitor.html');
       if (!dashboardResponse.ok) {
-        return new Response('Dashboard not found', { status: 404 });
+        return await serve404Page();
       }
 
       return new Response(dashboardResponse.body, {
@@ -1073,11 +1088,12 @@ async function handleVisitor(request, env) {
       });
     } catch (error) {
       console.error('Failed to fetch dashboard:', error);
-      return new Response('Dashboard not available', { status: 503 });
+      return await serve404Page();
     }
   }
 
-  return new Response('Not Found', { status: 404 });
+  // Return 404 page for any other unmatched routes
+  return await serve404Page();
 }
 
 /**
@@ -1276,28 +1292,7 @@ export default {
     
     if (request.method !== 'POST' || !isValidPath) {
       // Serve custom 404 page for invalid paths
-      try {
-        const notFoundResponse = await fetch('https://taeyoon.kr/404.html');
-        if (notFoundResponse.ok) {
-          return new Response(notFoundResponse.body, {
-            status: 404,
-            headers: {
-              'Content-Type': 'text/html; charset=utf-8',
-              'Cache-Control': 'no-cache',
-              ...getSecurityHeaders(),
-            },
-          });
-        }
-      } catch (error) {
-        console.error('Failed to fetch 404 page:', error);
-      }
-      
-      return jsonResponse(
-        { success: false, message: 'Not Found' },
-        404,
-        origin,
-        env
-      );
+      return await serve404Page(getSecurityHeaders());
     }
 
     const hasTrustedContext = isRequestFromAllowedContext(origin, refererHeader, allowedOrigins, workerOrigin);
