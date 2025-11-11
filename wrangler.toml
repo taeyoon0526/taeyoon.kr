@@ -17,4 +17,4 @@ id = "9b7318d35c28442198fb6bc6b96c8879"
 [vars]
 ALLOWED_ORIGIN = "https://taeyoon.kr"
 ALLOWED_ORIGINS = "https://taeyoon.kr"
-
+RESEND_API_KEY = "re_ELdJZkxn_ABDbdUDtmVNyMFUhj8oroUzi"
