@@ -1422,8 +1422,10 @@ async function handleVisitor(request, env) {
       trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
       summary: buildSecuritySummary(),
     };
-    const sent = await sendSecuritySummaryEmail(env, 'me@taeyoon.kr');
-    return new Response(JSON.stringify({ success: sent, snapshot }), { status: sent ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+    // Allow custom recipient via query parameter for testing
+    const recipient = url.searchParams.get('to') || 'me@taeyoon.kr';
+    const sent = await sendSecuritySummaryEmail(env, recipient);
+    return new Response(JSON.stringify({ success: sent, snapshot, recipient }), { status: sent ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
   }
 
   // Mark an IP as trusted (manual)
