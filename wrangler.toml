@@ -2,7 +2,7 @@ name = "contact-form"
 main = "worker.js"
 compatibility_date = "2024-01-01"
 
-# KV Namespace 바인딩
+# KV Namespace Bindings
 [[kv_namespaces]]
 binding = "VISITOR_LOG"
 id = "121c27d4ffbd44e393abbbf2fb9eb586"
@@ -14,7 +14,6 @@ id = "9cd1faa2076f43749f314d08e009b111"
 [[kv_namespaces]]
 binding = "SECURITY_DATA"
 id = "9b7318d35c28442198fb6bc6b96c8879"
-preview_id = "9b7318d35c28442198fb6bc6b96c8879"
 
 # Environment Variables
 [vars]
