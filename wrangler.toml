@@ -20,7 +20,7 @@ id = "9b7318d35c28442198fb6bc6b96c8879"
 ALLOWED_ORIGIN = "https://taeyoon.kr"
 ALLOWED_ORIGINS = "https://taeyoon.kr"
 
-# Secrets (wrangler secret put 명령으로 설정)
+# Secrets (set with: wrangler secret put)
 # TURNSTILE_SECRET
-# RESEND_API_KEY  
+# RESEND_API_KEY
 # VISITOR_PASSWORD
