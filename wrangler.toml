@@ -11,6 +11,10 @@ id = "121c27d4ffbd44e393abbbf2fb9eb586"
 binding = "VISITOR_ANALYTICS_KV"
 id = "9cd1faa2076f43749f314d08e009b111"
 
+[[kv_namespaces]]
+binding = "SECURITY_DATA"
+id = "9b7318d35c28442198fb6bc6b96c8879"
+
 # Environment Variables
 [vars]
 ALLOWED_ORIGIN = "https://taeyoon.kr"

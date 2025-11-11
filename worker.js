@@ -186,7 +186,7 @@ function cleanupRateLimitStore(now) {
   }
 }
 
-function applyRateLimit(ip, now = Date.now()) {
+function applyRateLimit(ip, now = Date.now(), env = null) {
   if (!ip || ip === 'Unknown') {
     return { limited: false };
   }
@@ -203,6 +203,14 @@ function applyRateLimit(ip, now = Date.now()) {
       lastSeen: now,
     };
     rateLimitStore.set(ip, entry);
+    
+    // Save to KV asynchronously
+    if (env) {
+      saveSecurityDataToKV(env).catch(err => 
+        console.error('[KV SAVE] Failed after rate limit update:', err)
+      );
+    }
+    
     return { limited: false };
   }
 
@@ -228,6 +236,14 @@ function applyRateLimit(ip, now = Date.now()) {
     entry.blockedUntil = now + CONFIG.RATE_LIMIT_BLOCK_MS;
     entry.count = 0;
     entry.firstAttempt = now;
+    
+    // Save to KV asynchronously when rate limited
+    if (env) {
+      saveSecurityDataToKV(env).catch(err => 
+        console.error('[KV SAVE] Failed after rate limit block:', err)
+      );
+    }
+    
     return {
       limited: true,
       retryAfter: Math.ceil(CONFIG.RATE_LIMIT_BLOCK_MS / 1000),
@@ -255,19 +271,26 @@ function isIpBlocked(ip, now = Date.now()) {
 /**
  * Block an IP address
  */
-function blockIp(ip, reason, duration = CONFIG.BLOCK_DURATION_MS) {
+function blockIp(ip, reason, duration = CONFIG.BLOCK_DURATION_MS, env = null) {
   const now = Date.now();
   blockedIpsStore.set(ip, {
     reason,
     blockedAt: now,
     until: now + duration,
   });
+
+  // Save to KV asynchronously
+  if (env) {
+    saveSecurityDataToKV(env).catch(err => 
+      console.error('[KV SAVE] Failed after blocking IP:', err)
+    );
+  }
 }
 
 /**
  * Track suspicious activity
  */
-function trackSuspiciousActivity(ip, reason) {
+function trackSuspiciousActivity(ip, reason, env = null) {
   const now = Date.now();
   let record = suspiciousActivityStore.get(ip);
   
@@ -285,9 +308,16 @@ function trackSuspiciousActivity(ip, reason) {
     inc => now - inc.timestamp < 60 * 60 * 1000
   );
   
+  // Save to KV asynchronously
+  if (env) {
+    saveSecurityDataToKV(env).catch(err => 
+      console.error('[KV SAVE] Failed after tracking suspicious activity:', err)
+    );
+  }
+  
   // Block if too many suspicious activities
   if (record.count >= CONFIG.SUSPICIOUS_PATTERN_LIMIT) {
-    blockIp(ip, 'multiple_suspicious_activities', CONFIG.BLOCK_DURATION_MS);
+    blockIp(ip, 'multiple_suspicious_activities', CONFIG.BLOCK_DURATION_MS, env);
     console.warn('[SECURITY] IP auto-blocked:', {
       ip,
       reason: 'multiple_suspicious_activities',
@@ -907,6 +937,99 @@ async function handleCollect(request, env, ctx) {
 }
 
 /**
+ * Load security data from KV storage
+ */
+async function loadSecurityDataFromKV(env) {
+  try {
+    const [blockedData, suspiciousData, rateLimitData] = await Promise.all([
+      env.SECURITY_DATA.get('blocked_ips', { type: 'json' }),
+      env.SECURITY_DATA.get('suspicious_activities', { type: 'json' }),
+      env.SECURITY_DATA.get('rate_limits', { type: 'json' }),
+    ]);
+
+    // Restore blocked IPs
+    if (blockedData && Array.isArray(blockedData)) {
+      const now = Date.now();
+      blockedData.forEach(({ ip, reason, blockedAt, until }) => {
+        // Only restore if block hasn't expired
+        if (until > now) {
+          blockedIpsStore.set(ip, { reason, blockedAt, until });
+        }
+      });
+    }
+
+    // Restore suspicious activities
+    if (suspiciousData && Array.isArray(suspiciousData)) {
+      suspiciousData.forEach(({ ip, count, firstSeen, lastSeen, incidents }) => {
+        suspiciousActivityStore.set(ip, { count, firstSeen, lastSeen, incidents });
+      });
+    }
+
+    // Restore rate limits
+    if (rateLimitData && Array.isArray(rateLimitData)) {
+      const now = Date.now();
+      rateLimitData.forEach(({ ip, count, firstAttempt, blockedUntil }) => {
+        // Only restore if not expired
+        const expiry = Math.max(
+          blockedUntil || 0, 
+          firstAttempt + CONFIG.RATE_LIMIT_WINDOW_MS + CONFIG.RATE_LIMIT_BLOCK_MS
+        );
+        if (now < expiry) {
+          rateLimitStore.set(ip, { count, firstAttempt, blockedUntil });
+        }
+      });
+    }
+
+    console.log('[KV LOAD] Security data loaded successfully');
+  } catch (error) {
+    console.error('[KV LOAD] Failed to load security data:', error);
+  }
+}
+
+/**
+ * Save security data to KV storage
+ */
+async function saveSecurityDataToKV(env) {
+  if (!env.SECURITY_DATA) {
+    return;
+  }
+
+  try {
+    const now = Date.now();
+
+    // Prepare blocked IPs data
+    const blockedData = Array.from(blockedIpsStore.entries())
+      .filter(([_, data]) => data.until > now) // Only save non-expired blocks
+      .map(([ip, data]) => ({ ip, ...data }));
+
+    // Prepare suspicious activities data
+    const suspiciousData = Array.from(suspiciousActivityStore.entries())
+      .map(([ip, data]) => ({ ip, ...data }));
+
+    // Prepare rate limits data
+    const rateLimitData = Array.from(rateLimitStore.entries())
+      .map(([ip, data]) => ({ ip, ...data }));
+
+    // Save to KV with 7 days expiration
+    const expirationTtl = 7 * 24 * 60 * 60; // 7 days in seconds
+
+    await Promise.all([
+      env.SECURITY_DATA.put('blocked_ips', JSON.stringify(blockedData), { expirationTtl }),
+      env.SECURITY_DATA.put('suspicious_activities', JSON.stringify(suspiciousData), { expirationTtl }),
+      env.SECURITY_DATA.put('rate_limits', JSON.stringify(rateLimitData), { expirationTtl }),
+    ]);
+
+    console.log('[KV SAVE] Security data saved successfully', {
+      blockedIps: blockedData.length,
+      suspiciousActivities: suspiciousData.length,
+      rateLimits: rateLimitData.length,
+    });
+  } catch (error) {
+    console.error('[KV SAVE] Failed to save security data:', error);
+  }
+}
+
+/**
  * Handle /api/visitors endpoint (data retrieval)
  */
 async function handleApiVisitors(request, env) {
@@ -978,8 +1101,32 @@ async function handleVisitor(request, env) {
     });
   }
 
+  // Security dashboard HTML page (accessible without authentication)
+  if (request.method === 'GET' && url.pathname === '/visitor/security') {
+    try {
+      const securityPageResponse = await fetch('https://taeyoon.kr/security.html');
+      if (securityPageResponse.ok) {
+        return new Response(securityPageResponse.body, {
+          status: 200,
+          headers: {
+            'Content-Type': 'text/html; charset=utf-8',
+            'Cache-Control': 'no-cache',
+          },
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch security.html:', error);
+    }
+    return new Response('Security dashboard not available', { status: 500 });
+  }
+
   // Security stats endpoint (accessible without authentication for monitoring)
   if (request.method === 'GET' && url.pathname === '/visitor/security-stats') {
+    // Load persisted data from KV first
+    if (env.SECURITY_DATA) {
+      await loadSecurityDataFromKV(env);
+    }
+
     const stats = {
       blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({
         ip,
@@ -1346,7 +1493,7 @@ export default {
     }
 
     // Rate limiting per IP
-    const rateLimitStatus = applyRateLimit(clientInfo.ip);
+    const rateLimitStatus = applyRateLimit(clientInfo.ip, Date.now(), env);
     const logIP = clientInfo.ip || 'Unknown';
     
     // Check if IP is blocked
@@ -1430,7 +1577,7 @@ export default {
       try {
         body = JSON.parse(rawBody);
       } catch (error) {
-        trackSuspiciousActivity(logIP, 'malformed_json');
+        trackSuspiciousActivity(logIP, 'malformed_json', env);
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('malformed_json', {
@@ -1449,7 +1596,7 @@ export default {
 
       // Detect suspicious patterns in request body
       if (detectSuspiciousPatterns(body)) {
-        const blocked = trackSuspiciousActivity(logIP, 'suspicious_pattern_detected');
+        const blocked = trackSuspiciousActivity(logIP, 'suspicious_pattern_detected', env);
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('suspicious_pattern', {
@@ -1481,7 +1628,7 @@ export default {
 
       // Strict email validation
       if (!isValidEmail(email)) {
-        trackSuspiciousActivity(logIP, 'invalid_email_format');
+        trackSuspiciousActivity(logIP, 'invalid_email_format', env);
         return jsonResponse(
           { success: false, message: '올바른 이메일 주소를 입력해주세요.' },
           400,
@@ -1502,7 +1649,7 @@ export default {
 
       // Additional name validation (no special characters except spaces, hyphens, apostrophes)
       if (!/^[a-zA-Z가-힣\s'\-]+$/.test(name)) {
-        trackSuspiciousActivity(logIP, 'invalid_name_characters');
+        trackSuspiciousActivity(logIP, 'invalid_name_characters', env);
         return jsonResponse(
           { success: false, message: '이름에 허용되지 않은 문자가 포함되어 있습니다.' },
           400,
@@ -1524,8 +1671,8 @@ export default {
       // Anti-spam: Honeypot check
       if (website) {
         console.warn('Honeypot triggered:', { name, email });
-        trackSuspiciousActivity(logIP, 'honeypot_triggered');
-        blockIp(logIP, 'honeypot_triggered', CONFIG.BLOCK_DURATION_MS);
+        trackSuspiciousActivity(logIP, 'honeypot_triggered', env);
+        blockIp(logIP, 'honeypot_triggered', CONFIG.BLOCK_DURATION_MS, env);
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('honeypot_triggered', {
@@ -1547,7 +1694,7 @@ export default {
         const submissionTime = Date.now() - parseInt(t, 10);
         if (submissionTime < CONFIG.MIN_SUBMISSION_TIME) {
           console.warn('Too fast submission:', { name, email, submissionTime });
-          trackSuspiciousActivity(logIP, 'suspicious_speed');
+          trackSuspiciousActivity(logIP, 'suspicious_speed', env);
           scheduleSecurityLog(
             ctx,
             logSecurityEvent('suspicious_speed', {
@@ -1568,7 +1715,7 @@ export default {
 
       // Verify Turnstile token
       if (!turnstileToken) {
-        trackSuspiciousActivity(logIP, 'missing_turnstile_token');
+        trackSuspiciousActivity(logIP, 'missing_turnstile_token', env);
         scheduleSecurityLog(
           ctx,
           logSecurityEvent('missing_turnstile_token', {
@@ -1616,7 +1763,7 @@ export default {
       );
 
       if (!turnstileResult.success) {
-        trackSuspiciousActivity(logIP, 'turnstile_failed');
+        trackSuspiciousActivity(logIP, 'turnstile_failed', env);
         scheduleSecurityLog(
           ctx,
       logSecurityEvent('turnstile_failed', {
