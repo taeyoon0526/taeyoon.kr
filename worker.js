@@ -67,6 +67,9 @@ const SECURITY_HEADERS = {
 const rateLimitStore = new Map();
 const suspiciousActivityStore = new Map();
 const blockedIpsStore = new Map();
+// Reputation and trusted IP stores
+const ipReputationStore = new Map(); // { ip -> { score, trust, blockedCount, lastSeen, permanent } }
+const trustedIpsStore = new Map(); // { ip -> { reason, addedAt, auto } }
 
 // Suspicious patterns for detection
 const SUSPICIOUS_PATTERNS = [
@@ -76,6 +79,49 @@ const SUSPICIOUS_PATTERNS = [
   /<\?php|<%|eval\(|exec\(/i,
   /\$\{|<%=|{{/,
 ];
+
+// Reputation defaults
+const REPUTATION = {
+  DEFAULT_SCORE: 50,
+  MAX_SCORE: 100,
+  MIN_SCORE: 0,
+  AUTO_TRUST_THRESHOLD: 85,
+  AUTO_BLOCK_THRESHOLD: 20,
+  TRUST_INCREMENT: 5,
+  SUSPICION_PENALTY: 15,
+};
+
+/**
+ * Adjust reputation score for an IP.
+ */
+function adjustReputation(ip, delta, env = null) {
+  const now = Date.now();
+  let cur = ipReputationStore.get(ip) || { score: REPUTATION.DEFAULT_SCORE, trust: 0, blockedCount: 0, lastSeen: now, permanent: false };
+  cur.score = Math.max(REPUTATION.MIN_SCORE, Math.min(REPUTATION.MAX_SCORE, cur.score + delta));
+  cur.lastSeen = now;
+  ipReputationStore.set(ip, cur);
+  // Auto-trust or auto-block actions
+  if (cur.score >= REPUTATION.AUTO_TRUST_THRESHOLD) {
+    // promote to trusted
+    trustedIpsStore.set(ip, { reason: 'auto-trust', addedAt: now, auto: true });
+  }
+  if (cur.score <= REPUTATION.AUTO_BLOCK_THRESHOLD) {
+    blockIp(ip, 'auto-reputation', CONFIG.BLOCK_DURATION_MS, env);
+    cur.blockedCount = (cur.blockedCount || 0) + 1;
+  }
+}
+
+function markTrustedIp(ip, reason = 'manual', auto = false) {
+  trustedIpsStore.set(ip, { reason, addedAt: Date.now(), auto });
+}
+
+function unmarkTrustedIp(ip) {
+  trustedIpsStore.delete(ip);
+}
+
+function getReputationSnapshot() {
+  return Array.from(ipReputationStore.entries()).map(([ip, data]) => ({ ip, ...data }));
+}
 
 /**
  * Serve 404 page
@@ -249,6 +295,8 @@ function applyRateLimit(ip, now = Date.now(), env = null) {
       retryAfter: Math.ceil(CONFIG.RATE_LIMIT_BLOCK_MS / 1000),
     };
   }
+  // Penalize reputation slightly for hitting rate limits
+  try { adjustReputation(ip, -Math.floor(REPUTATION.SUSPICION_PENALTY / 2), env); } catch (e) { /* ignore */ }
 
   return { limited: false };
 }
@@ -332,6 +380,7 @@ function trackSuspiciousActivity(ip, reason, env = null) {
       totalIncidents: record.count,
       recentIncidents: record.incidents.length,
     });
+    try { adjustReputation(ip, -REPUTATION.SUSPICION_PENALTY, env); } catch(e){ console.error(e); }
     return true;
   }
   
@@ -1008,6 +1057,7 @@ function getSecurityDashboardHTML() {
       <p>실시간 보안 위협 및 차단 현황을 확인하세요.</p>
       <div class="header-actions">
         <button id="refreshBtn" class="refresh-btn">🔄 새로고침</button>
+        <button id="sendSummaryBtn" class="refresh-btn" style="margin-left:0.5rem;background:#10b981">📧 요약 전송</button>
         <span id="lastUpdate" class="timestamp timestamp-update"></span>
       </div>
     </div>
@@ -1029,6 +1079,8 @@ function getSecurityDashboardHTML() {
     function renderRateLimits(items){const c=document.getElementById('rateLimitsContent');if(!items||items.length===0){c.innerHTML='<div class="empty-state"><div class="icon">✅</div><p>Rate Limit에 걸린 IP가 없습니다.</p></div>';return}c.innerHTML='<div class="table-wrapper"><table><thead><tr><th>IP 주소</th><th>요청 횟수</th><th>첫 요청</th><th>차단 상태</th></tr></thead><tbody>'+items.map(i=>'<tr><td><span class="ip-address">'+i.ip+'</span></td><td><span class="badge badge-warning">'+i.count+'회</span></td><td class="timestamp">'+formatDate(i.firstAttempt)+'</td><td>'+(i.blockedUntil?'<span class="badge badge-danger">차단됨 ('+formatDate(i.blockedUntil)+'까지)</span>':'<span class="badge badge-info">정상</span>')+'</td></tr>').join('')+'</tbody></table></div>'}
     async function loadSecurityStats(){const btn=document.getElementById('refreshBtn');btn.disabled=true;try{const r=await fetch(API_URL);const d=await r.json();document.getElementById('blockedCount').textContent=d.summary.totalBlockedIps;document.getElementById('suspiciousCount').textContent=d.summary.totalSuspiciousIps;document.getElementById('rateLimitCount').textContent=d.summary.totalRateLimitedIps;renderBlockedIps(d.blockedIps);renderSuspiciousActivities(d.suspiciousActivities);renderRateLimits(d.rateLimits);document.getElementById('lastUpdate').textContent='최근 업데이트: '+new Date().toLocaleTimeString('ko-KR')}catch(e){console.error('Failed to load:',e);alert('보안 통계를 불러오는데 실패했습니다.')}finally{btn.disabled=false}}
     loadSecurityStats();setInterval(loadSecurityStats,30000);document.getElementById('refreshBtn').addEventListener('click',loadSecurityStats);
+    document.getElementById('sendSummaryBtn').addEventListener('click', async function(){
+      const btn = this; btn.disabled = true; try{ const r = await fetch('/visitor/security-summary',{ method: 'POST', headers: { 'Content-Type':'application/json' } }); const j = await r.json(); alert(j.success ? '요약 이메일을 전송했습니다.' : '전송 실패: '+(j.message || 'unknown')); }catch(e){ alert('요약 전송 실패'); } finally { btn.disabled = false; }});
   </script>
 </body>
 </html>`;
@@ -1039,10 +1091,12 @@ function getSecurityDashboardHTML() {
  */
 async function loadSecurityDataFromKV(env) {
   try {
-    const [blockedData, suspiciousData, rateLimitData] = await Promise.all([
+    const [blockedData, suspiciousData, rateLimitData, reputationData, trustedData] = await Promise.all([
       env.SECURITY_DATA.get('blocked_ips', { type: 'json' }),
       env.SECURITY_DATA.get('suspicious_activities', { type: 'json' }),
       env.SECURITY_DATA.get('rate_limits', { type: 'json' }),
+      env.SECURITY_DATA.get('ip_reputation', { type: 'json' }),
+      env.SECURITY_DATA.get('trusted_ips', { type: 'json' }),
     ]);
 
     // Restore blocked IPs
@@ -1079,6 +1133,18 @@ async function loadSecurityDataFromKV(env) {
     }
 
     console.log('[KV LOAD] Security data loaded successfully');
+    // Restore reputation
+    if (reputationData && Array.isArray(reputationData)) {
+      reputationData.forEach(({ ip, score, trust, blockedCount, lastSeen, permanent }) => {
+        ipReputationStore.set(ip, { score, trust, blockedCount, lastSeen, permanent });
+      });
+    }
+    // Restore trusted IPs
+    if (trustedData && Array.isArray(trustedData)) {
+      trustedData.forEach(({ ip, reason, addedAt, auto }) => {
+        trustedIpsStore.set(ip, { reason, addedAt, auto });
+      });
+    }
   } catch (error) {
     console.error('[KV LOAD] Failed to load security data:', error);
   }
@@ -1118,6 +1184,8 @@ async function saveSecurityDataToKV(env) {
       env.SECURITY_DATA.put('blocked_ips', JSON.stringify(blockedData), { expirationTtl }),
       env.SECURITY_DATA.put('suspicious_activities', JSON.stringify(suspiciousData), { expirationTtl }),
       env.SECURITY_DATA.put('rate_limits', JSON.stringify(rateLimitData), { expirationTtl }),
+      env.SECURITY_DATA.put('ip_reputation', JSON.stringify(Array.from(ipReputationStore.entries()).map(([ip, d]) => ({ ip, ...d }))), { expirationTtl }),
+      env.SECURITY_DATA.put('trusted_ips', JSON.stringify(Array.from(trustedIpsStore.entries()).map(([ip, d]) => ({ ip, ...d }))), { expirationTtl }),
     ]);
 
     console.log('[KV SAVE] Security data saved successfully', {
@@ -1128,6 +1196,54 @@ async function saveSecurityDataToKV(env) {
   } catch (error) {
     console.error('[KV SAVE] Failed to save security data:', error);
   }
+}
+
+/**
+ * Send security summary email via Resend (requires RESEND_API_KEY env)
+ */
+async function sendSecuritySummaryEmail(env, recipient = 'me@taeyoon.kr') {
+  if (!env.RESEND_API_KEY) {
+    console.warn('[EMAIL] RESEND_API_KEY not configured');
+    return false;
+  }
+  const summary = buildSecuritySummary();
+  const body = `<pre>${JSON.stringify(summary, null, 2)}</pre>`;
+  try {
+    const res = await fetch(CONFIG.RESEND_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${env.RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: CONFIG.EMAIL_FROM,
+        to: [recipient],
+        subject: `Security Summary - ${new Date().toLocaleString()}`,
+        html: body,
+      }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error('[EMAIL] Failed to send security summary:', e);
+    return false;
+  }
+}
+
+function buildSecuritySummary() {
+  const now = Date.now();
+  const totalBlocked = Array.from(blockedIpsStore.values()).filter(d => d.until > now).length;
+  const totalSuspicious = Array.from(suspiciousActivityStore.values()).reduce((s, v) => s + (v.count || 0), 0);
+  const totalRateLimited = Array.from(rateLimitStore.values()).filter(r => r.blockedUntil && r.blockedUntil > now).length;
+  const whitelistSize = trustedIpsStore.size;
+  const highestRiskScore = Array.from(ipReputationStore.values()).reduce((mx, v) => Math.max(mx, v.score || 0), 0);
+  return {
+    totalBlockedIps: totalBlocked,
+    totalSuspiciousIps: totalSuspicious,
+    totalRateLimitedIps: totalRateLimited,
+    whitelistSize,
+    highestRiskScore,
+    lastSummarySentAt: null,
+  };
 }
 
 /**
@@ -1240,6 +1356,46 @@ async function handleVisitor(request, env) {
       console.warn('[SECURITY_STATS] SECURITY_DATA binding not available');
     }
 
+    // Manual trigger: send security summary email (protected by origin or allowlist)
+    if (request.method === 'POST' && url.pathname === '/visitor/security-summary') {
+      // Allow only same-origin or allowed visitor IPs
+      const origin = request.headers.get('Origin');
+      const clientIp = normalizeIp(clientInfo.ip);
+      if (!(isAllowedVisitorIp(clientIp) || (origin && getAllowedOrigins(env).includes(origin)))) {
+        return new Response(JSON.stringify({ success: false, message: 'Forbidden' }), { status: 403, headers: { 'Content-Type': 'application/json' } });
+      }
+      // Load KV first
+      if (env.SECURITY_DATA) await loadSecurityDataFromKV(env);
+      const snapshot = {
+        blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+        suspiciousActivities: Array.from(suspiciousActivityStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+        rateLimits: Array.from(rateLimitStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+        reputation: getReputationSnapshot(),
+        trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+        summary: buildSecuritySummary(),
+      };
+      const sent = await sendSecuritySummaryEmail(env, 'me@taeyoon.kr');
+      return new Response(JSON.stringify({ success: sent, snapshot }), { status: sent ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Mark an IP as trusted (manual)
+    if (request.method === 'POST' && url.pathname === '/visitor/trust-ip') {
+      const body = await request.json().catch(() => ({}));
+      if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      markTrustedIp(body.ip, body.reason || 'manual', false);
+      await saveSecurityDataToKV(env);
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    // Remove trusted IP
+    if (request.method === 'POST' && url.pathname === '/visitor/untrust-ip') {
+      const body = await request.json().catch(() => ({}));
+      if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+      unmarkTrustedIp(body.ip);
+      await saveSecurityDataToKV(env);
+      return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
     const stats = {
       blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({
         ip,
@@ -1264,11 +1420,9 @@ async function handleVisitor(request, env) {
         firstAttempt: new Date(data.firstAttempt).toISOString(),
         blockedUntil: data.blockedUntil ? new Date(data.blockedUntil).toISOString() : null,
       })),
-      summary: {
-        totalBlockedIps: blockedIpsStore.size,
-        totalSuspiciousIps: suspiciousActivityStore.size,
-        totalRateLimitedIps: rateLimitStore.size,
-      },
+      summary: buildSecuritySummary(),
+      reputation: getReputationSnapshot(),
+      trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
     };
 
     return new Response(JSON.stringify(stats), {
