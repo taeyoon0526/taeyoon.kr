@@ -937,6 +937,96 @@ async function handleCollect(request, env, ctx) {
 }
 
 /**
+ * Get security dashboard HTML
+ */
+function getSecurityDashboardHTML() {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>보안 모니터링 대시보드 | taeyoon.kr</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 2rem; }
+    .container { max-width: 1400px; margin: 0 auto; }
+    .header { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .header h1 { font-size: 2rem; color: #1f2933; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .header p { color: #52616b; font-size: 1rem; }
+    .header-actions { margin-top: 1rem; }
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+    .stat-card { background: rgba(255,255,255,0.95); border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: transform 0.2s; }
+    .stat-card:hover { transform: translateY(-5px); }
+    .stat-card .icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
+    .stat-card .label { color: #52616b; font-size: 0.9rem; margin-bottom: 0.5rem; }
+    .stat-card .value { font-size: 2.5rem; font-weight: 700; color: #1f2933; }
+    .section { background: rgba(255,255,255,0.95); border-radius: 20px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    .section h2 { font-size: 1.5rem; color: #1f2933; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.5rem; }
+    .table-wrapper { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    thead { background: #f8f9fb; }
+    th { padding: 1rem; text-align: left; font-weight: 600; color: #1f2933; border-bottom: 2px solid #e4e7eb; }
+    td { padding: 1rem; border-bottom: 1px solid #e4e7eb; color: #52616b; }
+    tr:hover { background: #f8f9fb; }
+    .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.85rem; font-weight: 600; }
+    .badge-danger { background: #fee; color: #c33; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .badge-info { background: #d1ecf1; color: #0c5460; }
+    .empty-state { text-align: center; padding: 3rem; color: #7c8a96; }
+    .empty-state .icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
+    .refresh-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 12px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: transform 0.2s; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+    .refresh-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.6); }
+    .refresh-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .timestamp { font-size: 0.85rem; color: #7c8a96; }
+    .timestamp-update { margin-left: 1rem; }
+    .ip-address { font-family: 'Courier New', monospace; font-weight: 600; color: #667eea; }
+    .loading { text-align: center; padding: 3rem; }
+    .loading::after { content: '...'; animation: dots 1.5s steps(4,end) infinite; }
+    @keyframes dots { 0%,20% { content: '.'; } 40% { content: '..'; } 60%,100% { content: '...'; } }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .header h1 { font-size: 1.5rem; }
+      .stat-card .value { font-size: 2rem; }
+      table { font-size: 0.9rem; }
+      th, td { padding: 0.75rem 0.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🛡️ 보안 모니터링 대시보드</h1>
+      <p>실시간 보안 위협 및 차단 현황을 확인하세요.</p>
+      <div class="header-actions">
+        <button id="refreshBtn" class="refresh-btn">🔄 새로고침</button>
+        <span id="lastUpdate" class="timestamp timestamp-update"></span>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="icon">🚫</div><div class="label">차단된 IP</div><div class="value" id="blockedCount">0</div></div>
+      <div class="stat-card"><div class="icon">⚠️</div><div class="label">의심스러운 활동</div><div class="value" id="suspiciousCount">0</div></div>
+      <div class="stat-card"><div class="icon">🔄</div><div class="label">Rate Limit</div><div class="value" id="rateLimitCount">0</div></div>
+    </div>
+    <div class="section"><h2>🚫 차단된 IP 목록</h2><div id="blockedIpsContent" class="loading">데이터를 불러오는 중</div></div>
+    <div class="section"><h2>⚠️ 의심스러운 활동</h2><div id="suspiciousActivitiesContent" class="loading">데이터를 불러오는 중</div></div>
+    <div class="section"><h2>🔄 Rate Limit 현황</h2><div id="rateLimitsContent" class="loading">데이터를 불러오는 중</div></div>
+  </div>
+  <script>
+    const API_URL='/visitor/security-stats';
+    function formatDate(d){const t=new Date(d);return t.toLocaleString('ko-KR',{year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'})}
+    function formatDuration(ms){const m=Math.floor(ms/60000);const s=Math.floor((ms%60000)/1000);return m+'분 '+s+'초'}
+    function renderBlockedIps(items){const c=document.getElementById('blockedIpsContent');if(!items||items.length===0){c.innerHTML='<div class="empty-state"><div class="icon">✅</div><p>현재 차단된 IP가 없습니다.</p></div>';return}c.innerHTML='<div class="table-wrapper"><table><thead><tr><th>IP 주소</th><th>차단 사유</th><th>차단 시각</th><th>해제 시각</th><th>남은 시간</th></tr></thead><tbody>'+items.map(i=>'<tr><td><span class="ip-address">'+i.ip+'</span></td><td><span class="badge badge-danger">'+i.reason+'</span></td><td class="timestamp">'+formatDate(i.blockedAt)+'</td><td class="timestamp">'+formatDate(i.until)+'</td><td>'+formatDuration(i.remainingMs)+'</td></tr>').join('')+'</tbody></table></div>'}
+    function renderSuspiciousActivities(items){const c=document.getElementById('suspiciousActivitiesContent');if(!items||items.length===0){c.innerHTML='<div class="empty-state"><div class="icon">✅</div><p>의심스러운 활동이 감지되지 않았습니다.</p></div>';return}c.innerHTML='<div class="table-wrapper"><table><thead><tr><th>IP 주소</th><th>활동 횟수</th><th>첫 감지</th><th>최근 활동</th><th>최근 사유</th></tr></thead><tbody>'+items.map(i=>'<tr><td><span class="ip-address">'+i.ip+'</span></td><td><span class="badge badge-warning">'+i.count+'회</span></td><td class="timestamp">'+formatDate(i.firstSeen)+'</td><td class="timestamp">'+formatDate(i.lastSeen)+'</td><td>'+i.recentIncidents.slice(-3).map(inc=>'<span class="badge badge-info" style="margin:2px">'+inc.reason+'</span>').join('')+'</td></tr>').join('')+'</tbody></table></div>'}
+    function renderRateLimits(items){const c=document.getElementById('rateLimitsContent');if(!items||items.length===0){c.innerHTML='<div class="empty-state"><div class="icon">✅</div><p>Rate Limit에 걸린 IP가 없습니다.</p></div>';return}c.innerHTML='<div class="table-wrapper"><table><thead><tr><th>IP 주소</th><th>요청 횟수</th><th>첫 요청</th><th>차단 상태</th></tr></thead><tbody>'+items.map(i=>'<tr><td><span class="ip-address">'+i.ip+'</span></td><td><span class="badge badge-warning">'+i.count+'회</span></td><td class="timestamp">'+formatDate(i.firstAttempt)+'</td><td>'+(i.blockedUntil?'<span class="badge badge-danger">차단됨 ('+formatDate(i.blockedUntil)+'까지)</span>':'<span class="badge badge-info">정상</span>')+'</td></tr>').join('')+'</tbody></table></div>'}
+    async function loadSecurityStats(){const btn=document.getElementById('refreshBtn');btn.disabled=true;try{const r=await fetch(API_URL);const d=await r.json();document.getElementById('blockedCount').textContent=d.summary.totalBlockedIps;document.getElementById('suspiciousCount').textContent=d.summary.totalSuspiciousIps;document.getElementById('rateLimitCount').textContent=d.summary.totalRateLimitedIps;renderBlockedIps(d.blockedIps);renderSuspiciousActivities(d.suspiciousActivities);renderRateLimits(d.rateLimits);document.getElementById('lastUpdate').textContent='최근 업데이트: '+new Date().toLocaleTimeString('ko-KR')}catch(e){console.error('Failed to load:',e);alert('보안 통계를 불러오는데 실패했습니다.')}finally{btn.disabled=false}}
+    loadSecurityStats();setInterval(loadSecurityStats,30000);document.getElementById('refreshBtn').addEventListener('click',loadSecurityStats);
+  </script>
+</body>
+</html>`;
+}
+
+/**
  * Load security data from KV storage
  */
 async function loadSecurityDataFromKV(env) {
@@ -1103,21 +1193,13 @@ async function handleVisitor(request, env) {
 
   // Security dashboard HTML page (accessible without authentication)
   if (request.method === 'GET' && url.pathname === '/visitor/security') {
-    try {
-      const securityPageResponse = await fetch('https://taeyoon.kr/security.html');
-      if (securityPageResponse.ok) {
-        return new Response(securityPageResponse.body, {
-          status: 200,
-          headers: {
-            'Content-Type': 'text/html; charset=utf-8',
-            'Cache-Control': 'no-cache',
-          },
-        });
-      }
-    } catch (error) {
-      console.error('Failed to fetch security.html:', error);
-    }
-    return new Response('Security dashboard not available', { status: 500 });
+    return new Response(getSecurityDashboardHTML(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
   }
 
   // Security stats endpoint (accessible without authentication for monitoring)
