@@ -1081,8 +1081,11 @@ async function loadSecurityDataFromKV(env) {
  */
 async function saveSecurityDataToKV(env) {
   if (!env.SECURITY_DATA) {
+    console.warn('[KV SAVE] SECURITY_DATA binding not available');
     return;
   }
+
+  console.log('[KV SAVE] Starting save process...');
 
   try {
     const now = Date.now();
@@ -1205,8 +1208,12 @@ async function handleVisitor(request, env) {
   // Security stats endpoint (accessible without authentication for monitoring)
   if (request.method === 'GET' && url.pathname === '/visitor/security-stats') {
     // Load persisted data from KV first
+    console.log('[SECURITY_STATS] SECURITY_DATA binding exists:', !!env.SECURITY_DATA);
     if (env.SECURITY_DATA) {
+      console.log('[SECURITY_STATS] Loading data from KV...');
       await loadSecurityDataFromKV(env);
+    } else {
+      console.warn('[SECURITY_STATS] SECURITY_DATA binding not available');
     }
 
     const stats = {
