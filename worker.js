@@ -291,17 +291,22 @@ function blockIp(ip, reason, duration = CONFIG.BLOCK_DURATION_MS, env = null) {
  * Track suspicious activity
  */
 function trackSuspiciousActivity(ip, reason, env = null) {
+  console.log('[TRACK_SUSPICIOUS] IP:', ip, 'Reason:', reason, 'Has env:', !!env);
+  
   const now = Date.now();
   let record = suspiciousActivityStore.get(ip);
   
   if (!record) {
     record = { count: 0, incidents: [], firstSeen: now };
     suspiciousActivityStore.set(ip, record);
+    console.log('[TRACK_SUSPICIOUS] Created new record for IP:', ip);
   }
   
   record.count += 1;
   record.incidents.push({ reason, timestamp: now });
   record.lastSeen = now;
+  
+  console.log('[TRACK_SUSPICIOUS] Updated record. Count:', record.count, 'Total stored IPs:', suspiciousActivityStore.size);
   
   // Keep only recent incidents (last hour)
   record.incidents = record.incidents.filter(
@@ -310,9 +315,12 @@ function trackSuspiciousActivity(ip, reason, env = null) {
   
   // Save to KV asynchronously
   if (env) {
+    console.log('[TRACK_SUSPICIOUS] Saving to KV...');
     saveSecurityDataToKV(env).catch(err => 
       console.error('[KV SAVE] Failed after tracking suspicious activity:', err)
     );
+  } else {
+    console.warn('[TRACK_SUSPICIOUS] No env, cannot save to KV');
   }
   
   // Block if too many suspicious activities
