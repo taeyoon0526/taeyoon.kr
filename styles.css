@@ -2178,6 +2178,7 @@ html {
     transition-duration: 0.01ms !important;
   }
 }
+
 /* ====================================
    Terms of Service Modal
    ==================================== */
@@ -2335,6 +2336,7 @@ html {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -2345,6 +2347,7 @@ html {
     transform: translateY(-50px);
     opacity: 0;
   }
+
   to {
     transform: translateY(0);
     opacity: 1;
