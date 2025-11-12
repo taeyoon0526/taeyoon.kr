@@ -388,6 +388,20 @@
           <span class="card-badge badge-dashboard">DASHBOARD</span>
           <div class="endpoint-path">/visitor/stats</div>
         </a>
+        <a href="/visitor/analytics" class="card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">상세 분석</div>
+          <div class="card-desc">방문자 상세 분석 대시보드. 데이터 시각화 및 트렌드 분석.</div>
+          <span class="card-badge badge-dashboard">DASHBOARD</span>
+          <div class="endpoint-path">/visitor/analytics</div>
+        </a>
+        <a href="/visitor/logs" class="card">
+          <div class="card-icon">📝</div>
+          <div class="card-title">방문 로그</div>
+          <div class="card-desc">페이지네이션 지원 방문 로그. 시간별, 필터별 로그 조회 가능.</div>
+          <span class="card-badge badge-dashboard">DASHBOARD</span>
+          <div class="endpoint-path">/visitor/logs</div>
+        </a>
       </div>
     </div>
 
@@ -402,26 +416,19 @@
           <span class="card-badge badge-get">GET</span>
           <div class="endpoint-path">/ip</div>
         </a>
+        <a href="/api/visitor/data" class="card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">방문자 데이터</div>
+          <div class="card-desc">전체 방문자 데이터 조회 (인증 필요). IP 마스킹 적용됨.</div>
+          <span class="card-badge badge-get">GET</span>
+          <div class="endpoint-path">/api/visitor/data</div>
+        </a>
         <a href="/visitor/security-stats" class="card">
-          <div class="card-icon">🔐</div>
+          <div class="card-icon">�</div>
           <div class="card-title">보안 통계 조회</div>
           <div class="card-desc">차단된 IP, 의심 활동, Rate Limit 현황을 JSON으로 반환.</div>
           <span class="card-badge badge-get">GET</span>
           <div class="endpoint-path">/visitor/security-stats</div>
-        </a>
-        <a href="/visitor/analytics" class="card">
-          <div class="card-icon">📊</div>
-          <div class="card-title">방문자 분석</div>
-          <div class="card-desc">실시간 방문자 수, 국가별 분포, 인기 경로 등 상세 분석 데이터.</div>
-          <span class="card-badge badge-get">GET</span>
-          <div class="endpoint-path">/visitor/analytics</div>
-        </a>
-        <a href="/visitor/logs?limit=50" class="card">
-          <div class="card-icon">📝</div>
-          <div class="card-title">방문 로그</div>
-          <div class="card-desc">최근 방문 기록 조회. limit 파라미터로 개수 조절 가능 (기본 50개).</div>
-          <span class="card-badge badge-get">GET</span>
-          <div class="endpoint-path">/visitor/logs?limit=50</div>
         </a>
       </div>
     </div>
