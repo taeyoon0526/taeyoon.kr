@@ -22,6 +22,12 @@ id = "9cd1faa2076f43749f314d08e009b111"
 binding = "SECURITY_DATA"
 id = "9b7318d35c28442198fb6bc6b96c8879"
 
+# Text module imports for HTML dashboards
+[[rules]]
+type = "Text"
+globs = ["**/*.html"]
+fallthrough = true
+
 [vars]
 ALLOWED_ORIGIN = "https://taeyoon.kr"
 ALLOWED_ORIGINS = "https://taeyoon.kr"

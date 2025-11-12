@@ -23,6 +23,9 @@
  * - JSON API responses
  */
 
+// ===== Import HTML Dashboard Templates =====
+import ipDashboardTemplate from './dashboards/ip.html';
+
 // ===== Configuration =====
 const CONFIG = {
   TURNSTILE_VERIFY_URL: 'https://challenges.cloudflare.com/turnstile/v0/siteverify',
@@ -584,212 +587,19 @@ async function verifyTurnstile(token, ip, env, siteKey = null) {
 // IP Information Dashboard
 function getIpDashboardHTML(clientInfo) {
   const { ip, normalizedIp, country, userAgent } = clientInfo;
-  return `<!DOCTYPE html>
-<html lang="ko">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>IP 정보 | taeyoon.kr</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-    .container {
-      background: white;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-      padding: 40px;
-      max-width: 800px;
-      width: 100%;
-    }
-    h1 {
-      color: #667eea;
-      text-align: center;
-      margin-bottom: 30px;
-      font-size: 2.5em;
-    }
-    .info-grid {
-      display: grid;
-      gap: 20px;
-      margin-bottom: 30px;
-    }
-    .info-card {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 25px;
-      border-radius: 15px;
-      box-shadow: 0 5px 15px rgba(102,126,234,0.3);
-    }
-    .info-label {
-      font-size: 0.9em;
-      opacity: 0.9;
-      margin-bottom: 8px;
-      font-weight: 500;
-    }
-    .info-value {
-      font-size: 1.5em;
-      font-weight: 700;
-      word-break: break-all;
-    }
-    .json-section {
-      background: #f8f9fa;
-      border-radius: 12px;
-      padding: 20px;
-      margin-top: 30px;
-    }
-    .json-title {
-      color: #667eea;
-      font-size: 1.2em;
-      font-weight: 600;
-      margin-bottom: 15px;
-    }
-    pre {
-      background: #2d3748;
-      color: #e2e8f0;
-      padding: 20px;
-      border-radius: 10px;
-      overflow-x: auto;
-      font-family: 'Monaco', 'Courier New', monospace;
-      font-size: 0.9em;
-      line-height: 1.6;
-    }
-    .btn-back {
-      display: block;
-      text-align: center;
-      padding: 12px 30px;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      text-decoration: none;
-      border-radius: 25px;
-      font-weight: 600;
-      margin-top: 20px;
-      transition: transform 0.2s;
-    }
-    .btn-back:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
-    }
-    .copy-btn {
-      background: #48bb78;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      margin-top: 10px;
-      transition: all 0.2s;
-    }
-    .copy-btn:hover {
-      background: #38a169;
-      transform: translateY(-2px);
-    }
-    
-    /* Mobile Responsive */
-    @media (max-width: 768px) {
-      body {
-        padding: 15px;
-      }
-      .container {
-        padding: 25px 20px;
-        border-radius: 15px;
-      }
-      h1 {
-        font-size: 1.8em;
-        margin-bottom: 20px;
-      }
-      .info-card {
-        padding: 20px;
-      }
-      .info-value {
-        font-size: 1.2em;
-      }
-      .json-section {
-        padding: 15px;
-      }
-      pre {
-        font-size: 0.75em;
-        padding: 15px;
-      }
-      .btn-back {
-        padding: 10px 25px;
-        font-size: 0.95em;
-      }
-    }
-    
-    @media (max-width: 480px) {
-      h1 {
-        font-size: 1.5em;
-      }
-      .info-label {
-        font-size: 0.85em;
-      }
-      .info-value {
-        font-size: 1em;
-      }
-      .container {
-        padding: 20px 15px;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>🌐 IP 정보</h1>
-    
-    <div class="info-grid">
-      <div class="info-card">
-        <div class="info-label">원본 IP 주소</div>
-        <div class="info-value">${ip || 'Unknown'}</div>
-      </div>
-      
-      <div class="info-card">
-        <div class="info-label">정규화된 IP</div>
-        <div class="info-value">${normalizedIp || ip || 'Unknown'}</div>
-      </div>
-      
-      <div class="info-card">
-        <div class="info-label">국가 코드</div>
-        <div class="info-value">${country || 'Unknown'}</div>
-      </div>
-      
-      <div class="info-card">
-        <div class="info-label">User Agent</div>
-        <div class="info-value" style="font-size: 1em;">${userAgent || 'Unknown'}</div>
-      </div>
-    </div>
-
-    <div class="json-section">
-      <div class="json-title">📄 JSON 응답</div>
-      <pre id="jsonData">${JSON.stringify({ ip: ip || 'Unknown', normalizedIp: normalizedIp || ip || 'Unknown', country: country || 'Unknown', userAgent: userAgent || 'Unknown' }, null, 2)}</pre>
-      <button class="copy-btn" onclick="copyJson()">📋 JSON 복사</button>
-    </div>
-
-    <a href="/" class="btn-back">← 홈으로 돌아가기</a>
-  </div>
-
-  <script>
-    function copyJson() {
-      const jsonText = document.getElementById('jsonData').textContent;
-      navigator.clipboard.writeText(jsonText).then(() => {
-        const btn = event.target;
-        const originalText = btn.textContent;
-        btn.textContent = '✓ 복사됨!';
-        setTimeout(() => {
-          btn.textContent = originalText;
-        }, 2000);
-      });
-    }
-  </script>
-</body>
-</html>`;
+  const jsonData = JSON.stringify({ 
+    ip: ip || 'Unknown', 
+    normalizedIp: normalizedIp || ip || 'Unknown', 
+    country: country || 'Unknown', 
+    userAgent: userAgent || 'Unknown' 
+  }, null, 2);
+  
+  return ipDashboardTemplate
+    .replace(/\{\{IP\}\}/g, ip || 'Unknown')
+    .replace(/\{\{NORMALIZED_IP\}\}/g, normalizedIp || ip || 'Unknown')
+    .replace(/\{\{COUNTRY\}\}/g, country || 'Unknown')
+    .replace(/\{\{USER_AGENT\}\}/g, userAgent || 'Unknown')
+    .replace(/\{\{JSON_DATA\}\}/g, jsonData);
 }
 
 // Visitor Stats HTML Dashboard
