@@ -2667,7 +2667,7 @@ function getSecurityDashboardHTML() {
     <div class="section"><h2>🔄 Rate Limit</h2><div id="rateLimitsContent" class="loading">로딩 중</div></div>
   </div>
   <script>
-    const API='/visitor/security-stats';
+    const API='/visitor/security-data';
     let charts={activity:null,threat:null};
     let darkMode=localStorage.getItem('darkMode')==='true'||window.matchMedia('(prefers-color-scheme: dark)').matches;
     
@@ -3154,6 +3154,52 @@ async function handleVisitor(request, env) {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
+  // Security data API endpoint (JSON) for Admin Dashboard
+  if (request.method === 'GET' && url.pathname === '/visitor/security-data') {
+    // Load persisted data from KV first
+    if (env.SECURITY_DATA) {
+      await loadSecurityDataFromKV(env);
+    }
+    
+    const stats = {
+      blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({
+        ip,
+        reason: data.reason,
+        blockedAt: new Date(data.blockedAt).toISOString(),
+        until: new Date(data.until).toISOString(),
+        remainingMs: Math.max(0, data.until - Date.now()),
+      })),
+      suspiciousActivities: Array.from(suspiciousActivityStore.entries()).map(([ip, data]) => ({
+        ip,
+        count: data.count,
+        firstSeen: new Date(data.firstSeen).toISOString(),
+        lastSeen: new Date(data.lastSeen).toISOString(),
+        recentIncidents: data.incidents.slice(-10).map(inc => ({
+          reason: inc.reason,
+          timestamp: new Date(inc.timestamp).toISOString(),
+        })),
+      })),
+      rateLimits: Array.from(rateLimitStore.entries()).map(([ip, data]) => ({
+        ip,
+        count: data.count,
+        firstAttempt: new Date(data.firstAttempt).toISOString(),
+        blockedUntil: data.blockedUntil ? new Date(data.blockedUntil).toISOString() : null,
+      })),
+      summary: buildSecuritySummary(),
+      reputation: getReputationSnapshot(),
+      trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
+    };
+
+    return new Response(JSON.stringify(stats), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Cache-Control': 'no-cache',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   }
