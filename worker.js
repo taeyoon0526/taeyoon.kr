@@ -51,16 +51,17 @@ const CONFIG = {
 };
 
 // IP allowlist for visitor dashboard access
-// Allowed visitor IPs for dashboard access
+// Allowed visitor IPs for dashboard access (보안 강화: 2025-11-12)
 const ALLOWED_VISITOR_IPS = [
-  '211.177.232.118', // WiFi (IPv4)
-  '118.235.5.139',   // Mobile data (IPv4)
-  '2001:e60:914e:29d1:65a3:21d4:9aaa:ac64', // WiFi (IPv6)
-  // '127.0.0.1',    // Localhost (개발용 - 프로덕션에서 제거됨)
+  '211.177.232.118', // #1
+  '118.235.5.139',   // #2
+  '2001:e60:914e:29d1:65a3:21d4:9aaa:ac64', // #3
 ];
 
+// 🔒 Security Improvement #4: CSP without 'unsafe-eval'
+// 🔒 Security Improvement #9: Enhanced cookie security flags
 const SECURITY_HEADERS = {
-  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.google-analytics.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'self';",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.googletagmanager.com https://www.google-analytics.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com https://www.google-analytics.com; frame-src https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'; worker-src 'self'; manifest-src 'self'; media-src 'self';",
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -77,6 +78,20 @@ const SECURITY_HEADERS = {
   'X-Download-Options': 'noopen',
   'X-DNS-Prefetch-Control': 'off',
 };
+
+// 🔒 Security Improvement #1 & #2: API Authentication
+const API_SECRET_KEY = 'dashboard-access-2025'; // 프로덕션에서는 환경 변수로 관리
+const API_RATE_LIMITS = {
+  '/api/visitor/data': { maxRequests: 10, windowMs: 60000 }, // 분당 10회
+  '/api/visitor/security-stats': { maxRequests: 10, windowMs: 60000 },
+  '/api/contact': { maxRequests: 3, windowMs: 300000 }, // 5분당 3회
+};
+
+// 🔒 Security Improvement #3: Turnstile token tracking
+const usedTurnstileTokens = new Map(); // { token -> timestamp }
+
+// 🔒 Security Improvement #5: Rate limiting store with sliding window
+const apiRateLimitStore = new Map(); // { ip+endpoint -> [timestamps] }
 
 const rateLimitStore = new Map();
 const suspiciousActivityStore = new Map();
@@ -242,6 +257,130 @@ function isRequestFromAllowedContext(origin, referer, allowedOrigins, workerOrig
  */
 function getSecurityHeaders() {
   return { ...SECURITY_HEADERS };
+}
+
+// 🔒 Security Improvement #1: API Authentication with API key
+function checkApiAuth(request) {
+  const authHeader = request.headers.get('Authorization');
+  const apiKey = request.headers.get('X-API-Key');
+  
+  // Check Bearer token
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.substring(7);
+    if (token === API_SECRET_KEY) {
+      return true;
+    }
+  }
+  
+  // Check X-API-Key header
+  if (apiKey === API_SECRET_KEY) {
+    return true;
+  }
+  
+  return false;
+}
+
+// 🔒 Security Improvement #5: Advanced Rate Limiting with sliding window
+function checkApiRateLimit(ip, endpoint, now = Date.now()) {
+  const rateLimit = API_RATE_LIMITS[endpoint];
+  if (!rateLimit) return { allowed: true };
+  
+  const key = `${ip}:${endpoint}`;
+  let timestamps = apiRateLimitStore.get(key) || [];
+  
+  // Remove expired timestamps (sliding window)
+  timestamps = timestamps.filter(ts => now - ts < rateLimit.windowMs);
+  
+  if (timestamps.length >= rateLimit.maxRequests) {
+    const oldestRequest = Math.min(...timestamps);
+    const retryAfter = Math.ceil((oldestRequest + rateLimit.windowMs - now) / 1000);
+    return { 
+      allowed: false, 
+      retryAfter,
+      current: timestamps.length,
+      limit: rateLimit.maxRequests
+    };
+  }
+  
+  // Add current timestamp
+  timestamps.push(now);
+  apiRateLimitStore.set(key, timestamps);
+  
+  return { 
+    allowed: true,
+    remaining: rateLimit.maxRequests - timestamps.length
+  };
+}
+
+// 🔒 Security Improvement #3: Turnstile token one-time use validation
+function checkTurnstileTokenUsed(token) {
+  if (usedTurnstileTokens.has(token)) {
+    return true; // Token already used
+  }
+  return false;
+}
+
+function markTurnstileTokenUsed(token) {
+  const now = Date.now();
+  usedTurnstileTokens.set(token, now);
+  
+  // Cleanup old tokens (older than 10 minutes)
+  for (const [oldToken, timestamp] of usedTurnstileTokens.entries()) {
+    if (now - timestamp > 10 * 60 * 1000) {
+      usedTurnstileTokens.delete(oldToken);
+    }
+  }
+}
+
+// 🔒 Security Improvement #1: IP Masking for privacy
+function maskIpAddress(ip) {
+  if (!ip || ip === 'Unknown') return 'Unknown';
+  
+  // IPv4: 192.168.xxx.xxx
+  if (ip.includes('.')) {
+    const parts = ip.split('.');
+    if (parts.length === 4) {
+      return `${parts[0]}.${parts[1]}.xxx.xxx`;
+    }
+  }
+  
+  // IPv6: 2001:db8:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx
+  if (ip.includes(':')) {
+    const parts = ip.split(':');
+    if (parts.length >= 4) {
+      return `${parts[0]}:${parts[1]}:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx`;
+    }
+  }
+  
+  return 'xxx.xxx.xxx.xxx';
+}
+
+// 🔒 Security Improvement #6: Generic error messages
+function getGenericErrorResponse(status = 500, origin, env) {
+  const messages = {
+    400: 'Bad Request',
+    401: 'Unauthorized',
+    403: 'Forbidden',
+    404: 'Not Found',
+    429: 'Too Many Requests',
+    500: 'Internal Server Error',
+    503: 'Service Unavailable'
+  };
+  
+  return jsonResponse(
+    { 
+      success: false, 
+      error: messages[status] || 'An error occurred'
+    },
+    status,
+    origin,
+    env
+  );
+}
+
+// 🔒 Security Improvement #9: Set secure cookie flags
+function setSecureCookie(name, value, maxAge = 31536000) {
+  return `${name}=${value}; Max-Age=${maxAge}; Path=/; Secure; HttpOnly; SameSite=Strict`;
 }
 
 function jsonResponse(data, status = 200, origin, env, extraHeaders = {}) {
@@ -1401,6 +1540,43 @@ async function handleVisitor(request, env) {
   const url = new URL(request.url);
   const clientInfo = getClientInfo(request);
   const normalizedIp = normalizeIp(clientInfo.ip);
+  const origin = request.headers.get('Origin');
+
+  // 🔒 Security Improvement #1 & #2: Protected API endpoints - require auth OR allowed IP
+  const protectedEndpoints = [
+    '/visitor/security-stats',
+    '/visitor/security-data',
+    '/visitor/stats',
+    '/visitor/analytics',
+    '/visitor/logs'
+  ];
+  
+  if (protectedEndpoints.some(endpoint => url.pathname === endpoint)) {
+    // Check if request is authenticated OR from allowed IP
+    const isAuthenticated = checkApiAuth(request);
+    const isAllowedIp = isAllowedVisitorIp(normalizedIp);
+    
+    if (!isAuthenticated && !isAllowedIp) {
+      return getGenericErrorResponse(401, origin, env);
+    }
+    
+    // 🔒 Security Improvement #5: Rate limiting check
+    const rateCheck = checkApiRateLimit(normalizedIp, url.pathname);
+    if (!rateCheck.allowed) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Too Many Requests',
+        retryAfter: rateCheck.retryAfter
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(rateCheck.retryAfter),
+          ...getSecurityHeaders(),
+        },
+      });
+    }
+  }
 
   // Debug endpoint to check current IP (accessible without authentication)
   if (request.method === 'GET' && url.pathname === '/visitor/check-ip') {
@@ -1693,6 +1869,75 @@ async function handleVisitor(request, env) {
     });
   }
 
+  // 🔒 Security Improvement #1 & #3: Visitor data API with IP masking
+  if (request.method === 'GET' && url.pathname === '/api/visitor/data') {
+    // Check authentication
+    const isAuthenticated = checkApiAuth(request);
+    const isAllowedIp = isAllowedVisitorIp(normalizedIp);
+    
+    if (!isAuthenticated && !isAllowedIp) {
+      return getGenericErrorResponse(401, origin, env);
+    }
+    
+    // Rate limiting
+    const rateCheck = checkApiRateLimit(normalizedIp, url.pathname);
+    if (!rateCheck.allowed) {
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Too Many Requests',
+        retryAfter: rateCheck.retryAfter
+      }), {
+        status: 429,
+        headers: {
+          'Content-Type': 'application/json',
+          'Retry-After': String(rateCheck.retryAfter),
+          ...getSecurityHeaders(),
+        },
+      });
+    }
+    
+    try {
+      // Fetch visitor data from KV
+      const keys = await env.VISITOR_LOG.list({ limit: 1000 });
+      const visitors = [];
+      
+      for (const key of keys.keys) {
+        try {
+          const data = await env.VISITOR_LOG.get(key.name, 'json');
+          if (data) {
+            // 🔒 Mask IP addresses for privacy
+            visitors.push({
+              ...data,
+              ip: maskIpAddress(data.ip),
+              // Keep original for authorized users only
+              _originalIp: isAuthenticated ? data.ip : undefined
+            });
+          }
+        } catch (error) {
+          console.error(`Error fetching visitor ${key.name}:`, error);
+        }
+      }
+      
+      return new Response(JSON.stringify({
+        success: true,
+        visitors,
+        count: visitors.length,
+        masked: true
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          ...getSecurityHeaders(),
+          ...getCorsHeaders(origin, env),
+        },
+      });
+    } catch (error) {
+      console.error('Error fetching visitor data:', error);
+      return getGenericErrorResponse(500, origin, env);
+    }
+  }
+
   if (request.method === 'GET' && url.pathname === '/visitor') {
     try {
       const dashboardResponse = await fetch('https://taeyoon.kr/visitor.html');
@@ -1857,6 +2102,38 @@ export default {
     const clientInfo = getClientInfo(request);
     const allowedOrigins = getAllowedOrigins(env);
     const workerOrigin = `${url.protocol}//${url.host}`;
+
+    // 🔒 Security Improvement #7: HTTPS enforcement (early check)
+    if (url.protocol === 'http:') {
+      const secureUrl = `https://${url.host}${url.pathname}${url.search}`;
+      return new Response(null, {
+        status: 301,
+        headers: {
+          Location: secureUrl,
+          ...getSecurityHeaders(),
+        },
+      });
+    }
+    
+    // Check CF-Visitor header for Cloudflare-proxied requests
+    try {
+      const visitorScheme = request.headers.get('CF-Visitor');
+      if (visitorScheme) {
+        const parsed = JSON.parse(visitorScheme);
+        if (parsed && parsed.scheme === 'http') {
+          const secureUrl = `https://${url.host}${url.pathname}${url.search}`;
+          return new Response(null, {
+            status: 301,
+            headers: {
+              Location: secureUrl,
+              ...getSecurityHeaders(),
+            },
+          });
+        }
+      }
+    } catch (error) {
+      console.error('CF-Visitor header parsing error:', error);
+    }
 
     // Public endpoints (no IP check required)
     if (request.method === 'GET' && url.pathname === '/ip') {
@@ -2242,6 +2519,25 @@ export default {
         );
       }
 
+      // 🔒 Security Improvement #3: Check if token was already used
+      if (checkTurnstileTokenUsed(turnstileToken)) {
+        trackSuspiciousActivity(logIP, 'turnstile_token_reuse', env);
+        scheduleSecurityLog(
+          ctx,
+          logSecurityEvent('turnstile_token_reuse', {
+            ip: logIP,
+            email,
+            name,
+          }, env)
+        );
+        return jsonResponse(
+          { success: false, message: 'CAPTCHA 토큰이 이미 사용되었습니다. 페이지를 새로고침해주세요.' },
+          400,
+          origin,
+          env
+        );
+      }
+
       if (!env.TURNSTILE_SECRET) {
         console.error('TURNSTILE_SECRET is not configured in the Worker environment');
         scheduleSecurityLog(
@@ -2296,6 +2592,9 @@ export default {
           env
         );
       }
+
+      // 🔒 Security Improvement #3: Mark token as used after successful verification
+      markTurnstileTokenUsed(turnstileToken);
 
       // Send email with client information
       const emailSent = await sendEmail(name, email, message, clientInfo, env);

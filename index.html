@@ -680,9 +680,12 @@
         console.log('%c  Email: me@taeyoon.kr', 'color: #00ff88;');
       };
 
-      // 페이지 로드 시 경고 표시
+      // 🎯 페이지 로드 후 3초 대기 후 경고 표시 (다른 로그가 완료될 시간 확보)
       if (typeof console !== 'undefined') {
-        consoleWarning();
+        setTimeout(() => {
+          console.clear();
+          consoleWarning();
+        }, 3000);
       }
 
       // 🔒 Console Hijacking 방지 - 원본 콘솔 함수 보호
@@ -691,11 +694,9 @@
         warn: console.warn,
         error: console.error,
         info: console.info,
-        debug: console.debug
+        debug: console.debug,
+        clear: console.clear
       };
-
-      // Object.freeze로 콘솔 객체 보호 (수정 불가)
-      Object.freeze(console);
 
       // 🚫 Paste Event 감지 - 콘솔에서의 붙여넣기 모니터링
       let pasteWarningShown = false;
@@ -709,8 +710,8 @@
         // 첫 붙여넣기 시도 시 경고
         if (!pasteWarningShown) {
           pasteWarningShown = true;
-          console.warn('%c⚠️ 경고: 붙여넣기 감지됨', 'font-size: 16px; color: #ff4444; font-weight: bold;');
-          console.warn('%c알 수 없는 코드를 실행하지 마세요!', 'font-size: 14px; color: #ffaa00;');
+          originalConsole.warn('%c⚠️ 경고: 붙여넣기 감지됨', 'font-size: 16px; color: #ff4444; font-weight: bold;');
+          originalConsole.warn('%c알 수 없는 코드를 실행하지 마세요!', 'font-size: 14px; color: #ffaa00;');
         }
       });
 
@@ -723,7 +724,7 @@
 
         if ((widthThreshold || heightThreshold) && !devtoolsOpen) {
           devtoolsOpen = true;
-          console.log('%c👨‍💻 개발자도구가 열렸습니다', 'font-size: 14px; color: #00aaff;');
+          originalConsole.log('%c👨‍💻 개발자도구가 열렸습니다', 'font-size: 14px; color: #00aaff;');
         }
       };
 
@@ -732,15 +733,14 @@
 
       // 🛡️ LocalStorage/Cookie 접근 경고
       const originalSetItem = Storage.prototype.setItem;
-      const originalGetItem = Storage.prototype.getItem;
 
       // LocalStorage 접근 모니터링 (개발 모드가 아닐 때만)
       if (!window.location.hostname.includes('localhost')) {
         Storage.prototype.setItem = function (key, value) {
           if (key.includes('token') || key.includes('password') || key.includes('secret')) {
-            console.error('%c🚨 경고: 민감한 정보를 LocalStorage에 저장하려고 시도했습니다!',
+            originalConsole.error('%c🚨 경고: 민감한 정보를 LocalStorage에 저장하려고 시도했습니다!',
               'font-size: 14px; color: #ff0000; font-weight: bold;');
-            console.trace('호출 스택:');
+            originalConsole.trace('호출 스택:');
             return; // 저장 차단
           }
           return originalSetItem.call(this, key, value);
@@ -749,14 +749,14 @@
 
       // 🔐 추가 보안: console.clear 방지 (보안 경고가 지워지지 않도록)
       let clearAttempts = 0;
-      const originalClear = console.clear;
       console.clear = function () {
         clearAttempts++;
         if (clearAttempts <= 3) {
-          console.warn('%c⚠️ 보안 경고를 지우려고 하시나요?', 'font-size: 14px; color: #ff4444;');
+          originalConsole.warn('%c⚠️ 보안 경고를 지우려고 하시나요?', 'font-size: 14px; color: #ff4444;');
           consoleWarning(); // 경고 다시 표시
+        } else {
+          return originalConsole.clear.call(this);
         }
-        return originalClear.call(this);
       };
 
     })();
