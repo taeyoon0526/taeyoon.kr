@@ -2169,6 +2169,12 @@ export default {
     if (url.pathname === '/api/visitors') {
       return handleApiVisitors(request, env);
     }
+    
+    // 🔒 Handle /api/visitor/* routes (API endpoints with authentication)
+    if (url.pathname.startsWith('/api/visitor')) {
+      return handleVisitor(request, env);
+    }
+    
     // Handle /visitor routes (dashboard, IP management)
     if (url.pathname.startsWith('/visitor')) {
       return handleVisitor(request, env);
