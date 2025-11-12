@@ -53,14 +53,14 @@
     }
 
     .container {
-      max-width: 1200px;
+      max-width: 1400px;
       margin: 0 auto;
     }
 
     .header {
       background: var(--card-bg);
       border-radius: 24px;
-      padding: 2rem;
+      padding: 2.5rem 3rem;
       margin-bottom: 2rem;
       box-shadow: var(--shadow);
       transition: all 0.3s ease;
@@ -75,7 +75,7 @@
     }
 
     .header h1 {
-      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-size: 2.5rem;
       color: var(--text-primary);
       display: flex;
       align-items: center;
@@ -84,7 +84,7 @@
 
     .header p {
       color: var(--text-secondary);
-      font-size: clamp(0.9rem, 2vw, 1.1rem);
+      font-size: 1.15rem;
       margin-top: 0.75rem;
     }
 
@@ -113,13 +113,13 @@
     .section {
       background: var(--card-bg);
       border-radius: 24px;
-      padding: 2rem;
+      padding: 2.5rem 3rem;
       margin-bottom: 2rem;
       box-shadow: var(--shadow);
     }
 
     .section h2 {
-      font-size: clamp(1.2rem, 3vw, 1.75rem);
+      font-size: 1.85rem;
       color: var(--text-primary);
       margin-bottom: 1.5rem;
       display: flex;
@@ -131,19 +131,25 @@
       color: var(--text-secondary);
       margin-bottom: 1.5rem;
       line-height: 1.6;
+      font-size: 1.05rem;
     }
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.25rem;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 1.5rem;
+    }
+
+    /* 3열 그리드 (GET API 섹션용) */
+    .grid-3col {
+      grid-template-columns: repeat(3, 1fr);
     }
 
     .card {
       background: var(--hover-bg);
       border: 2px solid var(--border-color);
       border-radius: 20px;
-      padding: 1.75rem;
+      padding: 2rem;
       transition: all 0.3s ease;
       cursor: pointer;
       text-decoration: none;
@@ -161,29 +167,29 @@
     }
 
     .card-icon {
-      font-size: 2.5rem;
+      font-size: 3rem;
       margin-bottom: 1rem;
     }
 
     .card-title {
-      font-size: 1.25rem;
+      font-size: 1.35rem;
       font-weight: 700;
       color: var(--text-primary);
-      margin-bottom: 0.5rem;
+      margin-bottom: 0.75rem;
     }
 
     .card-desc {
-      font-size: 0.95rem;
+      font-size: 1rem;
       color: var(--text-secondary);
-      line-height: 1.5;
+      line-height: 1.6;
       margin-bottom: 1rem;
     }
 
     .card-badge {
       display: inline-block;
-      padding: 0.35rem 0.75rem;
+      padding: 0.4rem 0.85rem;
       border-radius: 12px;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       font-weight: 600;
     }
 
@@ -212,9 +218,9 @@
       background: var(--accent);
       color: white;
       border: none;
-      padding: 0.85rem 1.5rem;
+      padding: 1rem 1.75rem;
       border-radius: 16px;
-      font-size: 1rem;
+      font-size: 1.05rem;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
@@ -246,9 +252,9 @@
     .endpoint-path {
       font-family: 'SF Mono', 'Courier New', monospace;
       background: var(--card-bg);
-      padding: 0.5rem 0.75rem;
+      padding: 0.6rem 0.9rem;
       border-radius: 8px;
-      font-size: 0.85rem;
+      font-size: 0.9rem;
       color: var(--accent);
       margin-top: 0.75rem;
       display: inline-block;
@@ -259,20 +265,20 @@
       background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
       color: white;
       border-radius: 20px;
-      padding: 2rem;
+      padding: 2.5rem;
       text-align: center;
       margin-bottom: 2rem;
       box-shadow: var(--shadow);
     }
 
     .stats-banner h3 {
-      font-size: 1.5rem;
+      font-size: 1.75rem;
       margin-bottom: 0.5rem;
     }
 
     .stats-banner p {
       opacity: 0.95;
-      font-size: 1rem;
+      font-size: 1.1rem;
     }
 
     @media (max-width: 768px) {
@@ -284,12 +290,41 @@
         padding: 1.5rem;
       }
 
+      .header h1 {
+        font-size: 1.75rem;
+      }
+
+      .header p {
+        font-size: 1rem;
+      }
+
       .section {
         padding: 1.5rem;
       }
 
-      .grid {
+      .section h2 {
+        font-size: 1.35rem;
+      }
+
+      .section p {
+        font-size: 0.95rem;
+      }
+
+      .grid,
+      .grid-3col {
         grid-template-columns: 1fr;
+      }
+
+      .card-icon {
+        font-size: 2.5rem;
+      }
+
+      .card-title {
+        font-size: 1.15rem;
+      }
+
+      .card-desc {
+        font-size: 0.9rem;
       }
 
       .quick-actions {
@@ -299,6 +334,20 @@
       .btn {
         width: 100%;
         justify-content: center;
+        font-size: 1rem;
+        padding: 0.85rem 1.25rem;
+      }
+
+      .stats-banner {
+        padding: 2rem;
+      }
+
+      .stats-banner h3 {
+        font-size: 1.35rem;
+      }
+
+      .stats-banner p {
+        font-size: 1rem;
       }
     }
   </style>
@@ -345,7 +394,7 @@
     <div class="section">
       <h2>🔍 조회 API (GET)</h2>
       <p>데이터를 조회하는 읽기 전용 API 엔드포인트입니다.</p>
-      <div class="grid">
+      <div class="grid grid-3col">
         <a href="/ip" class="card">
           <div class="card-icon">🌐</div>
           <div class="card-title">내 IP 확인</div>
