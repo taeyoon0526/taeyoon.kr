@@ -88,25 +88,25 @@
         if (!response.ok) {
           throw new Error('API 응답 실패: ' + response.status);
         }
-        
+
         const apiData = await response.json();
         const visitors = apiData.visitors || [];
-        
+
         // User Agent 파싱 (간단한 버전)
         const browserCount = { Chrome: 0, Safari: 0, Firefox: 0, Edge: 0, Other: 0 };
         const osCount = { Windows: 0, macOS: 0, Linux: 0, Android: 0, iOS: 0, Other: 0 };
         const hourlyCount = new Array(24).fill(0);
-        
+
         visitors.forEach(v => {
           const ua = (v.userAgent || '').toLowerCase();
-          
+
           // 브라우저 감지
           if (ua.includes('edg/')) browserCount.Edge++;
           else if (ua.includes('chrome')) browserCount.Chrome++;
           else if (ua.includes('safari') && !ua.includes('chrome')) browserCount.Safari++;
           else if (ua.includes('firefox')) browserCount.Firefox++;
           else browserCount.Other++;
-          
+
           // OS 감지
           if (ua.includes('windows')) osCount.Windows++;
           else if (ua.includes('mac os')) osCount.macOS++;
@@ -114,14 +114,14 @@
           else if (ua.includes('android')) osCount.Android++;
           else if (ua.includes('iphone') || ua.includes('ipad')) osCount.iOS++;
           else osCount.Other++;
-          
+
           // 시간대별 분석
           if (v.timestamp) {
             const hour = new Date(v.timestamp).getHours();
             hourlyCount[hour]++;
           }
         });
-        
+
         // 시간대별 데이터 (4시간 간격)
         const timeLabels = [];
         const timeData = [];
@@ -146,13 +146,13 @@
               backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b']
             }]
           },
-          options: { 
+          options: {
             responsive: true,
             plugins: {
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  label: function(context) {
+                  label: function (context) {
                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
                     const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
                     return '사용자: ' + context.parsed.y + '명 (' + percentage + '%)';
@@ -185,13 +185,13 @@
               fill: true
             }]
           },
-          options: { 
+          options: {
             responsive: true,
             plugins: {
               legend: { display: false },
               tooltip: {
                 callbacks: {
-                  label: function(context) {
+                  label: function (context) {
                     return '방문: ' + context.parsed.y + '회';
                   }
                 }
@@ -218,7 +218,7 @@
               backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#f5576c']
             }]
           },
-          options: { 
+          options: {
             responsive: true,
             plugins: {
               legend: {
@@ -226,7 +226,7 @@
               },
               tooltip: {
                 callbacks: {
-                  label: function(context) {
+                  label: function (context) {
                     const label = context.label || '';
                     const value = context.parsed || 0;
                     const total = context.dataset.data.reduce((a, b) => a + b, 0);
@@ -238,7 +238,7 @@
             }
           }
         });
-        
+
         console.log('방문자 분석 데이터 로드 완료:', {
           totalVisitors: visitors.length,
           browsers: browserCount,
@@ -251,7 +251,7 @@
     }
 
     loadAnalytics();
-    
+
     // 30초마다 자동 새로고침
     setInterval(loadAnalytics, 30000);
   </script>
