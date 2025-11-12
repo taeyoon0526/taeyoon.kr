@@ -1,58 +1,72 @@
 <!DOCTYPE html>
 <html lang="ko">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>방문자 통계 | taeyoon.kr</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       padding: 20px;
     }
+
     .container {
       max-width: 1400px;
       margin: 0 auto;
     }
+
     h1 {
       color: white;
       text-align: center;
       margin-bottom: 30px;
       font-size: 2.5em;
     }
+
     .stats-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
       margin-bottom: 30px;
     }
+
     .stat-card {
       background: white;
       padding: 25px;
       border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       text-align: center;
     }
+
     .stat-number {
       font-size: 3em;
       font-weight: bold;
       color: #667eea;
     }
+
     .stat-label {
       color: #666;
       margin-top: 10px;
       font-size: 1.1em;
     }
+
     .chart-container {
       background: white;
       padding: 30px;
       border-radius: 15px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
       margin-bottom: 20px;
     }
+
     .btn-back {
       display: inline-block;
       padding: 12px 30px;
@@ -64,71 +78,86 @@
       margin: 20px 0;
       transition: transform 0.2s;
     }
+
     .btn-back:hover {
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     }
+
     .loading {
       text-align: center;
       color: white;
       font-size: 1.5em;
       padding: 50px;
     }
-    
+
     /* Mobile Responsive */
     @media (max-width: 768px) {
       body {
         padding: 15px;
       }
+
       h1 {
         font-size: 2em;
         margin-bottom: 20px;
       }
+
       .stats-grid {
         grid-template-columns: repeat(2, 1fr);
         gap: 15px;
         margin-bottom: 20px;
       }
+
       .stat-card {
         padding: 20px;
       }
+
       .stat-number {
         font-size: 2em;
       }
+
       .chart-card {
         padding: 20px;
       }
+
       .chart-card h2 {
         font-size: 1.1em;
       }
+
       .chart-container {
         height: 250px;
       }
+
       .btn-back {
         padding: 10px 20px;
         font-size: 0.9em;
         margin: 15px 0;
       }
     }
-    
+
     @media (max-width: 480px) {
       h1 {
         font-size: 1.6em;
       }
+
       .stats-grid {
         grid-template-columns: 1fr;
       }
+
       .stat-number {
         font-size: 1.8em;
       }
+
       .chart-container {
         height: 220px;
       }
+
       .btn-back {
         display: block;
         text-align: center;
         width: 100%;
       }
+
       .loading {
         font-size: 1.2em;
         padding: 30px;
@@ -136,11 +165,12 @@
     }
   </style>
 </head>
+
 <body>
   <div class="container">
     <h1>📊 방문자 통계</h1>
     <a href="/admin" class="btn-back">← Admin Dashboard로 돌아가기</a>
-    
+
     <div id="loading" class="loading">데이터 로딩 중...</div>
     <div id="content" style="display: none;">
       <div class="stats-grid">
@@ -237,4 +267,5 @@
     loadStats();
   </script>
 </body>
+
 </html>
