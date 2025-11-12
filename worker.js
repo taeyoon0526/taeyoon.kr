@@ -995,6 +995,329 @@ async function handleCollect(request, env, ctx) {
 }
 
 /**
+ * Get admin dashboard HTML - Central hub for all endpoints
+ */
+function getAdminDashboardHTML() {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Admin Dashboard | taeyoon.kr</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
+  <style>
+    :root {
+      --bg-gradient-start: #667eea;
+      --bg-gradient-end: #764ba2;
+      --card-bg: rgba(255,255,255,0.95);
+      --text-primary: #1f2933;
+      --text-secondary: #52616b;
+      --border-color: #e4e7eb;
+      --hover-bg: #f8f9fb;
+      --accent: #667eea;
+      --shadow: 0 20px 60px rgba(0,0,0,0.3);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+    }
+    body.dark-mode {
+      --bg-gradient-start: #1a1a2e;
+      --bg-gradient-end: #16213e;
+      --card-bg: rgba(30,30,46,0.95);
+      --text-primary: #e4e7eb;
+      --text-secondary: #a8b2d1;
+      --border-color: #2d3748;
+      --hover-bg: #2a3142;
+      --accent: #8b5cf6;
+      --shadow: 0 20px 60px rgba(0,0,0,0.6);
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; 
+      background: linear-gradient(135deg, var(--bg-gradient-start) 0%, var(--bg-gradient-end) 100%); 
+      min-height: 100vh; 
+      padding: 1.5rem; 
+      color: var(--text-primary);
+      transition: background 0.3s ease;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { 
+      background: var(--card-bg); 
+      border-radius: 24px; 
+      padding: 2rem; 
+      margin-bottom: 2rem; 
+      box-shadow: var(--shadow); 
+      transition: all 0.3s ease;
+    }
+    .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; }
+    .header h1 { font-size: clamp(1.5rem, 5vw, 2.5rem); color: var(--text-primary); display: flex; align-items: center; gap: 0.75rem; }
+    .header p { color: var(--text-secondary); font-size: clamp(0.9rem, 2vw, 1.1rem); margin-top: 0.75rem; }
+    .theme-toggle { 
+      background: var(--accent); 
+      color: white; 
+      border: none; 
+      padding: 0.75rem 1.25rem; 
+      border-radius: 16px; 
+      font-size: 1rem; 
+      cursor: pointer; 
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+      font-weight: 600;
+    }
+    .theme-toggle:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102,126,234,0.4); }
+    .theme-toggle:active { transform: translateY(0); }
+    .section { 
+      background: var(--card-bg); 
+      border-radius: 24px; 
+      padding: 2rem; 
+      margin-bottom: 2rem; 
+      box-shadow: var(--shadow);
+    }
+    .section h2 { 
+      font-size: clamp(1.2rem, 3vw, 1.75rem); 
+      color: var(--text-primary); 
+      margin-bottom: 1.5rem; 
+      display: flex; 
+      align-items: center; 
+      gap: 0.5rem; 
+    }
+    .section p { color: var(--text-secondary); margin-bottom: 1.5rem; line-height: 1.6; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.25rem; }
+    .card { 
+      background: var(--hover-bg); 
+      border: 2px solid var(--border-color);
+      border-radius: 20px; 
+      padding: 1.75rem; 
+      transition: all 0.3s ease;
+      cursor: pointer;
+      text-decoration: none;
+      display: block;
+    }
+    .card:hover { 
+      transform: translateY(-5px); 
+      box-shadow: 0 12px 32px rgba(102,126,234,0.2);
+      border-color: var(--accent);
+    }
+    .card:active { transform: translateY(-2px); }
+    .card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    .card-title { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.5rem; }
+    .card-desc { font-size: 0.95rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 1rem; }
+    .card-badge { 
+      display: inline-block; 
+      padding: 0.35rem 0.75rem; 
+      border-radius: 12px; 
+      font-size: 0.8rem; 
+      font-weight: 600;
+    }
+    .badge-get { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-post { background: rgba(16,185,129,0.15); color: #10b981; }
+    .badge-dashboard { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    .quick-actions { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn { 
+      background: var(--accent); 
+      color: white; 
+      border: none; 
+      padding: 0.85rem 1.5rem; 
+      border-radius: 16px; 
+      font-size: 1rem; 
+      font-weight: 600; 
+      cursor: pointer; 
+      transition: all 0.2s; 
+      box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(102,126,234,0.4); }
+    .btn:active { transform: translateY(0); }
+    .btn-success { background: var(--success); box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
+    .btn-success:hover { box-shadow: 0 6px 16px rgba(16,185,129,0.4); }
+    .endpoint-path { 
+      font-family: 'SF Mono', 'Courier New', monospace; 
+      background: var(--card-bg);
+      padding: 0.5rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-top: 0.75rem;
+      display: inline-block;
+      border: 1px solid var(--border-color);
+    }
+    .stats-banner {
+      background: linear-gradient(135deg, var(--accent) 0%, #8b5cf6 100%);
+      color: white;
+      border-radius: 20px;
+      padding: 2rem;
+      text-align: center;
+      margin-bottom: 2rem;
+      box-shadow: var(--shadow);
+    }
+    .stats-banner h3 { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .stats-banner p { opacity: 0.95; font-size: 1rem; }
+    @media (max-width: 768px) {
+      body { padding: 1rem; }
+      .header { padding: 1.5rem; }
+      .section { padding: 1.5rem; }
+      .grid { grid-template-columns: 1fr; }
+      .quick-actions { flex-direction: column; }
+      .btn { width: 100%; justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="header-top">
+        <div>
+          <h1>⚡ Admin Dashboard</h1>
+          <p>taeyoon.kr 전체 시스템 관리 센터</p>
+        </div>
+        <button id="themeToggle" class="theme-toggle">🌙 다크</button>
+      </div>
+    </div>
+
+    <div class="stats-banner">
+      <h3>🚀 시스템 정상 가동 중</h3>
+      <p>모든 API 엔드포인트와 대시보드가 활성화되어 있습니다</p>
+    </div>
+
+    <div class="section">
+      <h2>📊 대시보드</h2>
+      <p>실시간 데이터를 시각화하여 확인할 수 있는 대시보드입니다.</p>
+      <div class="grid">
+        <a href="/visitor/dashboard" class="card">
+          <div class="card-icon">🛡️</div>
+          <div class="card-title">보안 모니터링</div>
+          <div class="card-desc">실시간 보안 위협, 차단된 IP, 의심 활동 추적. Chart.js 그래프와 다크모드 지원.</div>
+          <span class="card-badge badge-dashboard">DASHBOARD</span>
+          <div class="endpoint-path">/visitor/dashboard</div>
+        </a>
+        <a href="/visitor/stats" class="card">
+          <div class="card-icon">📈</div>
+          <div class="card-title">방문자 통계</div>
+          <div class="card-desc">국가별, 경로별, 시간대별 방문자 분석. 실시간 및 누적 데이터 제공.</div>
+          <span class="card-badge badge-dashboard">DASHBOARD</span>
+          <div class="endpoint-path">/visitor/stats</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔍 조회 API (GET)</h2>
+      <p>데이터를 조회하는 읽기 전용 API 엔드포인트입니다.</p>
+      <div class="grid">
+        <a href="/visitor/security-stats" class="card">
+          <div class="card-icon">🔐</div>
+          <div class="card-title">보안 통계 조회</div>
+          <div class="card-desc">차단된 IP, 의심 활동, Rate Limit 현황을 JSON으로 반환.</div>
+          <span class="card-badge badge-get">GET</span>
+          <div class="endpoint-path">/visitor/security-stats</div>
+        </a>
+        <a href="/visitor/analytics" class="card">
+          <div class="card-icon">📊</div>
+          <div class="card-title">방문자 분석</div>
+          <div class="card-desc">실시간 방문자 수, 국가별 분포, 인기 경로 등 상세 분석 데이터.</div>
+          <span class="card-badge badge-get">GET</span>
+          <div class="endpoint-path">/visitor/analytics</div>
+        </a>
+        <a href="/visitor/logs?limit=50" class="card">
+          <div class="card-icon">📝</div>
+          <div class="card-title">방문 로그</div>
+          <div class="card-desc">최근 방문 기록 조회. limit 파라미터로 개수 조절 가능 (기본 50개).</div>
+          <span class="card-badge badge-get">GET</span>
+          <div class="endpoint-path">/visitor/logs?limit=50</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>⚙️ 실행 API (POST)</h2>
+      <p>시스템 작업을 실행하는 API 엔드포인트입니다. 아래 버튼으로 바로 실행 가능합니다.</p>
+      <div class="grid">
+        <div class="card" style="cursor: default; border-color: var(--success);">
+          <div class="card-icon">📧</div>
+          <div class="card-title">보안 요약 이메일</div>
+          <div class="card-desc">현재 보안 상황을 me@taeyoon.kr로 전송. ?to 파라미터로 수신자 변경 가능.</div>
+          <span class="card-badge badge-post">POST</span>
+          <div class="endpoint-path">/visitor/security-summary</div>
+          <button onclick="sendSecuritySummary()" class="btn btn-success" style="margin-top: 1rem; width: 100%;">📧 요약 전송</button>
+        </div>
+        <div class="card" style="cursor: default;">
+          <div class="card-icon">🤝</div>
+          <div class="card-title">IP 신뢰 관리</div>
+          <div class="card-desc">특정 IP를 신뢰 목록에 추가/제거. Body: {"ip": "1.2.3.4"}</div>
+          <span class="card-badge badge-post">POST</span>
+          <div class="endpoint-path">/visitor/trust-ip</div>
+          <div class="endpoint-path" style="margin-left: 0.5rem;">/visitor/untrust-ip</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🔧 빠른 작업</h2>
+      <p>자주 사용하는 작업을 빠르게 실행할 수 있습니다.</p>
+      <div class="quick-actions">
+        <a href="/visitor/dashboard" class="btn">🛡️ 보안 대시보드</a>
+        <a href="/visitor/stats" class="btn">📈 방문자 통계</a>
+        <button onclick="sendSecuritySummary()" class="btn btn-success">📧 요약 전송</button>
+        <button onclick="window.location.reload()" class="btn">🔄 새로고침</button>
+      </div>
+    </div>
+
+    <div class="section" style="background: var(--hover-bg); border: 2px dashed var(--border-color);">
+      <h2>📚 API 문서</h2>
+      <p style="margin-bottom: 0.5rem;"><strong>모든 엔드포인트는 taeyoon.kr 도메인에서 작동합니다.</strong></p>
+      <p style="font-size: 0.9rem; color: var(--text-secondary);">
+        • GET 엔드포인트는 브라우저에서 직접 접속 가능<br>
+        • POST 엔드포인트는 curl, Postman, fetch() 등으로 호출<br>
+        • 모든 응답은 JSON 형식 (대시보드 제외)<br>
+        • Rate Limit 및 보안 정책 자동 적용
+      </p>
+    </div>
+  </div>
+  <script>
+    let darkMode = localStorage.getItem('darkMode') === 'true' || window.matchMedia('(prefers-color-scheme: dark)').matches;
+    
+    function setDarkMode(enabled) {
+      darkMode = enabled;
+      document.body.classList.toggle('dark-mode', enabled);
+      localStorage.setItem('darkMode', enabled);
+      document.getElementById('themeToggle').textContent = enabled ? '☀️ 라이트' : '🌙 다크';
+    }
+    setDarkMode(darkMode);
+    
+    document.getElementById('themeToggle').onclick = () => setDarkMode(!darkMode);
+    
+    async function sendSecuritySummary() {
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '📤 전송 중...';
+      try {
+        const r = await fetch('/visitor/security-summary', { method: 'POST' });
+        const j = await r.json();
+        if (j.success) {
+          btn.textContent = '✅ 전송 완료!';
+          setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+        } else {
+          alert('전송 실패: ' + (j.message || '알 수 없음'));
+          btn.textContent = originalText;
+          btn.disabled = false;
+        }
+      } catch (e) {
+        alert('전송 실패: ' + e.message);
+        btn.textContent = originalText;
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>`;
+}
+
+/**
  * Get security dashboard HTML
  */
 function getSecurityDashboardHTML() {
@@ -1599,8 +1922,19 @@ async function handleVisitor(request, env) {
     });
   }
 
+  // Admin dashboard HTML page - central hub for all endpoints
+  if (request.method === 'GET' && url.pathname === '/admin') {
+    return new Response(getAdminDashboardHTML(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
   // Security dashboard HTML page (accessible without authentication)
-  if (request.method === 'GET' && url.pathname === '/visitor/security') {
+  if (request.method === 'GET' && (url.pathname === '/visitor/security' || url.pathname === '/visitor/dashboard')) {
     return new Response(getSecurityDashboardHTML(), {
       status: 200,
       headers: {
