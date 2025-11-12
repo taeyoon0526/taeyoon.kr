@@ -56,11 +56,11 @@ const ALLOWED_VISITOR_IPS = [
   '211.177.232.118', // WiFi (IPv4)
   '118.235.5.139',   // Mobile data (IPv4)
   '2001:e60:914e:29d1:65a3:21d4:9aaa:ac64', // WiFi (IPv6)
-  '127.0.0.1',       // Localhost (개발용 - 배포 전 제거)
+  // '127.0.0.1',    // Localhost (개발용 - 프로덕션에서 제거됨)
 ];
 
 const SECURITY_HEADERS = {
-  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self';",
+  'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self';",
   'Strict-Transport-Security': 'max-age=63072000; includeSubDomains; preload',
   'X-Content-Type-Options': 'nosniff',
   'X-Frame-Options': 'DENY',
@@ -81,13 +81,32 @@ const blockedIpsStore = new Map();
 const ipReputationStore = new Map(); // { ip -> { score, trust, blockedCount, lastSeen, permanent } }
 const trustedIpsStore = new Map(); // { ip -> { reason, addedAt, auto } }
 
-// Suspicious patterns for detection
+// Suspicious patterns for detection (업데이트: 2025-11-12)
 const SUSPICIOUS_PATTERNS = [
-  /<script|javascript:|onerror|onload|onclick/i,
-  /(\.\.|\/\/|\\\\)/,
-  /union.*select|select.*from|insert.*into|drop.*table/i,
-  /<\?php|<%|eval\(|exec\(/i,
-  /\$\{|<%=|{{/,
+  // XSS 패턴
+  /<script|javascript:|onerror|onload|onclick|onmouseover|onfocus|onblur/i,
+  /<iframe|<embed|<object|<img[^>]+src=/i,
+  /document\.|window\.|eval\(|alert\(|prompt\(|confirm\(/i,
+  
+  // Path Traversal
+  /(\.\.|\/\/|\\\\|%2e%2e|%5c|%2f)/i,
+  
+  // SQL Injection (확장)
+  /union.*select|select.*from|insert.*into|drop.*table|delete.*from/i,
+  /update.*set|create.*table|alter.*table|exec.*sp_|xp_cmdshell/i,
+  /sleep\(|benchmark\(|waitfor.*delay|pg_sleep/i,
+  
+  // Code Injection
+  /<\?php|<%|eval\(|exec\(|system\(|passthru\(|shell_exec/i,
+  /\$\{|<%=|{{|}}/,
+  /require\(|include\(|import\(/i,
+  
+  // Command Injection
+  /;.*rm\s|;.*cat\s|;.*ls\s|\|.*whoami|\|.*id/i,
+  /&&|\|\||`|>|<|;/,
+  
+  // NoSQL Injection
+  /\$where|\$ne|\$gt|\$lt|\$regex|\$or|\$and/i,
 ];
 
 // Reputation defaults
@@ -546,6 +565,49 @@ function escapeHtml(text) {
 }
 
 /**
+ * Validate email address format
+ */
+function isValidEmail(email) {
+  if (!email || typeof email !== 'string') return false;
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email) && email.length <= 254; // RFC 5321 max length
+}
+
+/**
+ * Check if email recipient is in allowlist
+ */
+function isAllowedEmailRecipient(email) {
+  const allowedDomains = ['taeyoon.kr']; // Allowed domains
+  const allowedEmails = ['me@taeyoon.kr']; // Allowed full addresses
+  
+  if (allowedEmails.includes(email)) return true;
+  
+  const domain = email.split('@')[1];
+  return allowedDomains.includes(domain);
+}
+
+/**
+ * Validate IP address format (IPv4 or IPv6)
+ */
+function isValidIpAddress(ip) {
+  if (!ip || typeof ip !== 'string') return false;
+  
+  // IPv4 validation
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
+  if (ipv4Regex.test(ip)) {
+    const parts = ip.split('.');
+    return parts.every(part => {
+      const num = parseInt(part, 10);
+      return num >= 0 && num <= 255;
+    });
+  }
+  
+  // IPv6 validation (simplified)
+  const ipv6Regex = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/;
+  return ipv6Regex.test(ip);
+}
+
+/**
  * Verify Cloudflare Turnstile token
  */
 async function verifyTurnstile(token, ip, env, siteKey = null) {
@@ -593,6 +655,13 @@ async function verifyTurnstile(token, ip, env, siteKey = null) {
 // IP Information Dashboard
 function getIpDashboardHTML(clientInfo) {
   const { ip, normalizedIp, country, userAgent } = clientInfo;
+  
+  // XSS 방지: HTML 이스케이핑 적용
+  const safeIp = escapeHtml(ip || 'Unknown');
+  const safeNormalizedIp = escapeHtml(normalizedIp || ip || 'Unknown');
+  const safeCountry = escapeHtml(country || 'Unknown');
+  const safeUserAgent = escapeHtml(userAgent || 'Unknown');
+  
   const jsonData = JSON.stringify({ 
     ip: ip || 'Unknown', 
     normalizedIp: normalizedIp || ip || 'Unknown', 
@@ -601,11 +670,11 @@ function getIpDashboardHTML(clientInfo) {
   }, null, 2);
   
   return ipDashboardTemplate
-    .replace(/\{\{IP\}\}/g, ip || 'Unknown')
-    .replace(/\{\{NORMALIZED_IP\}\}/g, normalizedIp || ip || 'Unknown')
-    .replace(/\{\{COUNTRY\}\}/g, country || 'Unknown')
-    .replace(/\{\{USER_AGENT\}\}/g, userAgent || 'Unknown')
-    .replace(/\{\{JSON_DATA\}\}/g, jsonData);
+    .replace(/\{\{IP\}\}/g, safeIp)
+    .replace(/\{\{NORMALIZED_IP\}\}/g, safeNormalizedIp)
+    .replace(/\{\{COUNTRY\}\}/g, safeCountry)
+    .replace(/\{\{USER_AGENT\}\}/g, safeUserAgent)
+    .replace(/\{\{JSON_DATA\}\}/g, escapeHtml(jsonData));
 }
 
 // Visitor Stats HTML Dashboard
@@ -625,14 +694,17 @@ function getSecurityStatsHTML() {
 
 // Visitor Logs HTML Dashboard
 function getVisitorLogsHTML(limit = 50, page = 1) {
-  const prevPage = Math.max(1, page - 1);
-  const nextPage = page + 1;
-  const prevDisabled = page <= 1 ? 'disabled' : '';
+  // 입력 유효성 검증 (숫자만 허용, 범위 제한)
+  const safeLimit = Math.min(Math.max(parseInt(limit) || 50, 1), 1000);
+  const safePage = Math.max(parseInt(page) || 1, 1);
+  const prevPage = Math.max(1, safePage - 1);
+  const nextPage = safePage + 1;
+  const prevDisabled = safePage <= 1 ? 'disabled' : '';
   
   return visitorLogsTemplate
-    .replace(/\{\{LIMIT\}\}/g, limit)
-    .replace(/\{\{PAGE\}\}/g, page)
-    .replace(/\{\{CURRENT_PAGE\}\}/g, page)
+    .replace(/\{\{LIMIT\}\}/g, safeLimit)
+    .replace(/\{\{PAGE\}\}/g, safePage)
+    .replace(/\{\{CURRENT_PAGE\}\}/g, safePage)
     .replace(/\{\{PREV_PAGE\}\}/g, prevPage)
     .replace(/\{\{NEXT_PAGE\}\}/g, nextPage)
     .replace(/\{\{PREV_DISABLED\}\}/g, prevDisabled);
@@ -1309,9 +1381,9 @@ async function handleApiVisitors(request, env) {
 
   const url = new URL(request.url);
   const filters = {
-    country: url.searchParams.get('country') || '',
-    page: url.searchParams.get('page') || '',
-    date: url.searchParams.get('date') || '',
+    country: escapeHtml(url.searchParams.get('country') || ''),
+    page: escapeHtml(url.searchParams.get('page') || ''),
+    date: escapeHtml(url.searchParams.get('date') || ''),
   };
 
   const visitors = await getVisitorLogs(env, filters);
@@ -1402,6 +1474,28 @@ async function handleVisitor(request, env) {
     };
     // Allow custom recipient via query parameter for testing
     const recipient = url.searchParams.get('to') || 'me@taeyoon.kr';
+    
+    // Validate email format and check allowlist
+    if (!isValidEmail(recipient)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Invalid email format' 
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    if (!isAllowedEmailRecipient(recipient)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Email recipient not in allowlist' 
+      }), { 
+        status: 403, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+    
     const sent = await sendSecuritySummaryEmail(env, recipient);
     return new Response(JSON.stringify({ success: sent, snapshot, recipient }), { status: sent ? 200 : 500, headers: { 'Content-Type': 'application/json' } });
   }
@@ -1410,7 +1504,21 @@ async function handleVisitor(request, env) {
   if (request.method === 'POST' && url.pathname === '/visitor/trust-ip') {
     const body = await request.json().catch(() => ({}));
     if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
-    markTrustedIp(body.ip, body.reason || 'manual', false);
+    
+    // Validate IP address format
+    if (!isValidIpAddress(body.ip)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Invalid IP address format' 
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+    
+    // Sanitize reason field to prevent XSS
+    const safeReason = escapeHtml(body.reason || 'manual').substring(0, 200);
+    markTrustedIp(body.ip, safeReason, false);
     await saveSecurityDataToKV(env);
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
   }
@@ -1419,6 +1527,18 @@ async function handleVisitor(request, env) {
   if (request.method === 'POST' && url.pathname === '/visitor/untrust-ip') {
     const body = await request.json().catch(() => ({}));
     if (!body || !body.ip) return new Response(JSON.stringify({ success: false, message: 'ip required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    
+    // Validate IP address format
+    if (!isValidIpAddress(body.ip)) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'Invalid IP address format' 
+      }), { 
+        status: 400, 
+        headers: { 'Content-Type': 'application/json' } 
+      });
+    }
+    
     unmarkTrustedIp(body.ip);
     await saveSecurityDataToKV(env);
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { 'Content-Type': 'application/json' } });
