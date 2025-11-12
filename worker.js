@@ -1897,26 +1897,26 @@ async function handleVisitor(request, env) {
     }
     
     try {
-      // Fetch visitor data from KV
-      const keys = await env.VISITOR_LOG.list({ limit: 1000 });
-      const visitors = [];
+      // Fetch visitor data from KV (limit to 100 for performance)
+      const keys = await env.VISITOR_LOG.list({ limit: 100 });
       
-      for (const key of keys.keys) {
-        try {
-          const data = await env.VISITOR_LOG.get(key.name, 'json');
-          if (data) {
-            // 🔒 Mask IP addresses for privacy
-            visitors.push({
-              ...data,
-              ip: maskIpAddress(data.ip),
-              // Keep original for authorized users only
-              _originalIp: isAuthenticated ? data.ip : undefined
-            });
-          }
-        } catch (error) {
+      // Fetch all data in parallel for better performance
+      const dataPromises = keys.keys.map(key => 
+        env.VISITOR_LOG.get(key.name, 'json').catch(error => {
           console.error(`Error fetching visitor ${key.name}:`, error);
-        }
-      }
+          return null;
+        })
+      );
+      
+      const results = await Promise.all(dataPromises);
+      const visitors = results
+        .filter(data => data !== null)
+        .map(data => ({
+          ...data,
+          ip: maskIpAddress(data.ip),
+          // Keep original for authorized users only
+          _originalIp: isAuthenticated ? data.ip : undefined
+        }));
       
       return new Response(JSON.stringify({
         success: true,
