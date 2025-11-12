@@ -591,11 +591,11 @@
         // 방문자 데이터 로드
         const visitorResponse = await fetch('/api/visitor/data');
         const visitorData = await visitorResponse.json();
-        
+
         if (visitorData.success) {
           const totalVisitors = visitorData.count || 0;
           const recentVisitors = visitorData.visitors.slice(0, 10);
-          
+
           // 통계 배너 업데이트
           updateStatsBanner(totalVisitors, recentVisitors);
         }
@@ -603,7 +603,7 @@
         // 보안 통계 로드
         const securityResponse = await fetch('/visitor/security-stats');
         const securityData = await securityResponse.json();
-        
+
         if (securityData.success) {
           updateSecurityStats(securityData);
         }
@@ -617,7 +617,7 @@
       if (banner) {
         const uniqueCountries = new Set(recentVisitors.map(v => v.country)).size;
         const uniqueIPs = new Set(recentVisitors.map(v => v.ip)).size;
-        
+
         banner.innerHTML = `
           <h3>🚀 시스템 정상 가동 중</h3>
           <p>총 방문자: <strong>${totalVisitors.toLocaleString()}</strong>명 | 
@@ -635,14 +635,14 @@
       // 보안 통계 요약 추가
       const container = document.querySelector('.container');
       let statsSection = document.getElementById('realtime-security-stats');
-      
+
       if (!statsSection) {
         statsSection = document.createElement('div');
         statsSection.id = 'realtime-security-stats';
         statsSection.className = 'section';
         statsSection.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
         statsSection.style.color = 'white';
-        
+
         // 첫 번째 section 다음에 삽입
         const firstSection = container.querySelector('.section');
         firstSection.parentNode.insertBefore(statsSection, firstSection.nextSibling);
@@ -679,7 +679,7 @@
 
     // 페이지 로드 시 데이터 로드
     loadRealTimeStats();
-    
+
     // 30초마다 데이터 갱신
     setInterval(loadRealTimeStats, 30000);
   </script>
