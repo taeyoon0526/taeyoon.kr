@@ -3,7 +3,10 @@ main = "worker.js"
 compatibility_date = "2024-01-01"
 
 routes = [
-  { pattern = "taeyoon.kr/*", zone_name = "taeyoon.kr" }
+  { pattern = "taeyoon.kr/admin", zone_name = "taeyoon.kr" },
+  { pattern = "taeyoon.kr/ip", zone_name = "taeyoon.kr" },
+  { pattern = "taeyoon.kr/visitor/*", zone_name = "taeyoon.kr" },
+  { pattern = "taeyoon.kr/api/*", zone_name = "taeyoon.kr" }
 ]
 
 [[kv_namespaces]]
