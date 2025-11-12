@@ -509,8 +509,20 @@
       <br><small style="opacity: 0.8;">* 네트워크 식별자(IP 주소)는 보안 위협 차단 및 지역별 통계에만 활용됩니다.</small>
     </div>
 
-    <a href="/" class="back-link">← 메인으로 돌아가기</a>
+    <a href="javascript:void(0);" onclick="goBack()" class="back-link">← 돌아가기</a>
   </div>
+
+  <script>
+    function goBack() {
+      // referrer가 있고 같은 도메인이면 history.back() 사용
+      if (document.referrer && document.referrer.includes(window.location.hostname)) {
+        window.history.back();
+      } else {
+        // referrer가 없거나 다른 도메인이면 홈으로
+        window.location.href = '/';
+      }
+    }
+  </script>
 </body>
 
 </html>
