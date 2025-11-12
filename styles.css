@@ -2214,6 +2214,7 @@ html {
 
 .terms-modal-header {
   background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   padding: 25px 30px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.2);
@@ -2240,6 +2241,7 @@ html {
 
 .terms-summary {
   background: rgba(255, 255, 255, 0.1);
+  -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
   border-radius: 15px;
   padding: 20px;
