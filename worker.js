@@ -691,6 +691,53 @@ function getIpDashboardHTML(clientInfo) {
       background: #38a169;
       transform: translateY(-2px);
     }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      .container {
+        padding: 25px 20px;
+        border-radius: 15px;
+      }
+      h1 {
+        font-size: 1.8em;
+        margin-bottom: 20px;
+      }
+      .info-card {
+        padding: 20px;
+      }
+      .info-value {
+        font-size: 1.2em;
+      }
+      .json-section {
+        padding: 15px;
+      }
+      pre {
+        font-size: 0.75em;
+        padding: 15px;
+      }
+      .btn-back {
+        padding: 10px 25px;
+        font-size: 0.95em;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.5em;
+      }
+      .info-label {
+        font-size: 0.85em;
+      }
+      .info-value {
+        font-size: 1em;
+      }
+      .container {
+        padding: 20px 15px;
+      }
+    }
   </style>
 </head>
 <body>
@@ -822,6 +869,66 @@ function getVisitorStatsHTML() {
       color: white;
       font-size: 1.5em;
       padding: 50px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        padding: 20px;
+      }
+      .stat-number {
+        font-size: 2em;
+      }
+      .chart-card {
+        padding: 20px;
+      }
+      .chart-card h2 {
+        font-size: 1.1em;
+      }
+      .chart-container {
+        height: 250px;
+      }
+      .btn-back {
+        padding: 10px 20px;
+        font-size: 0.9em;
+        margin: 15px 0;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6em;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .stat-number {
+        font-size: 1.8em;
+      }
+      .chart-container {
+        height: 220px;
+      }
+      .btn-back {
+        display: block;
+        text-align: center;
+        width: 100%;
+      }
+      .loading {
+        font-size: 1.2em;
+        padding: 30px;
+      }
     }
   </style>
 </head>
@@ -1178,6 +1285,81 @@ function getSecurityStatsHTML() {
     .refresh-btn:hover {
       opacity: 0.9;
     }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        padding: 20px;
+      }
+      .stat-value {
+        font-size: 2em;
+      }
+      .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 15px;
+      }
+      .chart-card, .table-card {
+        padding: 20px;
+      }
+      .chart-card h2, .table-card h2 {
+        font-size: 1.1em;
+      }
+      .btn-back {
+        padding: 10px 20px;
+        font-size: 0.9em;
+        margin-bottom: 15px;
+      }
+      .refresh-btn {
+        padding: 8px 16px;
+        font-size: 0.9em;
+        margin-left: 5px;
+      }
+      table {
+        font-size: 0.85em;
+      }
+      th, td {
+        padding: 8px 10px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6em;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .stat-value {
+        font-size: 1.8em;
+      }
+      .chart-container {
+        height: 250px;
+      }
+      .btn-back, .refresh-btn {
+        display: block;
+        width: 100%;
+        margin: 5px 0;
+        text-align: center;
+      }
+      .refresh-btn {
+        margin-left: 0;
+      }
+      table {
+        font-size: 0.75em;
+      }
+    }
   </style>
 </head>
 <body>
@@ -1511,6 +1693,75 @@ function getVisitorLogsHTML(limit = 50, page = 1) {
       font-weight: 600;
     }
     .page-btn:hover, .page-btn.active { background: #43e97b; color: white; }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      .controls {
+        flex-direction: column;
+        padding: 15px;
+        gap: 10px;
+        align-items: stretch;
+      }
+      .controls label {
+        font-size: 0.9em;
+      }
+      select, input {
+        width: 100%;
+        padding: 8px;
+        font-size: 0.9em;
+      }
+      .log-table {
+        overflow-x: auto;
+      }
+      table {
+        font-size: 0.85em;
+        min-width: 800px;
+      }
+      th, td {
+        padding: 10px 8px;
+      }
+      .btn-back {
+        padding: 10px 20px;
+        font-size: 0.9em;
+        margin: 15px 0;
+      }
+      .pagination {
+        padding: 15px;
+      }
+      .page-btn {
+        padding: 6px 12px;
+        font-size: 0.9em;
+        margin: 0 3px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6em;
+      }
+      .controls {
+        padding: 12px;
+      }
+      table {
+        font-size: 0.75em;
+        min-width: 700px;
+      }
+      th, td {
+        padding: 8px 6px;
+      }
+      .btn-back {
+        display: block;
+        text-align: center;
+        width: 100%;
+      }
+    }
   </style>
 </head>
 <body>
