@@ -1208,6 +1208,13 @@ function getAdminDashboardHTML() {
       <h2>🔍 조회 API (GET)</h2>
       <p>데이터를 조회하는 읽기 전용 API 엔드포인트입니다.</p>
       <div class="grid">
+        <a href="/ip" class="card">
+          <div class="card-icon">🌐</div>
+          <div class="card-title">내 IP 확인</div>
+          <div class="card-desc">현재 접속 중인 IP 주소와 국가, User Agent 정보를 확인합니다.</div>
+          <span class="card-badge badge-get">GET</span>
+          <div class="endpoint-path">/ip</div>
+        </a>
         <a href="/visitor/security-stats" class="card">
           <div class="card-icon">🔐</div>
           <div class="card-title">보안 통계 조회</div>
@@ -1929,6 +1936,23 @@ async function handleVisitor(request, env) {
       headers: {
         'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
+      },
+    });
+  }
+
+  // IP check endpoint - returns client's IP address
+  if (request.method === 'GET' && url.pathname === '/ip') {
+    const normalizedIp = normalizeIp(clientInfo.ip);
+    return new Response(JSON.stringify({
+      ip: clientInfo.ip || 'Unknown',
+      normalizedIp: normalizedIp || clientInfo.ip || 'Unknown',
+      country: clientInfo.country || 'Unknown',
+      userAgent: clientInfo.userAgent || 'Unknown',
+    }), {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   }
