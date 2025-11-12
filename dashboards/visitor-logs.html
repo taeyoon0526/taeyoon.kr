@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>방문자 로그 | taeyoon.kr</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 { color: white; text-align: center; margin-bottom: 30px; font-size: 2.5em; }
+    .controls {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    select, input {
+      padding: 10px;
+      border: 2px solid #43e97b;
+      border-radius: 8px;
+      font-size: 1em;
+    }
+    .log-table {
+      background: white;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      overflow: hidden;
+    }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: #43e97b;
+      color: white;
+      padding: 15px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td {
+      padding: 12px 15px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tr:hover { background: #f8f9fa; }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-warning { background: #fff3cd; color: #856404; }
+    .btn-back {
+      display: inline-block;
+      padding: 12px 30px;
+      background: white;
+      color: #43e97b;
+      text-decoration: none;
+      border-radius: 25px;
+      font-weight: 600;
+      margin: 20px 0;
+      transition: transform 0.2s;
+    }
+    .btn-back:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+    .pagination {
+      background: white;
+      padding: 20px;
+      border-radius: 15px;
+      margin-top: 20px;
+      text-align: center;
+    }
+    .page-btn {
+      padding: 8px 16px;
+      margin: 0 5px;
+      border: 2px solid #43e97b;
+      background: white;
+      color: #43e97b;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .page-btn:hover, .page-btn.active { background: #43e97b; color: white; }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      .controls {
+        flex-direction: column;
+        padding: 15px;
+        gap: 10px;
+        align-items: stretch;
+      }
+      .controls label {
+        font-size: 0.9em;
+      }
+      select, input {
+        width: 100%;
+        padding: 8px;
+        font-size: 0.9em;
+      }
+      .log-table {
+        overflow-x: auto;
+      }
+      table {
+        font-size: 0.85em;
+        min-width: 800px;
+      }
+      th, td {
+        padding: 10px 8px;
+      }
+      .btn-back {
+        padding: 10px 20px;
+        font-size: 0.9em;
+        margin: 15px 0;
+      }
+      .pagination {
+        padding: 15px;
+      }
+      .page-btn {
+        padding: 6px 12px;
+        font-size: 0.9em;
+        margin: 0 3px;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6em;
+      }
+      .controls {
+        padding: 12px;
+      }
+      table {
+        font-size: 0.75em;
+        min-width: 700px;
+      }
+      th, td {
+        padding: 8px 6px;
+      }
+      .btn-back {
+        display: block;
+        text-align: center;
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📋 방문자 로그</h1>
+    <a href="/admin" class="btn-back">← Admin Dashboard로 돌아가기</a>
+
+    <div class="controls">
+      <label>보기:</label>
+      <select id="limitSelect" onchange="changeLimit(this.value)">
+        <option value="10">10개</option>
+        <option value="50" selected>50개</option>
+        <option value="100">100개</option>
+        <option value="500">500개</option>
+      </select>
+      <input type="search" placeholder="IP 또는 국가로 검색..." id="searchInput" oninput="filterLogs()">
+    </div>
+
+    <div class="log-table">
+      <table id="logsTable">
+        <thead>
+          <tr>
+            <th>시간</th>
+            <th>IP 주소</th>
+            <th>국가</th>
+            <th>경로</th>
+            <th>브라우저</th>
+            <th>OS</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody id="logBody">
+          <tr>
+            <td colspan="7" style="text-align: center; padding: 30px;">
+              <div style="font-size: 2em; margin-bottom: 10px;">🔄</div>
+              <div>로그 데이터를 불러오는 중...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="pagination">
+      <button class="page-btn" onclick="changePage({{PREV_PAGE}})" {{PREV_DISABLED}}>← 이전</button>
+      <button class="page-btn active">{{CURRENT_PAGE}}</button>
+      <button class="page-btn" onclick="changePage({{NEXT_PAGE}})">다음 →</button>
+    </div>
+  </div>
+
+  <script>
+    let allLogs = [];
+    let currentLimit = {{LIMIT}};
+    let currentPage = {{PAGE}};
+
+    // Set select option based on limit
+    document.getElementById('limitSelect').value = currentLimit;
+
+    async function loadLogs() {
+      try {
+        // 실제 API 호출 시뮬레이션 - 추후 KV에서 실제 데이터 가져오기
+        allLogs = generateSampleLogs(currentLimit);
+        renderLogs(allLogs);
+      } catch (error) {
+        console.error('Failed to load logs:', error);
+        document.getElementById('logBody').innerHTML = 
+          '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #e74c3c;"><div style="font-size: 2em; margin-bottom: 10px;">❌</div><div>로그를 불러오는데 실패했습니다.</div></td></tr>';
+      }
+    }
+
+    function generateSampleLogs(count) {
+      const logs = [];
+      const countries = [
+        { code: 'KR', flag: '🇰🇷', name: 'Korea' },
+        { code: 'US', flag: '🇺🇸', name: 'United States' },
+        { code: 'JP', flag: '🇯🇵', name: 'Japan' },
+        { code: 'CN', flag: '🇨🇳', name: 'China' },
+        { code: 'RU', flag: '🇷🇺', name: 'Russia' },
+        { code: 'DE', flag: '🇩🇪', name: 'Germany' }
+      ];
+      const browsers = ['Chrome 119', 'Firefox 120', 'Safari 17', 'Edge 119', 'Opera 105'];
+      const os = ['Windows 11', 'macOS 14', 'Linux', 'iOS 17', 'Android 14'];
+      const paths = ['/', '/admin', '/visitor/dashboard', '/ip', '/api/visitors'];
+      const statuses = [
+        { text: '✅ 허용', class: 'success' },
+        { text: '🚫 차단', class: 'danger' },
+        { text: '⚠️ 의심', class: 'warning' }
+      ];
+
+      for (let i = 0; i < count; i++) {
+        const date = new Date(Date.now() - i * 60000 * Math.random() * 10);
+        const country = countries[Math.floor(Math.random() * countries.length)];
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        
+        logs.push({
+          time: date.toLocaleString('ko-KR', { 
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          ip: generateRandomIP(),
+          country: country.flag + ' ' + country.code,
+          path: paths[Math.floor(Math.random() * paths.length)],
+          browser: browsers[Math.floor(Math.random() * browsers.length)],
+          os: os[Math.floor(Math.random() * os.length)],
+          status: status
+        });
+      }
+      return logs;
+    }
+
+    function generateRandomIP() {
+      return Array(4).fill(0).map(() => Math.floor(Math.random() * 256)).join('.');
+    }
+
+    function renderLogs(logs) {
+      const tbody = document.getElementById('logBody');
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;"><div style="font-size: 2em; margin-bottom: 10px;">📭</div><div>로그가 없습니다.</div></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = logs.map(function(log) {
+        return '<tr>' +
+          '<td style="white-space: nowrap;">' + log.time + '</td>' +
+          '<td><code style="background: #f8f9fa; padding: 4px 8px; border-radius: 4px; font-family: Monaco, monospace;">' + log.ip + '</code></td>' +
+          '<td>' + log.country + '</td>' +
+          '<td><code style="color: #667eea;">' + log.path + '</code></td>' +
+          '<td>' + log.browser + '</td>' +
+          '<td>' + log.os + '</td>' +
+          '<td><span class="badge badge-' + log.status.class + '">' + log.status.text + '</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function changeLimit(limit) {
+      window.location.href = '/visitor/logs?limit=' + limit + '&page=1';
+    }
+
+    function changePage(page) {
+      window.location.href = '/visitor/logs?limit=' + currentLimit + '&page=' + page;
+    }
+
+    function filterLogs() {
+      const search = document.getElementById('searchInput').value.toLowerCase();
+      const rows = document.querySelectorAll('#logBody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(search) ? '' : 'none';
+      });
+    }
+
+    // 페이지 로드 시 로그 불러오기
+    loadLogs();
+  </script>
+</body>
+</html>

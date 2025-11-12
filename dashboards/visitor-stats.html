@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>방문자 통계 | taeyoon.kr</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .stat-number {
+      font-size: 3em;
+      font-weight: bold;
+      color: #667eea;
+    }
+    .stat-label {
+      color: #666;
+      margin-top: 10px;
+      font-size: 1.1em;
+    }
+    .chart-container {
+      background: white;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+    .btn-back {
+      display: inline-block;
+      padding: 12px 30px;
+      background: white;
+      color: #667eea;
+      text-decoration: none;
+      border-radius: 25px;
+      font-weight: 600;
+      margin: 20px 0;
+      transition: transform 0.2s;
+    }
+    .btn-back:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .loading {
+      text-align: center;
+      color: white;
+      font-size: 1.5em;
+      padding: 50px;
+    }
+    
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+      body {
+        padding: 15px;
+      }
+      h1 {
+        font-size: 2em;
+        margin-bottom: 20px;
+      }
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+      .stat-card {
+        padding: 20px;
+      }
+      .stat-number {
+        font-size: 2em;
+      }
+      .chart-card {
+        padding: 20px;
+      }
+      .chart-card h2 {
+        font-size: 1.1em;
+      }
+      .chart-container {
+        height: 250px;
+      }
+      .btn-back {
+        padding: 10px 20px;
+        font-size: 0.9em;
+        margin: 15px 0;
+      }
+    }
+    
+    @media (max-width: 480px) {
+      h1 {
+        font-size: 1.6em;
+      }
+      .stats-grid {
+        grid-template-columns: 1fr;
+      }
+      .stat-number {
+        font-size: 1.8em;
+      }
+      .chart-container {
+        height: 220px;
+      }
+      .btn-back {
+        display: block;
+        text-align: center;
+        width: 100%;
+      }
+      .loading {
+        font-size: 1.2em;
+        padding: 30px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📊 방문자 통계</h1>
+    <a href="/admin" class="btn-back">← Admin Dashboard로 돌아가기</a>
+    
+    <div id="loading" class="loading">데이터 로딩 중...</div>
+    <div id="content" style="display: none;">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number" id="totalVisits">0</div>
+          <div class="stat-label">총 방문 수</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="uniqueVisitors">0</div>
+          <div class="stat-label">순 방문자</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="todayVisits">0</div>
+          <div class="stat-label">오늘 방문</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" id="avgDaily">0</div>
+          <div class="stat-label">일평균 방문</div>
+        </div>
+      </div>
+
+      <div class="chart-container">
+        <h2>일별 방문자 추이</h2>
+        <canvas id="dailyChart"></canvas>
+      </div>
+
+      <div class="chart-container">
+        <h2>국가별 방문 분포</h2>
+        <canvas id="countryChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function loadStats() {
+      try {
+        // 실제로는 KV에서 데이터를 가져와야 하지만, 여기서는 시뮬레이션
+        const data = {
+          totalVisits: 1247,
+          uniqueVisitors: 892,
+          todayVisits: 42,
+          avgDaily: 35,
+          dailyData: [25, 32, 28, 45, 38, 42, 35],
+          countryData: { KR: 450, US: 320, JP: 180, CN: 120, Other: 177 }
+        };
+
+        document.getElementById('totalVisits').textContent = data.totalVisits;
+        document.getElementById('uniqueVisitors').textContent = data.uniqueVisitors;
+        document.getElementById('todayVisits').textContent = data.todayVisits;
+        document.getElementById('avgDaily').textContent = data.avgDaily;
+
+        // Daily chart
+        new Chart(document.getElementById('dailyChart'), {
+          type: 'line',
+          data: {
+            labels: ['월', '화', '수', '목', '금', '토', '일'],
+            datasets: [{
+              label: '방문자 수',
+              data: data.dailyData,
+              borderColor: '#667eea',
+              backgroundColor: 'rgba(102, 126, 234, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: { legend: { display: false } }
+          }
+        });
+
+        // Country chart
+        new Chart(document.getElementById('countryChart'), {
+          type: 'doughnut',
+          data: {
+            labels: Object.keys(data.countryData),
+            datasets: [{
+              data: Object.values(data.countryData),
+              backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b']
+            }]
+          },
+          options: {
+            responsive: true
+          }
+        });
+
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('content').style.display = 'block';
+      } catch (err) {
+        document.getElementById('loading').textContent = '데이터 로딩 실패: ' + err.message;
+      }
+    }
+
+    loadStats();
+  </script>
+</body>
+</html>
