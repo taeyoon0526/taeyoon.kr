@@ -1326,3 +1326,145 @@ console.log('🌓 Toggle theme with the button in the navigation bar');
 console.log('🔍 Filter skills by category using the tabs');
 
 
+
+// ====================================
+// Terms of Service Modal
+// ====================================
+(function() {
+  const TERMS_COOKIE = 'terms_accepted';
+  const COOKIE_EXPIRY_DAYS = 365;
+
+  // 쿠키 가져오기
+  function getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
+  }
+
+  // 쿠키 설정
+  function setCookie(name, value, days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    const expires = `expires=${date.toUTCString()}`;
+    document.cookie = `${name}=${value};${expires};path=/;SameSite=Strict;Secure`;
+  }
+
+  // 모달 표시
+  function showTermsModal() {
+    const modal = document.getElementById('terms-modal');
+    if (modal) {
+      modal.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  // 모달 숨기기
+  function hideTermsModal() {
+    const modal = document.getElementById('terms-modal');
+    if (modal) {
+      modal.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // 동의 처리
+  function handleAgree() {
+    setCookie(TERMS_COOKIE, 'true', COOKIE_EXPIRY_DAYS);
+    hideTermsModal();
+    
+    // Analytics 전송 (GA가 로드되어 있다면)
+    if (typeof gtag === 'function') {
+      gtag('event', 'terms_accepted', {
+        'event_category': 'engagement',
+        'event_label': 'Terms of Service'
+      });
+    }
+  }
+
+  // 비동의 처리
+  function handleDisagree() {
+    // 경고 메시지 표시
+    const confirmMsg = '이용약관에 동의하지 않으시면 웹사이트를 이용하실 수 없습니다.\n\n' +
+                      '이용약관을 다시 확인하시겠습니까?\n\n' +
+                      '• 쿠키는 사용자 경험 개선을 위해서만 사용됩니다\n' +
+                      '• IP 주소는 보안 및 통계 목적으로만 수집됩니다\n' +
+                      '• 모든 데이터는 암호화되어 안전하게 보관됩니다\n' +
+                      '• 제3자에게 정보를 제공하지 않습니다';
+    
+    if (confirm(confirmMsg)) {
+      // 이용약관 페이지로 이동
+      window.open('/terms.html', '_blank', 'noopener,noreferrer');
+    } else {
+      // 다시 한 번 확인
+      const finalConfirm = '정말로 이용약관에 동의하지 않으시겠습니까?\n\n' +
+                          '동의하지 않으시면 웹사이트를 이용하실 수 없으며,\n' +
+                          '다른 페이지로 이동합니다.';
+      
+      if (confirm(finalConfirm)) {
+        // 사용자가 정말 거부한 경우 - 구글로 리다이렉트
+        alert('이용약관에 동의하지 않으셨습니다.\n\n' +
+              '다시 방문하실 때는 이용약관에 동의해 주시기 바랍니다.');
+        window.location.href = 'https://www.google.com';
+      }
+      // 아니면 모달 유지 (아무것도 하지 않음)
+    }
+  }
+
+  // 페이지 로드 시 체크
+  function checkTermsAcceptance() {
+    const termsAccepted = getCookie(TERMS_COOKIE);
+    
+    if (!termsAccepted || termsAccepted !== 'true') {
+      // 짧은 딜레이 후 모달 표시 (페이지 로딩 완료 후)
+      setTimeout(showTermsModal, 500);
+    }
+  }
+
+  // 이벤트 리스너 등록
+  function initTermsModal() {
+    const agreeBtn = document.getElementById('terms-agree');
+    const disagreeBtn = document.getElementById('terms-disagree');
+
+    if (agreeBtn) {
+      agreeBtn.addEventListener('click', handleAgree);
+    }
+
+    if (disagreeBtn) {
+      disagreeBtn.addEventListener('click', handleDisagree);
+    }
+
+    // ESC 키로 모달 닫기 방지 (반드시 선택하도록)
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const modal = document.getElementById('terms-modal');
+        if (modal && modal.classList.contains('show')) {
+          e.preventDefault();
+          handleDisagree();
+        }
+      }
+    });
+
+    // 모달 외부 클릭 방지
+    const modal = document.getElementById('terms-modal');
+    if (modal) {
+      modal.addEventListener('click', function(e) {
+        if (e.target === modal) {
+          e.preventDefault();
+          handleDisagree();
+        }
+      });
+    }
+  }
+
+  // DOM 로드 완료 후 실행
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      initTermsModal();
+      checkTermsAcceptance();
+    });
+  } else {
+    initTermsModal();
+    checkTermsAcceptance();
+  }
+})();

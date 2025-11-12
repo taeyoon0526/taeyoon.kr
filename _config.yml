@@ -1,0 +1,16 @@
+# GitHub Pages Jekyll 설정
+permalink: pretty
+
+# 제외할 파일들
+exclude:
+  - README.md
+  - DEPLOYMENT_GUIDE.md
+  - QUICK_DEPLOY.md
+  - SECURITY.md
+  - UPGRADE_GUIDE.md
+  - UPGRADE_SUMMARY.md
+  - check-upgrade.sh
+  - wrangler.toml
+  - worker.js
+  - node_modules/
+  - .git/
