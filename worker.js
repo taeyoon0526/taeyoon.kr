@@ -1929,34 +1929,6 @@ async function handleVisitor(request, env) {
     });
   }
 
-  // Admin dashboard HTML page - central hub for all endpoints
-  if (request.method === 'GET' && url.pathname === '/admin') {
-    return new Response(getAdminDashboardHTML(), {
-      status: 200,
-      headers: {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Cache-Control': 'no-cache',
-      },
-    });
-  }
-
-  // IP check endpoint - returns client's IP address
-  if (request.method === 'GET' && url.pathname === '/ip') {
-    const normalizedIp = normalizeIp(clientInfo.ip);
-    return new Response(JSON.stringify({
-      ip: clientInfo.ip || 'Unknown',
-      normalizedIp: normalizedIp || clientInfo.ip || 'Unknown',
-      country: clientInfo.country || 'Unknown',
-      userAgent: clientInfo.userAgent || 'Unknown',
-    }), {
-      status: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-      },
-    });
-  }
-
   // Security dashboard HTML page (accessible without authentication)
   if (request.method === 'GET' && (url.pathname === '/visitor/security' || url.pathname === '/visitor/dashboard')) {
     return new Response(getSecurityDashboardHTML(), {
@@ -2266,6 +2238,33 @@ export default {
     const clientInfo = getClientInfo(request);
     const allowedOrigins = getAllowedOrigins(env);
     const workerOrigin = `${url.protocol}//${url.host}`;
+
+    // Public endpoints (no IP check required)
+    if (request.method === 'GET' && url.pathname === '/ip') {
+      const normalizedIp = normalizeIp(clientInfo.ip);
+      return new Response(JSON.stringify({
+        ip: clientInfo.ip || 'Unknown',
+        normalizedIp: normalizedIp || clientInfo.ip || 'Unknown',
+        country: clientInfo.country || 'Unknown',
+        userAgent: clientInfo.userAgent || 'Unknown',
+      }), {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*',
+        },
+      });
+    }
+
+    if (request.method === 'GET' && url.pathname === '/admin') {
+      return new Response(getAdminDashboardHTML(), {
+        status: 200,
+        headers: {
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
 
     // Route visitor tracking endpoints
     if (url.pathname === '/collect') {
