@@ -2372,6 +2372,7 @@ html {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -2381,6 +2382,7 @@ html {
   from {
     transform: translateY(100%);
   }
+
   to {
     transform: translateY(0);
   }
@@ -2473,6 +2475,7 @@ html {
       transform: translateY(-30px);
       opacity: 0;
     }
+
     to {
       transform: translateY(0);
       opacity: 1;
