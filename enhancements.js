@@ -407,8 +407,8 @@
     ║   Thanks for checking the console!   ║
     ║   Made with ❤️ by Taeyoon Kim        ║
     ║                                       ║
-    ║   GitHub: taeyoon0526                 ║
     ║   Website: https://taeyoon.kr        ║
+    ║   Email: me@taeyoon.kr               ║
     ║                                       ║
     ╚═══════════════════════════════════════╝
     `;
