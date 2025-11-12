@@ -496,6 +496,8 @@ a {
 .hero-content {
   max-width: 800px;
   z-index: 2;
+  will-change: transform, opacity;
+  transform: translateZ(0);
 }
 
 .hero-greeting {
