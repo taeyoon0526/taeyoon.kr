@@ -565,15 +565,6 @@ function escapeHtml(text) {
 }
 
 /**
- * Validate email address format
- */
-function isValidEmail(email) {
-  if (!email || typeof email !== 'string') return false;
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email) && email.length <= 254; // RFC 5321 max length
-}
-
-/**
  * Check if email recipient is in allowlist
  */
 function isAllowedEmailRecipient(email) {
