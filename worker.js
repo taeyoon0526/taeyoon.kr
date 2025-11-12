@@ -2455,7 +2455,7 @@ function getAdminDashboardHTML() {
         alert('올바른 IP 주소 형식이 아닙니다. (예: 1.2.3.4)');
         return;
       }
-      if (!confirm('정말로 이 IP를 신뢰 목록에서 제거하시겠습니까?\n\nIP: ' + ip)) {
+      if (!confirm('정말로 이 IP를 신뢰 목록에서 제거하시겠습니까?\\n\\nIP: ' + ip)) {
         return;
       }
       try {
