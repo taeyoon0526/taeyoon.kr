@@ -1355,6 +1355,7 @@ console.log('🔍 Filter skills by category using the tabs');
     const modal = document.getElementById('terms-modal');
     if (modal) {
       modal.classList.add('show');
+      document.body.classList.add('terms-modal-open');
       document.body.style.overflow = 'hidden';
     }
   }
@@ -1364,6 +1365,7 @@ console.log('🔍 Filter skills by category using the tabs');
     const modal = document.getElementById('terms-modal');
     if (modal) {
       modal.classList.remove('show');
+      document.body.classList.remove('terms-modal-open');
       document.body.style.overflow = '';
     }
   }
@@ -1416,8 +1418,8 @@ console.log('🔍 Filter skills by category using the tabs');
     const termsAccepted = getCookie(TERMS_COOKIE);
     
     if (!termsAccepted || termsAccepted !== 'true') {
-      // 짧은 딜레이 후 모달 표시 (페이지 로딩 완료 후)
-      setTimeout(showTermsModal, 500);
+      // 즉시 모달 표시 (딜레이 없음)
+      showTermsModal();
     }
   }
 

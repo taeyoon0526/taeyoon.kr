@@ -13,7 +13,8 @@ body {
   overflow-x: hidden;
 }
 
-body.loading {
+body.loading,
+body.terms-modal-open {
   overflow: hidden;
 }
 
@@ -2271,6 +2272,12 @@ html {
 
 .terms-summary li:last-child {
   border-bottom: none;
+}
+
+.terms-footnote {
+  font-size: 0.85em;
+  margin-top: 10px;
+  opacity: 0.9;
 }
 
 .terms-detail-link {
