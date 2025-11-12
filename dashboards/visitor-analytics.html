@@ -81,49 +81,179 @@
   </div>
 
   <script>
-    // Browser chart
-    new Chart(document.getElementById('browserChart'), {
-      type: 'bar',
-      data: {
-        labels: ['Chrome', 'Safari', 'Firefox', 'Edge', 'Other'],
-        datasets: [{
-          label: '사용자 수',
-          data: [520, 280, 150, 95, 72],
-          backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b']
-        }]
-      },
-      options: { responsive: true }
-    });
+    async function loadAnalytics() {
+      try {
+        // 실시간 API에서 데이터 가져오기
+        const response = await fetch('/api/visitor/data');
+        if (!response.ok) {
+          throw new Error('API 응답 실패: ' + response.status);
+        }
+        
+        const apiData = await response.json();
+        const visitors = apiData.visitors || [];
+        
+        // User Agent 파싱 (간단한 버전)
+        const browserCount = { Chrome: 0, Safari: 0, Firefox: 0, Edge: 0, Other: 0 };
+        const osCount = { Windows: 0, macOS: 0, Linux: 0, Android: 0, iOS: 0, Other: 0 };
+        const hourlyCount = new Array(24).fill(0);
+        
+        visitors.forEach(v => {
+          const ua = (v.userAgent || '').toLowerCase();
+          
+          // 브라우저 감지
+          if (ua.includes('edg/')) browserCount.Edge++;
+          else if (ua.includes('chrome')) browserCount.Chrome++;
+          else if (ua.includes('safari') && !ua.includes('chrome')) browserCount.Safari++;
+          else if (ua.includes('firefox')) browserCount.Firefox++;
+          else browserCount.Other++;
+          
+          // OS 감지
+          if (ua.includes('windows')) osCount.Windows++;
+          else if (ua.includes('mac os')) osCount.macOS++;
+          else if (ua.includes('linux') && !ua.includes('android')) osCount.Linux++;
+          else if (ua.includes('android')) osCount.Android++;
+          else if (ua.includes('iphone') || ua.includes('ipad')) osCount.iOS++;
+          else osCount.Other++;
+          
+          // 시간대별 분석
+          if (v.timestamp) {
+            const hour = new Date(v.timestamp).getHours();
+            hourlyCount[hour]++;
+          }
+        });
+        
+        // 시간대별 데이터 (4시간 간격)
+        const timeLabels = [];
+        const timeData = [];
+        for (let h = 0; h < 24; h += 4) {
+          timeLabels.push(h.toString().padStart(2, '0') + ':00');
+          // 4시간 구간의 합계
+          let sum = 0;
+          for (let i = 0; i < 4 && (h + i) < 24; i++) {
+            sum += hourlyCount[h + i];
+          }
+          timeData.push(sum);
+        }
 
-    // Time chart
-    new Chart(document.getElementById('timeChart'), {
-      type: 'line',
-      data: {
-        labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00'],
-        datasets: [{
-          label: '시간대별 방문',
-          data: [5, 8, 25, 45, 52, 38],
-          borderColor: '#f5576c',
-          backgroundColor: 'rgba(245, 87, 108, 0.1)',
-          tension: 0.4,
-          fill: true
-        }]
-      },
-      options: { responsive: true }
-    });
+        // Browser chart
+        new Chart(document.getElementById('browserChart'), {
+          type: 'bar',
+          data: {
+            labels: Object.keys(browserCount),
+            datasets: [{
+              label: '사용자 수',
+              data: Object.values(browserCount),
+              backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b']
+            }]
+          },
+          options: { 
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
+                    return '사용자: ' + context.parsed.y + '명 (' + percentage + '%)';
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0
+                }
+              }
+            }
+          }
+        });
 
-    // OS chart
-    new Chart(document.getElementById('osChart'), {
-      type: 'pie',
-      data: {
-        labels: ['Windows', 'macOS', 'Linux', 'Android', 'iOS'],
-        datasets: [{
-          data: [450, 320, 85, 210, 180],
-          backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b']
-        }]
-      },
-      options: { responsive: true }
-    });
+        // Time chart
+        new Chart(document.getElementById('timeChart'), {
+          type: 'line',
+          data: {
+            labels: timeLabels,
+            datasets: [{
+              label: '시간대별 방문',
+              data: timeData,
+              borderColor: '#f5576c',
+              backgroundColor: 'rgba(245, 87, 108, 0.1)',
+              tension: 0.4,
+              fill: true
+            }]
+          },
+          options: { 
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    return '방문: ' + context.parsed.y + '회';
+                  }
+                }
+              }
+            },
+            scales: {
+              y: {
+                beginAtZero: true,
+                ticks: {
+                  precision: 0
+                }
+              }
+            }
+          }
+        });
+
+        // OS chart
+        new Chart(document.getElementById('osChart'), {
+          type: 'pie',
+          data: {
+            labels: Object.keys(osCount).filter(k => osCount[k] > 0),
+            datasets: [{
+              data: Object.values(osCount).filter(v => v > 0),
+              backgroundColor: ['#667eea', '#764ba2', '#f093fb', '#4facfe', '#43e97b', '#f5576c']
+            }]
+          },
+          options: { 
+            responsive: true,
+            plugins: {
+              legend: {
+                position: 'bottom'
+              },
+              tooltip: {
+                callbacks: {
+                  label: function(context) {
+                    const label = context.label || '';
+                    const value = context.parsed || 0;
+                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                    const percentage = ((value / total) * 100).toFixed(1);
+                    return label + ': ' + value + '명 (' + percentage + '%)';
+                  }
+                }
+              }
+            }
+          }
+        });
+        
+        console.log('방문자 분석 데이터 로드 완료:', {
+          totalVisitors: visitors.length,
+          browsers: browserCount,
+          os: osCount
+        });
+      } catch (err) {
+        console.error('데이터 로딩 오류:', err);
+        alert('데이터 로딩 실패: ' + err.message);
+      }
+    }
+
+    loadAnalytics();
+    
+    // 30초마다 자동 새로고침
+    setInterval(loadAnalytics, 30000);
   </script>
 </body>
 
