@@ -582,6 +582,106 @@
         alert('❌ 오류: ' + e.message);
       }
     }
+
+    // ====================================
+    // 실시간 데이터 로드
+    // ====================================
+    async function loadRealTimeStats() {
+      try {
+        // 방문자 데이터 로드
+        const visitorResponse = await fetch('/api/visitor/data');
+        const visitorData = await visitorResponse.json();
+        
+        if (visitorData.success) {
+          const totalVisitors = visitorData.count || 0;
+          const recentVisitors = visitorData.visitors.slice(0, 10);
+          
+          // 통계 배너 업데이트
+          updateStatsBanner(totalVisitors, recentVisitors);
+        }
+
+        // 보안 통계 로드
+        const securityResponse = await fetch('/visitor/security-stats');
+        const securityData = await securityResponse.json();
+        
+        if (securityData.success) {
+          updateSecurityStats(securityData);
+        }
+      } catch (error) {
+        console.error('데이터 로드 실패:', error);
+      }
+    }
+
+    function updateStatsBanner(totalVisitors, recentVisitors) {
+      const banner = document.querySelector('.stats-banner');
+      if (banner) {
+        const uniqueCountries = new Set(recentVisitors.map(v => v.country)).size;
+        const uniqueIPs = new Set(recentVisitors.map(v => v.ip)).size;
+        
+        banner.innerHTML = `
+          <h3>🚀 시스템 정상 가동 중</h3>
+          <p>총 방문자: <strong>${totalVisitors.toLocaleString()}</strong>명 | 
+             최근 24시간: <strong>${recentVisitors.length}</strong>명 | 
+             접속 국가: <strong>${uniqueCountries}</strong>개국 | 
+             고유 IP: <strong>${uniqueIPs}</strong>개</p>
+          <p style="font-size: 0.9em; opacity: 0.9; margin-top: 10px;">
+            마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}
+          </p>
+        `;
+      }
+    }
+
+    function updateSecurityStats(securityData) {
+      // 보안 통계 요약 추가
+      const container = document.querySelector('.container');
+      let statsSection = document.getElementById('realtime-security-stats');
+      
+      if (!statsSection) {
+        statsSection = document.createElement('div');
+        statsSection.id = 'realtime-security-stats';
+        statsSection.className = 'section';
+        statsSection.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+        statsSection.style.color = 'white';
+        
+        // 첫 번째 section 다음에 삽입
+        const firstSection = container.querySelector('.section');
+        firstSection.parentNode.insertBefore(statsSection, firstSection.nextSibling);
+      }
+
+      const blockedIPs = securityData.blockedIPs?.length || 0;
+      const suspiciousActivity = securityData.suspiciousActivity?.length || 0;
+      const rateLimitHits = securityData.rateLimitHits || 0;
+
+      statsSection.innerHTML = `
+        <h2>🛡️ 실시간 보안 현황</h2>
+        <div class="grid grid-3col" style="margin-top: 20px;">
+          <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 16px; text-align: center;">
+            <div style="font-size: 3em; margin-bottom: 10px;">🚫</div>
+            <div style="font-size: 2.5em; font-weight: 700;">${blockedIPs}</div>
+            <div style="opacity: 0.95; margin-top: 8px; font-size: 1.1em;">차단된 IP</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 16px; text-align: center;">
+            <div style="font-size: 3em; margin-bottom: 10px;">⚠️</div>
+            <div style="font-size: 2.5em; font-weight: 700;">${suspiciousActivity}</div>
+            <div style="opacity: 0.95; margin-top: 8px; font-size: 1.1em;">의심 활동</div>
+          </div>
+          <div style="background: rgba(255,255,255,0.15); padding: 25px; border-radius: 16px; text-align: center;">
+            <div style="font-size: 3em; margin-bottom: 10px;">🚦</div>
+            <div style="font-size: 2.5em; font-weight: 700;">${rateLimitHits}</div>
+            <div style="opacity: 0.95; margin-top: 8px; font-size: 1.1em;">Rate Limit</div>
+          </div>
+        </div>
+        <p style="text-align: center; margin-top: 20px; opacity: 0.9; font-size: 0.95em;">
+          마지막 업데이트: ${new Date().toLocaleTimeString('ko-KR')}
+        </p>
+      `;
+    }
+
+    // 페이지 로드 시 데이터 로드
+    loadRealTimeStats();
+    
+    // 30초마다 데이터 갱신
+    setInterval(loadRealTimeStats, 30000);
   </script>
 </body>
 
