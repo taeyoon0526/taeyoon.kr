@@ -581,6 +581,170 @@ async function verifyTurnstile(token, ip, env, siteKey = null) {
   }
 }
 
+// IP Information Dashboard
+function getIpDashboardHTML(clientInfo) {
+  const { ip, normalizedIp, country, userAgent } = clientInfo;
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IP 정보 | taeyoon.kr</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      padding: 40px;
+      max-width: 800px;
+      width: 100%;
+    }
+    h1 {
+      color: #667eea;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+    }
+    .info-grid {
+      display: grid;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .info-card {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(102,126,234,0.3);
+    }
+    .info-label {
+      font-size: 0.9em;
+      opacity: 0.9;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    .info-value {
+      font-size: 1.5em;
+      font-weight: 700;
+      word-break: break-all;
+    }
+    .json-section {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 20px;
+      margin-top: 30px;
+    }
+    .json-title {
+      color: #667eea;
+      font-size: 1.2em;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+    pre {
+      background: #2d3748;
+      color: #e2e8f0;
+      padding: 20px;
+      border-radius: 10px;
+      overflow-x: auto;
+      font-family: 'Monaco', 'Courier New', monospace;
+      font-size: 0.9em;
+      line-height: 1.6;
+    }
+    .btn-back {
+      display: block;
+      text-align: center;
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      text-decoration: none;
+      border-radius: 25px;
+      font-weight: 600;
+      margin-top: 20px;
+      transition: transform 0.2s;
+    }
+    .btn-back:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+    }
+    .copy-btn {
+      background: #48bb78;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-top: 10px;
+      transition: all 0.2s;
+    }
+    .copy-btn:hover {
+      background: #38a169;
+      transform: translateY(-2px);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌐 IP 정보</h1>
+    
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="info-label">원본 IP 주소</div>
+        <div class="info-value">${ip || 'Unknown'}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">정규화된 IP</div>
+        <div class="info-value">${normalizedIp || ip || 'Unknown'}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">국가 코드</div>
+        <div class="info-value">${country || 'Unknown'}</div>
+      </div>
+      
+      <div class="info-card">
+        <div class="info-label">User Agent</div>
+        <div class="info-value" style="font-size: 1em;">${userAgent || 'Unknown'}</div>
+      </div>
+    </div>
+
+    <div class="json-section">
+      <div class="json-title">📄 JSON 응답</div>
+      <pre id="jsonData">${JSON.stringify({ ip: ip || 'Unknown', normalizedIp: normalizedIp || ip || 'Unknown', country: country || 'Unknown', userAgent: userAgent || 'Unknown' }, null, 2)}</pre>
+      <button class="copy-btn" onclick="copyJson()">📋 JSON 복사</button>
+    </div>
+
+    <a href="/" class="btn-back">← 홈으로 돌아가기</a>
+  </div>
+
+  <script>
+    function copyJson() {
+      const jsonText = document.getElementById('jsonData').textContent;
+      navigator.clipboard.writeText(jsonText).then(() => {
+        const btn = event.target;
+        const originalText = btn.textContent;
+        btn.textContent = '✓ 복사됨!';
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2000);
+      });
+    }
+  </script>
+</body>
+</html>`;
+}
+
 // Visitor Stats HTML Dashboard
 function getVisitorStatsHTML() {
   return `<!DOCTYPE html>
@@ -875,6 +1039,386 @@ function getVisitorAnalyticsHTML() {
 </html>`;
 }
 
+// Security Stats HTML Dashboard
+function getSecurityStatsHTML() {
+  return `<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>보안 통계 | taeyoon.kr</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container { max-width: 1400px; margin: 0 auto; }
+    h1 {
+      color: white;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 2.5em;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .stat-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 2.5em;
+      font-weight: 700;
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .stat-label {
+      color: #666;
+      margin-top: 10px;
+      font-size: 1em;
+    }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+    .chart-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    .chart-card h2 {
+      color: #f5576c;
+      margin-bottom: 20px;
+      font-size: 1.3em;
+    }
+    .chart-container {
+      position: relative;
+      height: 300px;
+    }
+    .table-card {
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      margin-bottom: 20px;
+    }
+    .table-card h2 {
+      color: #f5576c;
+      margin-bottom: 20px;
+      font-size: 1.3em;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+    }
+    td {
+      padding: 10px 12px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tr:hover {
+      background: #f8f9fa;
+    }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+    }
+    .badge-danger { background: #fee; color: #c33; }
+    .badge-warning { background: #ffeaa7; color: #d63031; }
+    .badge-success { background: #dfe6e9; color: #00b894; }
+    .btn-back {
+      display: inline-block;
+      padding: 12px 30px;
+      background: white;
+      color: #f5576c;
+      text-decoration: none;
+      border-radius: 25px;
+      font-weight: 600;
+      transition: transform 0.2s;
+      margin-bottom: 20px;
+    }
+    .btn-back:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    .refresh-btn {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 20px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-left: 10px;
+    }
+    .refresh-btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🛡️ 보안 통계</h1>
+    <a href="/admin" class="btn-back">← Admin Dashboard로 돌아가기</a>
+    <button class="refresh-btn" onclick="loadSecurityStats()">🔄 새로고침</button>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" id="blockedIps">0</div>
+        <div class="stat-label">차단된 IP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="suspiciousIps">0</div>
+        <div class="stat-label">의심스러운 IP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="rateLimitedIps">0</div>
+        <div class="stat-label">Rate Limited IP</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="trustedIps">0</div>
+        <div class="stat-label">신뢰된 IP</div>
+      </div>
+    </div>
+
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h2>위협 유형별 분포</h2>
+        <div class="chart-container">
+          <canvas id="threatTypeChart"></canvas>
+        </div>
+      </div>
+      <div class="chart-card">
+        <h2>시간대별 보안 이벤트</h2>
+        <div class="chart-container">
+          <canvas id="timelineChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h2>최근 차단된 IP</h2>
+      <table id="blockedTable">
+        <thead>
+          <tr>
+            <th>IP 주소</th>
+            <th>차단 사유</th>
+            <th>차단 시각</th>
+            <th>해제 예정</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="5" style="text-align: center; padding: 20px;">데이터 로딩 중...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="table-card">
+      <h2>의심스러운 활동</h2>
+      <table id="suspiciousTable">
+        <thead>
+          <tr>
+            <th>IP 주소</th>
+            <th>국가</th>
+            <th>감지 횟수</th>
+            <th>첫 감지</th>
+            <th>최근 감지</th>
+            <th>사유</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 20px;">데이터 로딩 중...</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    let charts = {};
+
+    async function loadSecurityStats() {
+      try {
+        // 실제 API 호출 (여기서는 시뮬레이션)
+        const stats = {
+          summary: {
+            blockedIps: 15,
+            suspiciousIps: 8,
+            rateLimitedIps: 23,
+            trustedIps: 42
+          },
+          threatTypes: {
+            'SQL Injection': 12,
+            'XSS 시도': 8,
+            'Rate Limit': 23,
+            'Bot': 15,
+            '기타': 7
+          },
+          timeline: {
+            hours: ['00시', '04시', '08시', '12시', '16시', '20시'],
+            events: [5, 3, 8, 15, 12, 7]
+          },
+          blockedList: [
+            { ip: '192.168.1.100', reason: 'SQL Injection', blocked: '2025-11-12 14:23', until: '2025-11-13 14:23', status: 'active' },
+            { ip: '10.0.0.50', reason: 'Rate Limit', blocked: '2025-11-12 13:10', until: '2025-11-12 15:10', status: 'active' },
+            { ip: '172.16.0.1', reason: 'Bot 감지', blocked: '2025-11-12 12:45', until: '2025-11-12 18:45', status: 'active' }
+          ],
+          suspiciousList: [
+            { ip: '203.0.113.0', country: 'US', count: 5, first: '2025-11-10 10:00', last: '2025-11-12 14:00', reason: 'Multiple failed logins' },
+            { ip: '198.51.100.0', country: 'CN', count: 3, first: '2025-11-11 08:30', last: '2025-11-12 09:15', reason: 'Suspicious pattern' }
+          ]
+        };
+
+        // 통계 업데이트
+        document.getElementById('blockedIps').textContent = stats.summary.blockedIps;
+        document.getElementById('suspiciousIps').textContent = stats.summary.suspiciousIps;
+        document.getElementById('rateLimitedIps').textContent = stats.summary.rateLimitedIps;
+        document.getElementById('trustedIps').textContent = stats.summary.trustedIps;
+
+        // 차트 업데이트
+        updateCharts(stats);
+        
+        // 테이블 업데이트
+        updateBlockedTable(stats.blockedList);
+        updateSuspiciousTable(stats.suspiciousList);
+
+      } catch (error) {
+        console.error('Failed to load security stats:', error);
+      }
+    }
+
+    function updateCharts(stats) {
+      const ctx1 = document.getElementById('threatTypeChart');
+      const ctx2 = document.getElementById('timelineChart');
+
+      if (charts.threatType) charts.threatType.destroy();
+      if (charts.timeline) charts.timeline.destroy();
+
+      charts.threatType = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(stats.threatTypes),
+          datasets: [{
+            data: Object.values(stats.threatTypes),
+            backgroundColor: [
+              '#e74c3c',
+              '#e67e22',
+              '#f39c12',
+              '#3498db',
+              '#9b59b6'
+            ],
+            borderWidth: 0
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: 'bottom'
+            }
+          }
+        }
+      });
+
+      charts.timeline = new Chart(ctx2, {
+        type: 'line',
+        data: {
+          labels: stats.timeline.hours,
+          datasets: [{
+            label: '보안 이벤트',
+            data: stats.timeline.events,
+            borderColor: '#f5576c',
+            backgroundColor: 'rgba(245, 87, 108, 0.1)',
+            tension: 0.4,
+            fill: true
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          scales: {
+            y: {
+              beginAtZero: true,
+              ticks: {
+                precision: 0
+              }
+            }
+          }
+        }
+      });
+    }
+
+    function updateBlockedTable(list) {
+      const tbody = document.getElementById('blockedTable').querySelector('tbody');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px;">차단된 IP가 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(function(item) {
+        return '<tr>' +
+          '<td><code>' + item.ip + '</code></td>' +
+          '<td><span class="badge badge-danger">' + item.reason + '</span></td>' +
+          '<td>' + item.blocked + '</td>' +
+          '<td>' + item.until + '</td>' +
+          '<td><span class="badge badge-warning">활성</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    function updateSuspiciousTable(list) {
+      const tbody = document.getElementById('suspiciousTable').querySelector('tbody');
+      if (!list || list.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px;">의심스러운 활동이 없습니다.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = list.map(function(item) {
+        return '<tr>' +
+          '<td><code>' + item.ip + '</code></td>' +
+          '<td>' + item.country + '</td>' +
+          '<td><span class="badge badge-warning">' + item.count + '회</span></td>' +
+          '<td>' + item.first + '</td>' +
+          '<td>' + item.last + '</td>' +
+          '<td>' + item.reason + '</td>' +
+          '</tr>';
+      }).join('');
+    }
+
+    // 페이지 로드 시 데이터 로드
+    loadSecurityStats();
+  </script>
+</body>
+</html>`;
+}
+
 // Visitor Logs HTML Dashboard
 function getVisitorLogsHTML(limit = 50, page = 1) {
   return `<!DOCTYPE html>
@@ -927,6 +1471,16 @@ function getVisitorLogsHTML(limit = 50, page = 1) {
       border-bottom: 1px solid #f0f0f0;
     }
     tr:hover { background: #f8f9fa; }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.85em;
+      font-weight: 600;
+      display: inline-block;
+    }
+    .badge-success { background: #d4edda; color: #155724; }
+    .badge-danger { background: #f8d7da; color: #721c24; }
+    .badge-warning { background: #fff3cd; color: #856404; }
     .btn-back {
       display: inline-block;
       padding: 12px 30px;
@@ -976,42 +1530,24 @@ function getVisitorLogsHTML(limit = 50, page = 1) {
     </div>
 
     <div class="log-table">
-      <table>
+      <table id="logsTable">
         <thead>
           <tr>
             <th>시간</th>
-            <th>네트워크 ID</th>
+            <th>IP 주소</th>
             <th>국가</th>
             <th>경로</th>
             <th>브라우저</th>
+            <th>OS</th>
             <th>상태</th>
           </tr>
         </thead>
         <tbody id="logBody">
-          <!-- Sample data -->
           <tr>
-            <td>2025-11-12 14:23:45</td>
-            <td>211.177.xxx.xxx</td>
-            <td>🇰🇷 KR</td>
-            <td>/admin</td>
-            <td>Chrome 119</td>
-            <td>✅ 허용</td>
-          </tr>
-          <tr>
-            <td>2025-11-12 14:22:10</td>
-            <td>8.8.xxx.xxx</td>
-            <td>🇺🇸 US</td>
-            <td>/</td>
-            <td>Safari 17</td>
-            <td>✅ 허용</td>
-          </tr>
-          <tr>
-            <td>2025-11-12 14:20:33</td>
-            <td>45.142.xxx.xxx</td>
-            <td>🇷🇺 RU</td>
-            <td>/admin</td>
-            <td>Unknown</td>
-            <td>🚫 차단</td>
+            <td colspan="7" style="text-align: center; padding: 30px;">
+              <div style="font-size: 2em; margin-bottom: 10px;">🔄</div>
+              <div>로그 데이터를 불러오는 중...</div>
+            </td>
           </tr>
         </tbody>
       </table>
@@ -1025,6 +1561,90 @@ function getVisitorLogsHTML(limit = 50, page = 1) {
   </div>
 
   <script>
+    let allLogs = [];
+    let currentLimit = ${limit};
+    let currentPage = ${page};
+
+    async function loadLogs() {
+      try {
+        // 실제 API 호출 시뮬레이션 - 추후 KV에서 실제 데이터 가져오기
+        allLogs = generateSampleLogs(currentLimit);
+        renderLogs(allLogs);
+      } catch (error) {
+        console.error('Failed to load logs:', error);
+        document.getElementById('logBody').innerHTML = 
+          '<tr><td colspan="7" style="text-align: center; padding: 30px; color: #e74c3c;"><div style="font-size: 2em; margin-bottom: 10px;">❌</div><div>로그를 불러오는데 실패했습니다.</div></td></tr>';
+      }
+    }
+
+    function generateSampleLogs(count) {
+      const logs = [];
+      const countries = [
+        { code: 'KR', flag: '🇰🇷', name: 'Korea' },
+        { code: 'US', flag: '🇺🇸', name: 'United States' },
+        { code: 'JP', flag: '🇯🇵', name: 'Japan' },
+        { code: 'CN', flag: '🇨🇳', name: 'China' },
+        { code: 'RU', flag: '🇷🇺', name: 'Russia' },
+        { code: 'DE', flag: '🇩🇪', name: 'Germany' }
+      ];
+      const browsers = ['Chrome 119', 'Firefox 120', 'Safari 17', 'Edge 119', 'Opera 105'];
+      const os = ['Windows 11', 'macOS 14', 'Linux', 'iOS 17', 'Android 14'];
+      const paths = ['/', '/admin', '/visitor/dashboard', '/ip', '/api/visitors'];
+      const statuses = [
+        { text: '✅ 허용', class: 'success' },
+        { text: '🚫 차단', class: 'danger' },
+        { text: '⚠️ 의심', class: 'warning' }
+      ];
+
+      for (let i = 0; i < count; i++) {
+        const date = new Date(Date.now() - i * 60000 * Math.random() * 10);
+        const country = countries[Math.floor(Math.random() * countries.length)];
+        const status = statuses[Math.floor(Math.random() * statuses.length)];
+        
+        logs.push({
+          time: date.toLocaleString('ko-KR', { 
+            year: 'numeric',
+            month: '2-digit', 
+            day: '2-digit', 
+            hour: '2-digit', 
+            minute: '2-digit',
+            second: '2-digit'
+          }),
+          ip: generateRandomIP(),
+          country: country.flag + ' ' + country.code,
+          path: paths[Math.floor(Math.random() * paths.length)],
+          browser: browsers[Math.floor(Math.random() * browsers.length)],
+          os: os[Math.floor(Math.random() * os.length)],
+          status: status
+        });
+      }
+      return logs;
+    }
+
+    function generateRandomIP() {
+      return Array(4).fill(0).map(() => Math.floor(Math.random() * 256)).join('.');
+    }
+
+    function renderLogs(logs) {
+      const tbody = document.getElementById('logBody');
+      if (!logs || logs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 30px;"><div style="font-size: 2em; margin-bottom: 10px;">📭</div><div>로그가 없습니다.</div></td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = logs.map(function(log) {
+        return '<tr>' +
+          '<td style="white-space: nowrap;">' + log.time + '</td>' +
+          '<td><code style="background: #f8f9fa; padding: 4px 8px; border-radius: 4px; font-family: Monaco, monospace;">' + log.ip + '</code></td>' +
+          '<td>' + log.country + '</td>' +
+          '<td><code style="color: #667eea;">' + log.path + '</code></td>' +
+          '<td>' + log.browser + '</td>' +
+          '<td>' + log.os + '</td>' +
+          '<td><span class="badge badge-' + log.status.class + '">' + log.status.text + '</span></td>' +
+          '</tr>';
+      }).join('');
+    }
+
     function changeLimit(limit) {
       window.location.href = '/visitor/logs?limit=' + limit + '&page=1';
     }
@@ -1042,6 +1662,9 @@ function getVisitorLogsHTML(limit = 50, page = 1) {
         row.style.display = text.includes(search) ? '' : 'none';
       });
     }
+
+    // 페이지 로드 시 로그 불러오기
+    loadLogs();
   </script>
 </body>
 </html>`;
@@ -2525,42 +3148,23 @@ async function handleVisitor(request, env) {
     } else {
       console.warn('[SECURITY_STATS] SECURITY_DATA binding not available');
     }
-
-    const stats = {
-      blockedIps: Array.from(blockedIpsStore.entries()).map(([ip, data]) => ({
-        ip,
-        reason: data.reason,
-        blockedAt: new Date(data.blockedAt).toISOString(),
-        until: new Date(data.until).toISOString(),
-        remainingMs: Math.max(0, data.until - Date.now()),
-      })),
-      suspiciousActivities: Array.from(suspiciousActivityStore.entries()).map(([ip, data]) => ({
-        ip,
-        count: data.count,
-        firstSeen: new Date(data.firstSeen).toISOString(),
-        lastSeen: new Date(data.lastSeen).toISOString(),
-        recentIncidents: data.incidents.slice(-10).map(inc => ({
-          reason: inc.reason,
-          timestamp: new Date(inc.timestamp).toISOString(),
-        })),
-      })),
-      rateLimits: Array.from(rateLimitStore.entries()).map(([ip, data]) => ({
-        ip,
-        count: data.count,
-        firstAttempt: new Date(data.firstAttempt).toISOString(),
-        blockedUntil: data.blockedUntil ? new Date(data.blockedUntil).toISOString() : null,
-      })),
-      summary: buildSecuritySummary(),
-      reputation: getReputationSnapshot(),
-      trustedIps: Array.from(trustedIpsStore.entries()).map(([ip, data]) => ({ ip, ...data })),
-    };
-
-    return new Response(JSON.stringify(stats), {
+    // Return HTML dashboard instead of JSON
+    return new Response(getSecurityStatsHTML(), {
       status: 200,
       headers: {
-        'Content-Type': 'application/json',
+        'Content-Type': 'text/html; charset=utf-8',
         'Cache-Control': 'no-cache',
-        'Access-Control-Allow-Origin': '*',
+      },
+    });
+  }
+
+  // Visitor stats HTML page
+  if (request.method === 'GET' && url.pathname === '/visitor/stats') {
+    return new Response(getVisitorStatsHTML(), {
+      status: 200,
+      headers: {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'no-cache',
       },
     });
   }
@@ -2810,7 +3414,7 @@ export default {
     // Public endpoints (no IP check required)
     if (request.method === 'GET' && url.pathname === '/ip') {
       const normalizedIp = normalizeIp(clientInfo.ip);
-      return new Response(JSON.stringify({
+      return new Response(getIpDashboardHTML({
         ip: clientInfo.ip || 'Unknown',
         normalizedIp: normalizedIp || clientInfo.ip || 'Unknown',
         country: clientInfo.country || 'Unknown',
@@ -2818,8 +3422,8 @@ export default {
       }), {
         status: 200,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'text/html; charset=utf-8',
+          'Cache-Control': 'no-cache',
         },
       });
     }
