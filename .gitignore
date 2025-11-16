@@ -35,3 +35,6 @@ logs/
 # Temporary files
 *.tmp
 .cache/
+*.php
+*.bak
+wp-config*
