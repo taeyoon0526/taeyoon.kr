@@ -1897,8 +1897,8 @@ async function handleVisitor(request, env) {
     }
     
     try {
-      // Fetch visitor data from KV (limit to 100 for performance)
-      const keys = await env.VISITOR_LOG.list({ limit: 100 });
+      // Fetch visitor data from KV (increase limit to 500 for better coverage)
+      const keys = await env.VISITOR_LOG.list({ limit: 500 });
       
       // Fetch all data in parallel for better performance
       const dataPromises = keys.keys.map(key => 
@@ -1909,7 +1909,7 @@ async function handleVisitor(request, env) {
       );
       
       const results = await Promise.all(dataPromises);
-      const visitors = results
+      let visitors = results
         .filter(data => data !== null)
         .map(data => ({
           ...data,
@@ -1917,6 +1917,13 @@ async function handleVisitor(request, env) {
           // Keep original for authorized users only
           _originalIp: isAuthenticated ? data.ip : undefined
         }));
+      
+      // Sort by timestamp descending (most recent first)
+      visitors.sort((a, b) => {
+        const timeA = new Date(a.timestamp || a.time || 0).getTime();
+        const timeB = new Date(b.timestamp || b.time || 0).getTime();
+        return timeB - timeA;
+      });
       
       return new Response(JSON.stringify({
         success: true,
