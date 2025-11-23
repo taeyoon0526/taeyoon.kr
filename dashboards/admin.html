@@ -477,6 +477,34 @@
       </div>
     </div>
 
+    <div class="section">
+      <h2>👥 최근 방문자 (실시간)</h2>
+      <p id="visitorUpdateTime" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 1rem;">
+        데이터 로딩 중...
+      </p>
+      <div style="overflow-x: auto;">
+        <table id="visitorTable"
+          style="width: 100%; border-collapse: collapse; background: var(--card-bg); border-radius: 12px; overflow: hidden;">
+          <thead style="background: var(--accent); color: white;">
+            <tr>
+              <th style="padding: 12px; text-align: left;">IP</th>
+              <th style="padding: 12px; text-align: left;">국가</th>
+              <th style="padding: 12px; text-align: left;">도시</th>
+              <th style="padding: 12px; text-align: left;">경로</th>
+              <th style="padding: 12px; text-align: left;">시간</th>
+            </tr>
+          </thead>
+          <tbody id="visitorTableBody">
+            <tr>
+              <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-secondary);">
+                로딩 중...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
     <div class="section" style="background: var(--hover-bg); border: 2px dashed var(--border-color);">
       <h2>📚 API 문서</h2>
       <p style="margin-bottom: 0.5rem;"><strong>모든 엔드포인트는 taeyoon.kr 도메인에서 작동합니다.</strong></p>
@@ -594,10 +622,14 @@
 
         if (visitorData.success) {
           const totalVisitors = visitorData.count || 0;
-          const recentVisitors = visitorData.visitors.slice(0, 10);
+          const allVisitors = visitorData.visitors || [];
+          const recentVisitors = allVisitors.slice(0, 10);
 
           // 통계 배너 업데이트
           updateStatsBanner(totalVisitors, recentVisitors);
+
+          // 방문자 테이블 업데이트
+          updateVisitorTable(allVisitors);
         }
 
         // 보안 통계 로드
@@ -629,6 +661,89 @@
           </p>
         `;
       }
+    }
+
+    function updateVisitorTable(visitors) {
+      const tbody = document.getElementById('visitorTableBody');
+      const updateTime = document.getElementById('visitorUpdateTime');
+
+      if (!tbody) return;
+
+      // 업데이트 시간 표시
+      if (updateTime) {
+        updateTime.textContent = `마지막 업데이트: ${new Date().toLocaleString('ko-KR')} | 총 ${visitors.length}명의 방문자`;
+      }
+
+      if (visitors.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" style="padding: 20px; text-align: center; color: var(--text-secondary);">
+              방문자 데이터가 없습니다.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      // 최근 20명만 표시 (성능 최적화)
+      const recentVisitors = visitors.slice(0, 20);
+
+      tbody.innerHTML = recentVisitors.map(visitor => {
+        const timestamp = new Date(visitor.timestamp);
+        const timeAgo = getTimeAgo(timestamp);
+        const fullTime = timestamp.toLocaleString('ko-KR');
+
+        return `
+          <tr style="border-bottom: 1px solid var(--border-color);">
+            <td style="padding: 12px; font-family: monospace; font-size: 0.9rem;">
+              ${visitor.ip || 'N/A'}
+            </td>
+            <td style="padding: 12px;">
+              ${visitor.country || 'Unknown'} ${getCountryFlag(visitor.country)}
+            </td>
+            <td style="padding: 12px;">
+              ${visitor.city || '-'}
+            </td>
+            <td style="padding: 12px; font-size: 0.9rem; color: var(--text-secondary);">
+              ${visitor.path || '/'}
+            </td>
+            <td style="padding: 12px; font-size: 0.9rem;" title="${fullTime}">
+              ${timeAgo}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getTimeAgo(timestamp) {
+      const now = new Date();
+      const diff = now - timestamp;
+      const seconds = Math.floor(diff / 1000);
+      const minutes = Math.floor(seconds / 60);
+      const hours = Math.floor(minutes / 60);
+      const days = Math.floor(hours / 24);
+
+      if (seconds < 60) return `${seconds}초 전`;
+      if (minutes < 60) return `${minutes}분 전`;
+      if (hours < 24) return `${hours}시간 전`;
+      if (days < 7) return `${days}일 전`;
+      return timestamp.toLocaleDateString('ko-KR');
+    }
+
+    function getCountryFlag(country) {
+      const flags = {
+        'South Korea': '🇰🇷', 'KR': '🇰🇷',
+        'United States': '🇺🇸', 'US': '🇺🇸',
+        'Japan': '🇯🇵', 'JP': '🇯🇵',
+        'China': '🇨🇳', 'CN': '🇨🇳',
+        'United Kingdom': '🇬🇧', 'GB': '🇬🇧',
+        'Germany': '🇩🇪', 'DE': '🇩🇪',
+        'France': '🇫🇷', 'FR': '🇫🇷',
+        'Canada': '🇨🇦', 'CA': '🇨🇦',
+        'Australia': '🇦🇺', 'AU': '🇦🇺',
+        'India': '🇮🇳', 'IN': '🇮🇳',
+      };
+      return flags[country] || '🌍';
     }
 
     function updateSecurityStats(securityData) {
