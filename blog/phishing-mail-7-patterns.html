@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>피싱 메일 7가지 패턴과 대처법 (일반인용) | taeyoon.kr</title>
+  <meta name="description" content="일반인이 가장 자주 당하는 피싱 메일 7가지 패턴과 실제로 써먹는 대처법 체크리스트." />
+  <meta name="theme-color" content="#0b0f19" />
+
+  <style>
+    :root{
+      --bg0:#070A12; --bg1:#0b0f19;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.12);
+      --txt:#e9eefc; --muted:rgba(233,238,252,.72);
+      --brand:#8ab4ff; --brand2:#b1ffda; --warn:#ffd18a; --bad:#ff9aa5;
+      --shadow:0 18px 50px rgba(0,0,0,.55);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--txt); font-family:var(--sans); line-height:1.85;
+      background:
+        radial-gradient(900px 600px at 12% 12%, rgba(255,154,165,.16), transparent 60%),
+        radial-gradient(900px 600px at 90% 18%, rgba(138,180,255,.18), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
+      background:linear-gradient(180deg,rgba(7,10,18,.8),rgba(7,10,18,.44));
+      border-bottom:1px solid var(--line)}
+    .nav{max-width:1100px;margin:0 auto;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+    .brand{display:flex;gap:10px;align-items:center;color:var(--txt);text-decoration:none}
+    .dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+    .links a{color:var(--muted);margin-left:10px;text-decoration:none}
+    .links a:hover,.links a.active{color:var(--txt)}
+
+    .wrap{max-width:900px;margin:0 auto;padding:28px 16px 70px}
+    h1{font-size:1.9rem;margin-bottom:10px}
+    h2{margin-top:28px;font-size:1.25rem}
+    .lede{color:var(--muted)}
+    .card{margin-top:16px;border:1px solid var(--line);border-radius:var(--radius);
+      background:var(--card);padding:16px}
+    .bad{border-color:rgba(255,154,165,.3);background:rgba(255,154,165,.07)}
+    .warn{border-color:rgba(255,209,138,.3);background:rgba(255,209,138,.07)}
+    ul{padding-left:18px}
+    .foot{margin-top:28px;border-top:1px solid var(--line);padding-top:14px;
+      display:flex;justify-content:space-between;color:var(--muted)}
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="nav">
+      <a class="brand" href="/"><span class="dot"></span><b>taeyoon.kr</b></a>
+      <div class="links">
+        <a href="/blog/" class="active">Blog</a>
+        <a href="/disclosure">Disclosure</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <h1>피싱 메일 7가지 패턴과 대처법 (일반인용)</h1>
+    <p class="lede">
+      피싱은 기술보다 <b>심리</b>를 노립니다. 이 글은 일반인이 실제로 가장 많이 당하는
+      피싱 메일 패턴 7가지를 정리하고, <b>즉시 써먹는 대처법</b>만 담았습니다.
+    </p>
+
+    <div class="card bad">
+      <h2>패턴 1. “계정이 정지됩니다” 긴급 경고</h2>
+      <ul>
+        <li>공포/긴급 프레임</li>
+        <li>대처: 메일 링크 클릭 ❌ → 공식 사이트 직접 접속</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h2>패턴 2. 결제·환불·영수증 위장</h2>
+      <ul>
+        <li>실제 서비스와 매우 유사한 디자인</li>
+        <li>대처: 결제 내역은 앱/공식 페이지에서만 확인</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h2>패턴 3. 택배·배송 문제</h2>
+      <ul>
+        <li>짧은 링크 + “주소 확인 필요”</li>
+        <li>대처: 운송장 번호 직접 조회</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h2>패턴 4. 상금·이벤트 당첨</h2>
+      <ul>
+        <li>기억나지 않는 이벤트</li>
+        <li>대처: 참여한 적 없으면 100% 무시</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h2>패턴 5. 회사/학교 내부 공지 사칭</h2>
+      <ul>
+        <li>첨부파일(.zip/.html) 포함</li>
+        <li>대처: 내부 포털에서 재확인</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h2>패턴 6. 비밀번호 재설정 요청</h2>
+      <ul>
+        <li>최근 요청한 적 없음</li>
+        <li>대처: 링크 클릭 ❌ → 공식 로그인 페이지 직접 방문</li>
+      </ul>
+    </div>
+
+    <div class="card bad">
+      <h2>패턴 7. 지인 사칭(메일 해킹 연계)</h2>
+      <ul>
+        <li>짧은 문장 + 링크/파일</li>
+        <li>대처: 다른 채널로 진짜 여부 확인</li>
+      </ul>
+    </div>
+
+    <div class="card warn">
+      <h2>핵심 대처 원칙 3가지</h2>
+      <ul>
+        <li>링크는 누르기 전에 도메인 확인</li>
+        <li>긴급/공포 프레임이면 일단 멈춤</li>
+        <li>삭제 전에 “신고”</li>
+      </ul>
+    </div>
+
+    <div class="foot">
+      <div>제휴 고지: <a href="/disclosure">/disclosure</a></div>
+      <div><a href="/blog/">← 블로그</a></div>
+    </div>
+  </div>
+</body>
+</html>
