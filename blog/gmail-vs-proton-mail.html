@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Gmail vs Proton Mail: 일반인이 체감하는 차이 | taeyoon.kr</title>
+  <meta name="description" content="일반인 관점에서 Gmail과 Proton Mail의 차이를 보안, 프라이버시, 사용성 기준으로 비교." />
+  <meta name="theme-color" content="#0b0f19" />
+
+  <style>
+    :root{
+      --bg0:#070A12; --bg1:#0b0f19;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.12);
+      --txt:#e9eefc; --muted:rgba(233,238,252,.72);
+      --brand:#8ab4ff; --brand2:#b1ffda; --shadow:0 18px 50px rgba(0,0,0,.55);
+      --radius:18px;
+      --sans: system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR";
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; color:var(--txt); font-family:var(--sans); line-height:1.85;
+      background:
+        radial-gradient(900px 600px at 14% 14%, rgba(138,180,255,.18), transparent 60%),
+        radial-gradient(900px 600px at 88% 18%, rgba(177,255,218,.14), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+    }
+
+    .topbar{position:sticky;top:0;z-index:50;backdrop-filter:blur(10px);
+      background:linear-gradient(180deg,rgba(7,10,18,.8),rgba(7,10,18,.44));
+      border-bottom:1px solid var(--line)}
+    .nav{max-width:1000px;margin:0 auto;padding:12px 16px;display:flex;justify-content:space-between}
+    .brand{display:flex;gap:10px;align-items:center;color:var(--txt);text-decoration:none}
+    .dot{width:10px;height:10px;border-radius:999px;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+    .links a{color:var(--muted);margin-left:10px;text-decoration:none}
+    .links a:hover,.links a.active{color:var(--txt)}
+
+    .wrap{max-width:900px;margin:0 auto;padding:28px 16px 70px}
+    h1{font-size:1.9rem}
+    .lede{color:var(--muted)}
+    table{width:100%;border-collapse:collapse;margin-top:20px}
+    th,td{border:1px solid var(--line);padding:12px;vertical-align:top}
+    th{background:rgba(255,255,255,.05)}
+    .card{margin-top:20px;border:1px solid var(--line);border-radius:var(--radius);
+      background:var(--card);padding:16px}
+    .foot{margin-top:28px;border-top:1px solid var(--line);padding-top:14px;
+      display:flex;justify-content:space-between;color:var(--muted)}
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="nav">
+      <a class="brand" href="/"><span class="dot"></span><b>taeyoon.kr</b></a>
+      <div class="links">
+        <a href="/blog/" class="active">Blog</a>
+        <a href="/disclosure">Disclosure</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <h1>Gmail vs Proton Mail: 일반인이 체감하는 차이</h1>
+    <p class="lede">
+      이 비교는 “누가 더 좋다”가 아니라,
+      <b>일반인이 실제로 체감하는 차이</b>를 기준으로 정리했습니다.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>기준</th>
+          <th>Gmail</th>
+          <th>Proton Mail</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>기본 목적</td>
+          <td>편의성, 생태계 통합</td>
+          <td>프라이버시, 보안 중심</td>
+        </tr>
+        <tr>
+          <td>광고/데이터 활용</td>
+          <td>서비스 개선·광고 모델 연계</td>
+          <td>광고 없음</td>
+        </tr>
+        <tr>
+          <td>피싱 대응</td>
+          <td>자동 필터 강력</td>
+          <td>필터 + 사용자 보안 습관 강조</td>
+        </tr>
+        <tr>
+          <td>계정 복구</td>
+          <td>상대적으로 쉬움</td>
+          <td>사용자 책임 비중 큼</td>
+        </tr>
+        <tr>
+          <td>초기 진입 장벽</td>
+          <td>매우 낮음</td>
+          <td>조금 있음</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="card">
+      <h2>이런 사람에게 Gmail</h2>
+      <ul>
+        <li>편의성과 자동화를 최우선</li>
+        <li>보안 설정에 신경 쓰기 싫음</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>이런 사람에게 Proton Mail</h2>
+      <ul>
+        <li>이메일을 계정 보안의 핵심으로 보는 사람</li>
+        <li>광고·추적 없는 메일을 원하는 경우</li>
+        <li>2FA/복구 설정을 직접 관리할 의향이 있음</li>
+      </ul>
+    </div>
+
+    <div class="card">
+      <h2>현실적인 추천</h2>
+      <p>
+        메인 계정은 Proton Mail,
+        알림·구독·가입용은 Gmail처럼 <b>역할 분리</b>가
+        일반인에게 가장 부담이 적은 전략입니다.
+      </p>
+    </div>
+
+    <div class="foot">
+      <div>제휴 고지: <a href="/disclosure">/disclosure</a></div>
+      <div><a href="/blog/">← 블로그</a></div>
+    </div>
+  </div>
+</body>
+</html>
