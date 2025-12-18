@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>공공 와이파이에서 VPN을 ‘안전하게’ 쓰는 법 (Proton VPN) | taeyoon.kr</title>
+  <meta name="description" content="VPN이 해주는 것/못 해주는 것, 킬 스위치, 공공 와이파이 체크리스트. Proton VPN 기준." />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta property="og:title" content="공공 와이파이에서 VPN을 ‘안전하게’ 쓰는 법 (Proton VPN)" />
+  <meta property="og:description" content="킬 스위치/공공 와이파이 체크리스트 중심의 VPN 사용 가이드" />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://taeyoon.kr/blog/proton-vpn-public-wifi.html" />
+
+  <style>
+    :root{
+      --bg0:#070A12; --bg1:#0b0f19;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.12);
+      --txt:#e9eefc; --muted:rgba(233,238,252,.72);
+      --brand:#8ab4ff; --brand2:#b1ffda; --warn:#ffd18a; --bad:#ff9aa5;
+      --shadow:0 18px 50px rgba(0,0,0,.55);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Helvetica, Arial, "Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--txt); font-family:var(--sans); line-height:1.85;
+      background:
+        radial-gradient(900px 600px at 12% 12%, rgba(138,180,255,.20), transparent 60%),
+        radial-gradient(900px 600px at 92% 16%, rgba(177,255,218,.14), transparent 62%),
+        radial-gradient(900px 600px at 60% 92%, rgba(197,138,255,.10), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    .prog{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--brand),var(--brand2));z-index:100}
+
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(7,10,18,.80), rgba(7,10,18,.44));
+      border-bottom: 1px solid var(--line);
+    }
+    .nav{
+      max-width:1160px;margin:0 auto;padding:12px 16px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--txt)}
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background:linear-gradient(90deg,var(--brand),var(--brand2));
+      box-shadow:0 0 0 6px rgba(138,180,255,.12)
+    }
+    .links{display:flex;gap:10px;flex-wrap:wrap}
+    .links a{
+      color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:999px;
+      border:1px solid transparent;
+    }
+    .links a:hover{color:var(--txt);border-color:var(--line);background:rgba(255,255,255,.04)}
+    .links a.active{color:var(--txt);border-color:var(--line);background:rgba(255,255,255,.04)}
+
+    .wrap{max-width:1160px;margin:0 auto;padding:22px 16px 72px}
+    .layout{display:grid;grid-template-columns: 1fr 320px;gap:14px;align-items:start}
+    .article{
+      border:1px solid var(--line);
+      border-radius:calc(var(--radius) + 6px);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      padding:22px 22px;
+    }
+    h1{margin:4px 0 10px;font-size:1.9rem;line-height:1.25}
+    .meta{color:var(--muted);display:flex;gap:10px;flex-wrap:wrap;font-size:.98rem}
+    .badge{
+      font-family:var(--mono); font-size:.84rem;
+      padding:4px 8px; border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+    }
+    .lede{margin-top:14px;color:var(--muted);max-width:80ch}
+    .hr{height:1px;background:var(--line);margin:18px 0}
+    h2{margin:22px 0 10px;font-size:1.25rem}
+    a{color:var(--txt);text-decoration:underline;text-decoration-color:rgba(138,180,255,.55);text-underline-offset:3px}
+    a:hover{text-decoration-color:rgba(177,255,218,.75)}
+
+    .callout{
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background: var(--card);
+      padding:14px 14px;
+      margin:14px 0;
+    }
+    .callout.tip{border-color:rgba(177,255,218,.22);background:rgba(177,255,218,.07)}
+    .callout.warn{border-color:rgba(255,209,138,.24);background:rgba(255,209,138,.07)}
+    .callout.bad{border-color:rgba(255,154,165,.22);background:rgba(255,154,165,.06)}
+
+    .check{margin:10px 0 0 0; padding:0; list-style:none; display:grid; gap:10px;}
+    .check li{border:1px solid var(--line);border-radius:14px;background:rgba(0,0,0,.18);padding:12px 12px;}
+    .check li strong{display:block;margin-bottom:6px}
+
+    .side{
+      position:sticky; top:74px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background:rgba(255,255,255,.04);
+      padding:14px 14px;
+    }
+    .toc a{display:block;padding:6px 8px;border-radius:10px;text-decoration:none;color:var(--muted);border:1px solid transparent}
+    .toc a:hover{color:var(--txt);border-color:var(--line);background:rgba(255,255,255,.04)}
+    .mini{color:var(--muted);font-size:.95rem}
+
+    .foot{
+      margin-top:18px; color:var(--muted); font-size:.95rem;
+      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      border-top:1px solid var(--line); padding-top:16px;
+    }
+    .foot a{color:var(--muted)}
+    .foot a:hover{color:var(--txt)}
+
+    @media (max-width: 1020px){
+      .layout{grid-template-columns:1fr}
+      .side{position:relative;top:auto}
+      h1{font-size:1.7rem}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="prog" id="prog"></div>
+
+  <div class="topbar">
+    <div class="nav">
+      <a class="brand" href="/"><span class="dot"></span><b>taeyoon.kr</b></a>
+      <div class="links">
+        <a href="/">Home</a>
+        <a class="active" href="/blog/">Blog</a>
+        <a href="/security.html">Security</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/disclosure">Disclosure</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <div class="layout">
+      <article class="article" id="article">
+        <div class="meta">
+          <span>업데이트: 2025-12-18</span><span>·</span><span class="badge">vpn</span><span class="badge">checklist</span>
+        </div>
+
+        <h1>공공 와이파이에서 VPN을 ‘안전하게’ 쓰는 법 (Proton VPN)</h1>
+
+        <p class="lede">
+          VPN은 “만능 프라이버시 도구”가 아니라, 특히 <b>공공 와이파이</b> 같은 위험한 네트워크에서
+          <b>트래픽 노출/세션 탈취</b> 같은 사고 확률을 줄이는 실전 도구입니다.
+          이 글은 과장 없이 “안전하게 쓰는 법”만 정리합니다.
+        </p>
+
+        <div class="callout tip">
+          <b>✅ 1분 요약</b>
+          <ul>
+            <li>공공 와이파이에서는 VPN을 “켜고 시작”하는 습관이 핵심입니다.</li>
+            <li><b>Kill Switch</b>를 켜 두면 VPN이 끊기는 순간 트래픽 누출을 줄일 수 있습니다.</li>
+          </ul>
+        </div>
+
+        <div class="hr"></div>
+
+        <h2 id="what">1) VPN이 해주는 것 / 못 해주는 것</h2>
+        <div class="callout warn">
+          <b>VPN이 해주는 것</b>
+          <ul>
+            <li>내 기기 ↔ VPN 서버 구간을 암호화해 공공망에서 엿보기/간섭 위험을 낮춥니다.</li>
+            <li>네트워크 관점에서 내 실제 IP 노출을 줄이는 데 도움이 됩니다.</li>
+          </ul>
+        </div>
+
+        <div class="callout bad">
+          <b>VPN이 못 해주는 것</b>
+          <ul>
+            <li>피싱 링크 클릭/악성 앱 설치/비밀번호 입력 실수는 막지 못합니다.</li>
+            <li>로그인 상태/쿠키 기반 추적을 자동으로 제거하지 못합니다.</li>
+          </ul>
+        </div>
+
+        <h2 id="checklist">2) 공공 와이파이 체크리스트(6개)</h2>
+        <ul class="check">
+          <li><strong>1. 가능하면 LTE/5G 우선</strong><div>공공 와이파이는 “필요할 때만”.</div></li>
+          <li><strong>2. VPN 먼저 켜기</strong><div>브라우저/앱을 열기 전에 연결하는 습관.</div></li>
+          <li><strong>3. Kill Switch 켜기</strong><div>끊김 순간이 사고 지점입니다.</div></li>
+          <li><strong>4. HTTPS/도메인 확인</strong><div>자물쇠 + 철자 확인만으로 피싱 사고가 크게 줄어듭니다.</div></li>
+          <li><strong>5. 중요한 작업은 피하기</strong><div>결제/계좌/민감 업로드는 집/핫스팟에서.</div></li>
+          <li><strong>6. 자동 연결 끄기</strong><div>낯선 AP에 자동으로 붙지 않게 설정.</div></li>
+        </ul>
+
+        <h2 id="settings">3) 공공망에서 특히 실수 줄이는 옵션</h2>
+        <ul>
+          <li><b>Kill Switch</b>: 끊김 사고 방지용 핵심 옵션</li>
+          <li><b>항상-연결(Always-on)</b>: “깜빡하고 안 켜는” 실수 감소</li>
+        </ul>
+
+        <div class="callout warn">
+          <b>⚠️ 톤 가이드(심사용)</b>
+          <div>
+            VPN 글은 “우회/불법 회피”가 아니라 <b>공공 와이파이 보안</b>, <b>데이터 보호</b>, <b>안전 습관</b> 중심으로 쓰는 편이 안전합니다.
+          </div>
+        </div>
+
+        <h2 id="mistakes">4) 흔한 실수 4가지</h2>
+        <ol>
+          <li>VPN을 켰다고 해서 피싱 링크를 눌러도 된다고 생각</li>
+          <li>Kill Switch를 꺼둔 상태로 “자동 연결만 믿기”</li>
+          <li>공공 와이파이에서 결제/계좌 같은 고위험 행동</li>
+          <li>업데이트/2FA 같은 기본기를 무시</li>
+        </ol>
+
+        <div class="foot">
+          <div>제휴 고지: <a href="/disclosure">/disclosure</a></div>
+          <div><a href="/blog/">블로그 목록</a></div>
+        </div>
+      </article>
+
+      <aside class="side">
+        <h3 style="margin:6px 0 10px;font-size:1.02rem">목차</h3>
+        <div class="toc" id="toc"></div>
+        <div class="hr"></div>
+        <div class="mini">
+          <b>다음 추천</b>
+          <ul>
+            <li><a href="/blog/proton-mail-for-beginners.html">Proton Mail 10가지 보안 설정</a></li>
+          </ul>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    // progress
+    const prog = document.getElementById("prog");
+    function onScroll(){
+      const doc = document.documentElement;
+      const h = doc.scrollHeight - doc.clientHeight;
+      const p = h > 0 ? (doc.scrollTop / h) : 0;
+      prog.style.width = (p * 100).toFixed(2) + "%";
+    }
+    document.addEventListener("scroll", onScroll, {passive:true});
+    onScroll();
+
+    // toc
+    const toc = document.getElementById("toc");
+    const headings = [...document.querySelectorAll("#article h2[id]")];
+    toc.innerHTML = headings.map(h => `<a href="#${h.id}">${h.textContent}</a>`).join("");
+  </script>
+</body>
+</html>
