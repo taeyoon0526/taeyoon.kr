@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Blog | taeyoon.kr</title>
+  <meta name="description" content="일반인을 위한 이메일 보안/프라이버시 가이드 (Proton Mail 중심)" />
+  <meta name="theme-color" content="#0b0f19" />
+  <meta property="og:title" content="Blog | taeyoon.kr" />
+  <meta property="og:description" content="일반인을 위한 이메일 보안/프라이버시 가이드 (Proton Mail 중심)" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://taeyoon.kr/blog/" />
+
+  <style>
+    :root{
+      --bg0:#070A12; --bg1:#0b0f19;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.12);
+      --txt:#e9eefc; --muted:rgba(233,238,252,.72);
+      --brand:#8ab4ff; --brand2:#b1ffda; --warn:#ffd18a;
+      --shadow:0 18px 50px rgba(0,0,0,.55);
+      --radius:18px;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Noto Sans KR", "Apple SD Gothic Neo", Helvetica, Arial, "Segoe UI Emoji";
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--txt); font-family:var(--sans); line-height:1.7;
+      background:
+        radial-gradient(900px 600px at 10% 12%, rgba(138,180,255,.20), transparent 60%),
+        radial-gradient(900px 600px at 92% 14%, rgba(177,255,218,.14), transparent 62%),
+        radial-gradient(900px 600px at 60% 92%, rgba(255,209,138,.11), transparent 62%),
+        linear-gradient(180deg, var(--bg0), var(--bg1));
+      overflow-x:hidden;
+    }
+
+    /* Topbar */
+    .topbar{
+      position:sticky; top:0; z-index:50;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(180deg, rgba(7,10,18,.78), rgba(7,10,18,.42));
+      border-bottom: 1px solid var(--line);
+    }
+    .nav{
+      max-width:1100px;margin:0 auto;padding:12px 16px;
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+    }
+    .brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--txt)}
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background:linear-gradient(90deg,var(--brand),var(--brand2));
+      box-shadow:0 0 0 6px rgba(138,180,255,.12)
+    }
+    .brand b{letter-spacing:.2px}
+    .links{display:flex;gap:10px;flex-wrap:wrap}
+    .links a{
+      color:var(--muted); text-decoration:none; padding:8px 10px; border-radius:999px;
+      border:1px solid transparent;
+    }
+    .links a:hover{color:var(--txt);border-color:var(--line);background:rgba(255,255,255,.04)}
+    .links a.active{color:var(--txt);border-color:var(--line);background:rgba(255,255,255,.04)}
+
+    /* Page */
+    .wrap{max-width:1100px;margin:0 auto;padding:28px 16px 70px}
+    .hero{
+      margin-top:18px;
+      border:1px solid var(--line);
+      border-radius:calc(var(--radius) + 6px);
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      padding:26px 22px;
+    }
+    h1{margin:0 0 8px;font-size:1.9rem}
+    .sub{color:var(--muted);max-width:78ch}
+    .row{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+
+    .chip{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border-radius:999px;
+      border:1px solid var(--line); background:rgba(255,255,255,.04);
+      color:var(--muted); cursor:pointer; user-select:none;
+    }
+    .chip[aria-pressed="true"]{color:var(--txt); background:rgba(138,180,255,.12); border-color:rgba(138,180,255,.28)}
+
+    .search{margin-left:auto; flex:1 1 260px; min-width:240px; display:flex; justify-content:flex-end}
+    input{
+      width:min(520px,100%);
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+      color:var(--txt);
+      outline:none;
+    }
+    input::placeholder{color:rgba(233,238,252,.55)}
+
+    .grid{
+      margin-top:18px;
+      display:grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap:12px;
+    }
+    .post{
+      grid-column: span 6;
+      border:1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--card);
+      box-shadow: 0 10px 32px rgba(0,0,0,.35);
+      padding:18px 18px;
+      transition: transform .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .post:hover{transform: translateY(-2px); background:rgba(255,255,255,.075); border-color:rgba(255,255,255,.18)}
+    .post h2{margin:0 0 8px;font-size:1.18rem;letter-spacing:.1px}
+    .post a{color:var(--txt);text-decoration:none}
+    .post a:hover{text-decoration:underline}
+
+    .meta{color:var(--muted);font-size:.95rem;display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+    .badge{
+      font-family:var(--mono); font-size:.84rem;
+      padding:4px 8px; border-radius:999px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.18);
+      color:var(--muted);
+    }
+    .note{
+      grid-column: span 12;
+      border:1px dashed rgba(255,255,255,.18);
+      border-radius: var(--radius);
+      background: rgba(255,255,255,.04);
+      padding:14px 16px;
+      color:var(--muted);
+    }
+    .note a{color:var(--txt)}
+    .foot{
+      margin-top:18px; color:var(--muted); font-size:.95rem;
+      display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap;
+      border-top:1px solid var(--line); padding-top:16px;
+    }
+    .foot a{color:var(--muted)}
+    .foot a:hover{color:var(--txt)}
+    @media (max-width: 900px){
+      .post{grid-column: span 12}
+      .search{margin-left:0; justify-content:stretch}
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="nav">
+      <a class="brand" href="/"><span class="dot"></span><b>taeyoon.kr</b></a>
+      <div class="links">
+        <a href="/">Home</a>
+        <a class="active" href="/blog/">Blog</a>
+        <a href="/security.html">Security</a>
+        <a href="/terms.html">Terms</a>
+        <a href="/disclosure">Disclosure</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="hero">
+      <h1>Blog</h1>
+      <p class="sub">
+        일반인을 위한 <b>이메일 보안</b>과 <b>프라이버시</b> 실전 가이드입니다.
+        우선순위는 “메일 사고 확률을 줄이는 기본기”입니다.
+      </p>
+
+      <div class="row">
+        <button class="chip" type="button" data-tag="mail" aria-pressed="true">📧 Mail</button>
+        <button class="chip" type="button" data-tag="vpn" aria-pressed="false">🌐 VPN</button>
+        <button class="chip" type="button" data-tag="checklist" aria-pressed="false">✅ Checklist</button>
+
+        <div class="search">
+          <input id="q" placeholder="검색: 2FA, 피싱, 복구…" autocomplete="off" />
+        </div>
+      </div>
+    </section>
+
+    <div class="grid" id="list">
+      <article class="post" data-tags="mail checklist">
+        <h2><a href="/blog/proton-mail-for-beginners.html">Proton Mail 입문: 일반인이 바로 적용하는 10가지 보안 설정</a></h2>
+        <div class="meta"><span>업데이트: 2025-12-18</span><span>·</span><span>읽기 8~10분</span></div>
+        <p class="sub">2FA, 복구, 피싱 방어, 계정 이관 순서까지. “메일 사고를 줄이는 최소 세팅”을 정리했습니다.</p>
+        <div class="badges">
+          <span class="badge">mail</span><span class="badge">checklist</span><span class="badge">2FA</span><span class="badge">phishing</span>
+        </div>
+      </article>
+
+      <article class="post" data-tags="vpn checklist">
+        <h2><a href="/blog/proton-vpn-public-wifi.html">공공 와이파이에서 VPN을 ‘안전하게’ 쓰는 법 (Proton VPN)</a></h2>
+        <div class="meta"><span>업데이트: 2025-12-18</span><span>·</span><span>읽기 6~8분</span></div>
+        <p class="sub">VPN이 해주는 것/못 해주는 것, 킬 스위치, 안전한 사용 습관 중심으로 과장 없이 정리했습니다.</p>
+        <div class="badges">
+          <span class="badge">vpn</span><span class="badge">checklist</span><span class="badge">kill-switch</span>
+        </div>
+      </article>
+
+      <div class="note">
+        <b>제휴 고지</b>: 이 블로그의 일부 글에는 제휴 링크가 포함될 수 있습니다.
+        자세히: <a href="/disclosure">/disclosure</a>
+      </div>
+    </div>
+
+    <div class="foot">
+      <div>© <span id="y"></span> taeyoon.kr</div>
+      <div><a href="/disclosure">Disclosure</a></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    const q = document.getElementById("q");
+    const chips = [...document.querySelectorAll(".chip[data-tag]")];
+    const posts = [...document.querySelectorAll(".post")];
+
+    function activeTags(){
+      return chips.filter(c=>c.getAttribute("aria-pressed")==="true").map(c=>c.dataset.tag);
+    }
+    function apply(){
+      const query = (q.value||"").trim().toLowerCase();
+      const tags = activeTags();
+      posts.forEach(p=>{
+        const hay = (p.innerText||"").toLowerCase();
+        const ptags = (p.dataset.tags||"").split(/\s+/).filter(Boolean);
+        const tagOk = tags.length ? tags.some(t=>ptags.includes(t)) : true;
+        const qOk = query ? hay.includes(query) : true;
+        p.style.display = (tagOk && qOk) ? "" : "none";
+      });
+    }
+    chips.forEach(c=>{
+      c.addEventListener("click", ()=>{
+        const on = c.getAttribute("aria-pressed")==="true";
+        c.setAttribute("aria-pressed", String(!on));
+        apply();
+      });
+    });
+    q.addEventListener("input", apply);
+    apply();
+  </script>
+</body>
+</html>
