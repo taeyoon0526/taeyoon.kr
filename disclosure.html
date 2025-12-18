@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>제휴(파트너) 고지 | taeyoon.kr</title>
   <meta name="description" content="taeyoon.kr 제휴(파트너) 링크 고지 및 편집 원칙" />
+  <meta name="theme-color" content="#0b0f19" />
+
   <meta property="og:title" content="제휴(파트너) 고지 | taeyoon.kr" />
   <meta property="og:description" content="제휴 링크 고지 및 편집 원칙" />
   <meta property="og:type" content="website" />
-  <meta property="og:url" content="https://taeyoon.kr/disclosure.html" />
-  <meta name="theme-color" content="#0b0f19" />
+  <meta property="og:url" content="https://taeyoon.kr/disclosure" />
 
   <style>
     :root{
       --bg0:#070A12; --bg1:#0b0f19;
-      --card:rgba(255,255,255,.06); --card2:rgba(255,255,255,.09);
+      --card:rgba(255,255,255,.06);
       --line:rgba(255,255,255,.12);
       --txt:#e9eefc; --muted:rgba(233,238,252,.72);
       --brand:#8ab4ff; --brand2:#b1ffda;
@@ -26,7 +27,10 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; color:var(--txt); font-family:var(--sans); line-height:1.7;
+      margin:0;
+      color:var(--txt);
+      font-family:var(--sans);
+      line-height:1.75;
       background:
         radial-gradient(900px 600px at 12% 10%, rgba(138,180,255,.20), transparent 60%),
         radial-gradient(900px 600px at 92% 18%, rgba(177,255,218,.14), transparent 62%),
@@ -34,14 +38,169 @@
         linear-gradient(180deg, var(--bg0), var(--bg1));
       overflow-x:hidden;
     }
-    .wrap{max-width:980px;margin:0 auto;padding:28px 16px 64px}
+
+    /* Top navigation */
     .topbar{
-      position:sticky; top:0; z-index:50;
+      position:sticky;
+      top:0;
+      z-index:50;
       backdrop-filter: blur(10px);
       background: linear-gradient(180deg, rgba(7,10,18,.78), rgba(7,10,18,.42));
       border-bottom: 1px solid var(--line);
     }
     .nav{
-      max-width:980px;margin:0 auto;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;
+      max-width:980px;
+      margin:0 auto;
+      padding:12px 16px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
     }
-    .brand{display:flex
+    .brand{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      text-decoration:none;
+      color:var(--txt);
+    }
+    .dot{
+      width:10px;height:10px;border-radius:999px;
+      background:linear-gradient(90deg,var(--brand),var(--brand2));
+      box-shadow:0 0 0 6px rgba(138,180,255,.12);
+    }
+    .brand b{letter-spacing:.2px}
+    .links{display:flex;gap:10px;flex-wrap:wrap}
+    .links a{
+      color:var(--muted);
+      text-decoration:none;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid transparent;
+    }
+    .links a:hover{
+      color:var(--txt);
+      border-color:var(--line);
+      background:rgba(255,255,255,.04);
+    }
+    .links a.active{
+      color:var(--txt);
+      border-color:var(--line);
+      background:rgba(255,255,255,.04);
+    }
+
+    /* Page layout */
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:28px 16px 64px;
+    }
+    .hero{
+      margin-top:18px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.04));
+      box-shadow: var(--shadow);
+      padding:22px 20px;
+    }
+    h1{margin:0 0 10px;font-size:1.7rem;line-height:1.25}
+    .meta{color:var(--muted);font-size:.98rem}
+
+    .card{
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      background: var(--card);
+      padding:18px 18px;
+    }
+    .card h2{margin:0 0 10px;font-size:1.15rem}
+    .card ul{margin:10px 0 0 18px}
+    .kbd{
+      font-family:var(--mono);
+      font-size:.95em;
+      padding:.15em .45em;
+      border-radius:8px;
+      border:1px solid var(--line);
+      background:rgba(0,0,0,.22);
+    }
+
+    .foot{
+      margin-top:18px;
+      color:var(--muted);
+      font-size:.95rem;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+      border-top:1px solid var(--line);
+      padding-top:16px;
+    }
+    .foot a{color:var(--muted)}
+    .foot a:hover{color:var(--txt)}
+
+    /* --- Force text visibility (in case of global CSS/JS issues) --- */
+    body, body *{
+      opacity: 1 !important;
+      visibility: visible !important;
+      -webkit-text-fill-color: currentColor !important;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="topbar">
+    <div class="nav">
+      <a class="brand" href="/"><span class="dot"></span><b>taeyoon.kr</b></a>
+      <div class="links">
+        <a href="/">Home</a>
+        <a href="/blog/">Blog</a>
+        <a href="/security.html">Security</a>
+        <a href="/terms.html">Terms</a>
+        <a class="active" href="/disclosure">Disclosure</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="wrap">
+    <section class="hero">
+      <h1>제휴(파트너) 고지</h1>
+      <div class="meta">
+        이 페이지는 제휴 링크 포함 여부와 편집 원칙을 투명하게 공개합니다.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>1) 제휴 링크란?</h2>
+      <p>
+        본 사이트의 일부 글에는 제휴 링크(affiliate link)가 포함될 수 있습니다.
+        사용자가 해당 링크를 통해 가입/구매를 진행하면 작성자에게 수수료가 발생할 수 있습니다.
+        (대부분의 경우 사용자에게 추가 비용이 발생하지 않습니다.)
+      </p>
+    </section>
+
+    <section class="card">
+      <h2>2) 편집 원칙(독립성)</h2>
+      <ul>
+        <li>사실 기반(설정/기능/보안 습관)에 집중하고 과장된 표현을 피합니다.</li>
+        <li>제휴 여부가 결론에 영향을 주지 않도록 하며, 제한/단점도 함께 작성합니다.</li>
+        <li>일반인을 대상으로 “실제로 도움이 되는 체크리스트/가이드” 형식으로 작성합니다.</li>
+      </ul>
+    </section>
+
+    <section class="card">
+      <h2>3) 문의</h2>
+      <p class="meta">오탈자, 잘못된 정보, 보안 관련 제보는 아래로 연락해 주세요.</p>
+      <p><span class="kbd">me@taeyoon.kr</span></p>
+    </section>
+
+    <div class="foot">
+      <div>© <span id="y"></span> taeyoon.kr</div>
+      <div><a href="/blog/">블로그로 이동</a></div>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>
